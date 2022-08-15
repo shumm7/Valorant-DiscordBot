@@ -108,13 +108,12 @@ class API_ENDPOINT:
 
         self.locale_response()
 
-        data = data if type(data) is list else json.dumps(data)
+        data = json.dumps(data)
 
         endpoint_url = getattr(self, url)
-        data = None
 
         r = requests.put(f'{endpoint_url}{endpoint}', headers=self.headers, data=data)
-        print(f"[{datetime.datetime.now()}] Putting {endpoint_url}{endpoint}.")
+        print(f"[{datetime.datetime.now()}] Putting {endpoint_url}{endpoint}.\n\tbody: \"{data}\"")
 
         data = json.loads(r.text)
 
@@ -151,11 +150,14 @@ class API_ENDPOINT:
         data = self.fetch(endpoint=f'/account-xp/v1/players/{self.puuid}', url='pd')
         return data
 
-    def fetch_player_mmr(self) -> Mapping[str, Any]:
+    def fetch_player_mmr(self, puuid: str = "") -> Mapping[str, Any]:
         """
         Get the account mmr
         """
-        data = self.fetch(endpoint=f'/mmr/v1/players/{self.puuid}', url='pd')
+        if puuid=="":
+            puuid = self.puuid
+
+        data = self.fetch(endpoint=f'/mmr/v1/players/{puuid}', url='pd')
         return data
     
     def fetch_match_history(self, index: int = 20, queue: str = "competitive", not_found_error: bool = True) -> Mapping[str, Any]:
@@ -190,7 +192,7 @@ class API_ENDPOINT:
             puuid = [self.__check_puuid()]
         elif puuid is not None and type(puuid) is str:
             puuid = [puuid]
-        data = self.put(endpoint='/name-service/v2/players', url='pd', body=puuid)
+        data = self.put(endpoint='/name-service/v2/players', url='pd', data=puuid)
         return data
 
     def fetch_player_loadout(self) -> Mapping[str, Any]:
@@ -211,11 +213,11 @@ class API_ENDPOINT:
     
     # party endpoints
 
-    def fetch_partyid_from_puuid(self) -> Mapping[str, Any]:
+    def fetch_partyid_from_puuid(self, not_found_error: bool = True) -> Mapping[str, Any]:
         """
         GET Party_FetchPlayer
         """
-        data = self.fetch(endpoint=f'/parties/v1/players/{self.puuid}', url='glz')
+        data = self.fetch(endpoint=f'/parties/v1/players/{self.puuid}', url='glz', not_found_error=not_found_error)
         return data
     
     def fetch_party_details(self, party_id: str) -> Mapping[str, Any]:

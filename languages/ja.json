@@ -179,6 +179,52 @@
       "RESPONSE": "**{username}**のナイトマーケット | 残り時間 {duration}",
       "NIGMARKET_HAS_END": "**ナイトマーケット**が終了しました"
     },
+    "party": {
+      "NAME": "party",
+      "DESCRIPTION": "現在のパーティの情報を取得します。",
+      "TITLE": "{name} の所属するパーティ",
+      "RESPONSE": "人数: **{members}**人\n選択中のキュー: **{queue}**\nパーティ:** {access}**",
+      "ACCESS": {
+        "OPEN": "公開",
+        "CLOSED": "非公開"
+      },
+      "READY": "準備完了",
+      "NO_READY": "ゲーム中",
+      "OWNER": "🔶 ",
+      "PLAYER": {
+        "TITLE": "",
+        "RESPONSE": "{owner}**{name}** (Lv.{level})\n`{title}`",
+        "HEADER": "{rank} ({rr} RR)",
+        "FOOTER": "{ready}"
+      },
+      "CUSTOM": {
+        "TITLE": "",
+        "RESPONSE": "{membership}\n{owner}**{name}** (Lv.{level})\n`{title}`",
+        "HEADER": "{rank} ({rr} RR)",
+        "FOOTER": "{ready}"
+      },
+      "MEMBERSHIP": {
+        "DEFAULT": "プレイヤー",
+        "COACH_A": "コーチ (チームA)",
+        "COACH_B": "コーチ (チームB)",
+        "TEAM_A": "チームA",
+        "TEAM_B": "チームB",
+        "SPECTATE": "観戦者"
+      },
+      "QUEUE":{
+        "unknown": "不明",
+        "unrated": "アンレート",
+        "competitive": "コンペティティブ",
+        "deathmatch": "デスマッチ",
+        "ggteam": "エスカレーション",
+        "onefa": "レプリケーション",
+        "custom": "カスタム",
+        "newmap": "新マップ",
+        "snowball": "スノーボールファイト",
+        "spikerush": "スパイクラッシュ"
+      },
+      "FAILED": "パーティ情報の取得に失敗しました。"
+    },
     "battlepass": {
       "NAME": "battlepass",
       "DESCRIPTION": "自分の現在のバトルパスレベルを表示します。",
