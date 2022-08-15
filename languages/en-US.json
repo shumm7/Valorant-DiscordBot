@@ -176,6 +176,52 @@
       "RESPONSE": "NightMarket for **{username}** | Expires {duration}",
       "NIGMARKET_HAS_END": "**NightMarket** has been ended"
     },
+    "party": {
+      "NAME": "party",
+      "DESCRIPTION": "Get information about the party you belong to",
+      "TITLE": "{name}'s Party",
+      "RESPONSE": "Members: **{members}**\nQueue: **{queue}**\nAccessibility:** {access}**",
+      "ACCESS": {
+        "OPEN": "Open",
+        "CLOSED": "Closed"
+      },
+      "READY": "Ready",
+      "NO_READY": "In Game",
+      "OWNER": "🔶 ",
+      "PLAYER": {
+        "TITLE": "",
+        "RESPONSE": "{owner}**{name}** (Lv.{level})\n`{title}`",
+        "HEADER": "{rank} ({rr} RR)",
+        "FOOTER": "{ready}"
+      },
+      "CUSTOM": {
+        "TITLE": "",
+        "RESPONSE": "{membership}\n{owner}**{name}** (Lv.{level})\n`{title}`",
+        "HEADER": "{rank} ({rr} RR)",
+        "FOOTER": "{ready}"
+      },
+      "MEMBERSHIP": {
+        "DEFAULT": "Player",
+        "COACH_A": "Coach A",
+        "COACH_B": "Coach B",
+        "TEAM_A": "Team A",
+        "TEAM_B": "Team B",
+        "SPECTATE": "Spectater"
+      },
+      "QUEUE":{
+        "unknown": "Unknown",
+        "unrated": "Unrated",
+        "competitive": "Competitive",
+        "deathmatch": "Deathmatch",
+        "ggteam": "Escalation",
+        "onefa": "Replication",
+        "custom": "Custom",
+        "newmap": "New Map",
+        "snowball": "Snowball Fight",
+        "spikerush": "Spike Rush"
+      },
+      "FAILED": "Failed to fetch the party info."
+    },
     "battlepass": {
       "NAME": "battlepass",
       "DESCRIPTION": "View your battlepass current tier",

@@ -6,6 +6,7 @@ import io
 import json
 import contextlib
 from datetime import datetime, timedelta, timezone
+import dateutil.parser
 from tracemalloc import start
 from typing import Any, Dict, List, TYPE_CHECKING, Union
 from unittest import result
@@ -16,6 +17,8 @@ from utils.errors import (
 
 import discord
 import matplotlib.pyplot as plt
+
+from .endpoint import API_ENDPOINT
 
 from .useful import (calculate_level_xp, format_relative, GetEmoji, GetFormat, GetItems, iso_to_time, format_timedelta, JSON)
 from ..locale_v2 import ValorantTranslator
@@ -49,13 +52,13 @@ class GetEmbed:
     def store(cls, player: str, offer: Dict, response: Dict, bot: ValorantBot) -> List[discord.Embed]:
         """Embed Store"""
         
-        store_esponse = response.get('RESPONSE')
+        store_response = response.get('RESPONSE')
         
         data = GetFormat.offer_format(offer)
         
         duration = data.pop('duration')
         
-        description = store_esponse.format(username=player, duration=format_relative(datetime.utcnow() + timedelta(seconds=duration)))
+        description = store_response.format(username=player, duration=format_relative(datetime.utcnow() + timedelta(seconds=duration)))
         
         embed = Embed(description)
         embeds = [embed]
@@ -1302,6 +1305,133 @@ class GetEmbed:
         
         return embed
     
+    # ---------- PARTY EMBED ---------- #
+    
+    def party(player: str, puuid: str, data: Dict, endpoint: API_ENDPOINT, response: Dict) -> discord.Embed:
+        cache = JSON.read("cache")
+
+        # values
+        # is this custome game ?
+        is_custom_game = False
+        if data["State"]=="CUSTOM_GAME_SETUP" or data["State"]=="CUSTOM_GAME_STARTING":
+            is_custom_game = True
+
+        # player data
+        owner = {}
+        players = {}
+        for p in data["Members"]:
+            # fetch mmr
+            p_puuid = p["Subject"]
+            mmr = endpoint.fetch_player_mmr(p_puuid)
+
+            season_id = mmr['LatestCompetitiveUpdate']['SeasonID']
+            if season_id==None:
+                season_id = ""
+            if len(season_id) == 0:
+                season_id = endpoint.__get_live_season()
+
+            # player data
+            current_season = mmr["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
+            name_data = endpoint.fetch_name_by_puuid(p_puuid)
+
+            # set data to dict
+            players[p_puuid] = {
+                "name": name_data[0]["GameName"] + "#" + name_data[0]["TagLine"],
+                "puuid": p_puuid,
+                "player_card": p["PlayerIdentity"]["PlayerCardID"],
+                "player_title": p["PlayerIdentity"]["PlayerTitleID"],
+                "level": p["PlayerIdentity"]["AccountLevel"],
+                "rank": current_season[season_id]['CompetitiveTier'],
+                "rr": current_season[season_id]['RankedRating'],
+                "leaderboard": current_season[season_id]["LeaderboardRank"] if current_season[season_id]["LeaderboardRank"]>0 else "-",
+                "ready": response.get("READY") if p["IsReady"] else response.get("NO_READY"),
+                "owner": response.get("OWNER") if p["IsOwner"] else "",
+                "membership": response.get("MEMBERSHIP", {}).get("DEFAULT")
+            }
+
+
+        # embeds
+        embeds = []
+
+        # main embed
+        def format_party_info(format: str) -> str:
+            return format.format(
+                name = player,
+                puuid = puuid,
+                access = response.get("ACCESS", {}).get(data["Accessibility"]),
+                party_id = data["ID"],
+
+                queue_id = data["MatchmakingData"]["QueueID"] if not is_custom_game else "custom",
+                queue = response.get("QUEUE", {}).get(data["MatchmakingData"]["QueueID"])if not is_custom_game else response.get("QUEUE", {}).get("custom"),
+                members = len(data["Members"]),
+                in_queue = format_relative(dateutil.parser.parse(data["QueueEntryTime"])) if data["QueueEntryTime"]!="0001-01-01T00:00:00Z" else "",
+                owner_icon = response.get("OWNER")
+            )
+        embed_main = Embed(
+            title = format_party_info(response.get("TITLE", "")),
+            description = format_party_info(response.get("RESPONSE", ""))
+        )
+
+        # player embed
+        def format_player_info(format: str, p_puuid: str, name: str = response.get("")) -> str:
+            return format.format(
+                name = players[p_puuid]["name"],
+                level = players[p_puuid]["level"],
+                rank = GetFormat.get_competitive_tier_name(players[p_puuid]["rank"]),
+                rr = players[p_puuid]["rr"],
+                leaderboard = players[p_puuid]["leaderboard"],
+                ready = players[p_puuid]["ready"],
+                owner = players[p_puuid]["owner"],
+                playercard = cache["playercards"][players[p_puuid]["player_card"]]["names"][str(VLR_locale)],
+                title = cache["titles"][players[p_puuid]["player_title"]]["text"][str(VLR_locale)],
+                membership = players[p_puuid]["membership"]
+            )
+
+        if is_custom_game:
+            def make_embed(p_puuid: str, membership: str, color: int = 0x0F1923):
+                players[p_puuid]["membership"] = membership
+                embed_player = Embed(
+                    title=format_player_info(response.get("CUSTOM", {}).get("TITLE"), p_puuid),
+                    description=format_player_info(response.get("CUSTOM", {}).get("RESPONSE"), p_puuid),
+                    color = color
+                )
+                embed_player.set_thumbnail(url=cache["playercards"][players[p_puuid]["player_card"]]["icon"]["small"])
+                embed_player.set_author(
+                    name=format_player_info(response.get("CUSTOM", {}).get("HEADER"), p_puuid),
+                    icon_url=cache["competitive_tiers"][str(players[p_puuid]["rank"])]["icon"]
+                )
+                embed_player.set_footer(text=format_player_info(response.get("CUSTOM", {}).get("FOOTER"), p_puuid))
+                return embed_player
+
+            for p in data["CustomGameData"]["Membership"].get("teamOne", []):
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("TEAM_B"), 0x3cb371))
+            for p in data["CustomGameData"]["Membership"].get("teamTwo", []):
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("TEAM_A"), 0xff0000))
+            for p in data["CustomGameData"]["Membership"].get("teamOneCoaches", []):
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("COACH_B"), 0x3cb371))
+            for p in data["CustomGameData"]["Membership"].get("teamTwoCoaches", []):
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("COACH_A"), 0xff0000))
+            for p in data["CustomGameData"]["Membership"].get("teamSpectate", []):
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("SPECTATE"), 0x4169e1))
+                
+        else:
+            for p in players.values():
+                p_puuid = p["puuid"]
+                embed_player = Embed(
+                    title=format_player_info(response.get("PLAYER", {}).get("TITLE"), p_puuid),
+                    description=format_player_info(response.get("PLAYER", {}).get("RESPONSE"), p_puuid),
+                    color = 0x0F1923
+                )
+                embed_player.set_thumbnail(url=cache["playercards"][players[p_puuid]["player_card"]]["icon"]["small"])
+                embed_player.set_author(
+                    name=format_player_info(response.get("PLAYER", {}).get("HEADER"), p_puuid),
+                    icon_url=cache["competitive_tiers"][str(players[p_puuid]["rank"])]["icon"]
+                )
+                embed_player.set_footer(text=format_player_info(response.get("PLAYER", {}).get("FOOTER"), p_puuid))
+                embeds.append(embed_player)
+
+        return [embed_main, embeds]
+
     # ---------- NOTIFY EMBED ---------- #
     
     def notify_specified_send(uuid: str) -> discord.Embed:

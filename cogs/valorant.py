@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime
+import math
 from typing import Literal, TYPE_CHECKING  # noqa: F401
 
 from discord import app_commands, Interaction, ui
@@ -498,14 +499,24 @@ class ValorantCog(commands.Cog, name='Valorant'):
         endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
         
         # data
-        data = endpoint.fetch_partyid_from_puuid()
-        if data==None:
-            raise ValorantBotError("Failed to fetch partyid")
-        endpoint._debug_output_json(data)
+        user_data = endpoint.fetch_partyid_from_puuid(False)
+        if user_data.get("CurrentPartyID")==None:
+            raise ValorantBotError(response.get("FAILED"))
+        party_details = endpoint.fetch_party_details(party_id = user_data.get("CurrentPartyID", ""))
+        endpoint._debug_output_json(party_details, "data.json")
 
-        embed = Embed("test command worked fine")
+        temp_embeds = GetEmbed.party(endpoint.player, endpoint.puuid, party_details, endpoint, response)
+        main_embed, embeds = temp_embeds[0], temp_embeds[1]
         
-        await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+        if len(embeds)>6:
+            for i in range(math.ceil(len(embeds) / 5)):
+                e = embeds[0+(i*5):5+(i*5)]
+                if i==0:
+                    e.insert(0, main_embed)
+                await interaction.followup.send(embeds=e, view=View.share_button(interaction, e) if is_private_message else MISSING)
+        else:
+            embeds.insert(0, main_embed)
+            await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
 
     # ---------- ROAD MAP ---------- #
     

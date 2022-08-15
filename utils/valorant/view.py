@@ -514,12 +514,13 @@ class BaseAgent(ui.View):
                 color, subcolor = agent['color'][0], agent['color'][1]
 
                 embed = discord.Embed(
-                    title=self.agent_format("{name}", agent),
-                    description=self.agent_format("{role_emoji} **{role}**\n{description}", agent),
+                    title=self.agent_format("{role_emoji} {role}", agent),
+                    description=self.agent_format("{description}", agent),
                     color=color
                 )
+                embed.set_author(name=self.agent_format("{name} // {name_en_capital}", agent))
                 embed.set_thumbnail(url=self.agent_format("{icon}", agent))
-                embed.set_image(url=self.agent_format("{bust_portrait}", agent))
+                embed.set_image(url=self.agent_format("{portrait}", agent))
 
                 embeds.append(embed)
                 
