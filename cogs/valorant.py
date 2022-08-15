@@ -203,7 +203,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
     
 
     @app_commands.command(description='過去の対戦結果を表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', matches='読み込むマッチ数 (1～8)')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', matches='読み込むマッチ数 (1～8)', queue='読み込むマッチキュー')
     # @dynamic_cooldown(cooldown_5s)
     async def career(self, interaction: Interaction, matches: int = 1, queue: Literal['All', 'Competitive', 'Unrated', 'Deathmatch', 'Escalation', 'Replication', 'Spike Rush', 'Custom', 'Snowball Fight', 'New Map']="Competitive", username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
