@@ -946,12 +946,12 @@ class GetEmbed:
                 total=total_teamB, align_total=str(total_teamB).rjust(6)
             )
 
-        description = response.get("ECONOMY", {}).get("TITLE_TEAM_DIFF") + f"\n{message}" + "\n\n" + response.get("ECONOMY", {}).get("TITLE_TEAM_A") + f"\n{message_teamA}" + "\n\n" + response.get("ECONOMY", {}).get("TITLE_TEAM_B") + f"\n{message_teamB}"
+        description = response.get("ECONOMY", {}).get("TITLE_TEAM_DIFF") + f"\n{message}"
+        description_team = response.get("ECONOMY", {}).get("TITLE_TEAM_A") + f"\n{message_teamA}" + "\n\n" + response.get("ECONOMY", {}).get("TITLE_TEAM_B") + f"\n{message_teamB}"
 
         embed_economy = Embed(title=response.get("ECONOMY", {}).get("TITLE"), description=description, color=color)
-        embed_economy.set_image(url=f"attachment://graph.png")
-
-        return [embed_economy, graph]
+        embed_economy_team = Embed(description=description_team, color=color).set_image(url=f"attachment://graph.png")
+        return [[embed_economy, embed_economy_team], graph]
     
     @classmethod
     def match(cls, player: str, puuid: str, match_id: str, response: Dict, endpoint, bot: ValorantBot):
@@ -1015,7 +1015,7 @@ class GetEmbed:
             embed_economy = cls.__match_embed_economy(cls, cache, response, match_info["teams"], match_info["rounds"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], bot)
 
             cls.__match_heatmap(match_info["players"], match_info["teams"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"])
-            return [[embed_main, embed_players[0], embed_teamA, embed_teamB, embed_economy[0]], [embed_players[1], embed_economy[1]]]
+            return [[embed_main, embed_players[0], embed_teamA, embed_teamB, embed_economy[0][0], embed_economy[0][1]], [embed_players[1], embed_economy[1]]]
         else:
             return [[embed_main, embed_players[0]], None]
 
