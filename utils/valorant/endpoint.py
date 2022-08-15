@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Mapping
 
+import datetime
 import requests
 import urllib3
 
@@ -68,7 +69,7 @@ class API_ENDPOINT:
 
     # self.__build_headers()
 
-    def fetch(self, endpoint: str = '/', url: str = 'pd', errors: Dict = {}) -> Dict:
+    def fetch(self, endpoint: str = '/', url: str = 'pd', errors: Dict = {}, not_found_error: bool = True) -> Dict:
         """ fetch data from the api """
 
         self.locale_response()
@@ -78,6 +79,7 @@ class API_ENDPOINT:
         data = None
 
         r = requests.get(f'{endpoint_url}{endpoint}', headers=self.headers)
+        print(f"[{datetime.datetime.now()}] Fetching {endpoint_url}{endpoint}.")
 
         try:
             data = json.loads(r.text)
@@ -89,7 +91,15 @@ class API_ENDPOINT:
 
         if data["httpStatus"] == 400:
             response = LocalErrorResponse('AUTH', self.locale_code)
+            print(f"[{datetime.datetime.now()}] Fetching failed (400): {endpoint_url}{endpoint}.")
             raise ResponseError(response.get('COOKIES_EXPIRED'))
+        elif data["httpStatus"] == 404:
+            print(f"[{datetime.datetime.now()}] Fetching failed (404): {endpoint_url}{endpoint}.")
+            if not_found_error:
+                response = LocalErrorResponse('NOT_FOUND', self.locale_code)
+                raise ResponseError(response)
+            else:
+                return {}
             # await self.refresh_token()
             # return await self.fetch(endpoint=endpoint, url=url, errors=errors)
 
@@ -104,6 +114,8 @@ class API_ENDPOINT:
         data = None
 
         r = requests.put(f'{endpoint_url}{endpoint}', headers=self.headers, data=data)
+        print(f"[{datetime.datetime.now()}] Putting {endpoint_url}{endpoint}.")
+
         data = json.loads(r.text)
 
         if data is not None:
@@ -139,11 +151,34 @@ class API_ENDPOINT:
         data = self.fetch(endpoint=f'/account-xp/v1/players/{self.puuid}', url='pd')
         return data
 
-    def fetch_player_mmr(self, puuid: str = None) -> Mapping[str, Any]:
-        puuid = self.__check_puuid(puuid)
-        data = self.fetch(endpoint=f'/mmr/v1/players/{puuid}', url='pd')
+    def fetch_player_mmr(self) -> Mapping[str, Any]:
+        """
+        Get the account mmr
+        """
+        data = self.fetch(endpoint=f'/mmr/v1/players/{self.puuid}', url='pd')
         return data
+    
+    def fetch_match_history(self, index: int = 20, queue: str = "competitive", not_found_error: bool = True) -> Mapping[str, Any]:
+        """
+        Get the competitive history
+        """
+        if index > 20 or index < 1:
+            index = 20
 
+        key = ""
+        if len(queue)>0:
+            key = f"&queue={queue}"
+
+        data = self.fetch(endpoint=f'/mmr/v1/players/{self.puuid}/competitiveupdates?startIndex=0&endIndex={index}{key}', url='pd', not_found_error=not_found_error)
+        return data
+    
+    def fetch_match_details(self, match_id: str, not_found_error: bool = True) -> Mapping[str, Any]:
+        """
+        Get the history of match
+        """
+        data = self.fetch(endpoint=f'/match-details/v1/matches/{match_id}', url='pd', not_found_error=not_found_error)
+        return data
+    
     def fetch_name_by_puuid(self, puuid: str = None) -> Mapping[str, Any]:
         """
         Name_service
@@ -172,6 +207,22 @@ class API_ENDPOINT:
         Use the values from `fetch_player_loadout` excluding properties like `subject` and `version.` Loadout changes take effect when starting a new game
         """
         data = self.put(endpoint=f'/personalization/v2/players/{self.puuid}/playerloadout', url='pd', body=loadout)
+        return data
+    
+    # party endpoints
+
+    def fetch_partyid_from_puuid(self) -> Mapping[str, Any]:
+        """
+        GET Party_FetchPlayer
+        """
+        data = self.fetch(endpoint=f'/parties/v1/players/{self.puuid}', url='glz')
+        return data
+    
+    def fetch_party_details(self, party_id: str) -> Mapping[str, Any]:
+        """
+        GET Party_FetchParty
+        """
+        data = self.fetch(endpoint=f'/parties/v1/parties/{party_id}', url='glz')
         return data
 
     # store endpoints
@@ -309,3 +360,9 @@ class API_ENDPOINT:
             return None
         data = r.json()['data']
         return data['version']
+    
+    def _debug_output_json(self, json_data: json, filename: str = "debug.json"):
+        f = open(filename, "w")
+        f.write(json.dumps(json_data, sort_keys=True, indent=4))
+        f.close()
+        print(f"json file was dumped: {filename}")

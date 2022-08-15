@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import datetime
 from typing import Literal, TYPE_CHECKING  # noqa: F401
 
 from discord import app_commands, Interaction, ui
@@ -80,11 +81,12 @@ class ValorantCog(commands.Cog, name='Valorant'):
         endpoint.activate(data)
         return endpoint
     
-    @app_commands.command(description='Log in with your Riot acoount')
-    @app_commands.describe(username='Input username', password='Input password')
+    @app_commands.command(description='あなたのRiotアカウントにログインします')
+    @app_commands.describe(username='ユーザーネーム', password='パスワード')
     # @dynamic_cooldown(cooldown_5s)
     async def login(self, interaction: Interaction, username: str, password: str) -> None:
-        
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
         user_id = interaction.user.id
@@ -109,9 +111,10 @@ class ValorantCog(commands.Cog, name='Valorant'):
             modal = View.TwoFA_UI(interaction, self.db, cookies, message, label, response)
             await interaction.response.send_modal(modal)
     
-    @app_commands.command(description='Logout and Delete your account from database')
+    @app_commands.command(description='あなたのアカウントからログアウトします')
     # @dynamic_cooldown(cooldown_5s)
     async def logout(self, interaction: Interaction) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
         
         await interaction.response.defer(ephemeral=True)
         
@@ -124,12 +127,13 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 return await interaction.followup.send(embed=embed, ephemeral=True)
             raise ValorantBotError(response.get('FAILED'))
     
-    @app_commands.command(description="Shows your daily store in your accounts")
-    @app_commands.describe(username='Input username (without login)', password='password (without login)')
-    @app_commands.guild_only()
+    @app_commands.command(description="あなたのアカウントのストアを表示します")
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    # @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def store(self, interaction: Interaction, username: str = None, password: str = None) -> None:
-        
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         # language
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
@@ -137,9 +141,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
         is_private_message = True if username is not None or password is not None else False
         
         await interaction.response.defer(ephemeral=is_private_message)
-        
-        # setup emoji 
-        await setup_emoji(self.bot, interaction.guild, interaction.locale)
         
         # get endpoint
         endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
@@ -153,10 +154,62 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embeds = GetEmbed.store(endpoint.player, data, response, self.bot)
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
-    @app_commands.command(description='View your remaining Valorant and Riot Points (VP/RP)')
+    @app_commands.command(description='あなたのアカウントのVP/RPを表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
     @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def point(self, interaction: Interaction, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # data
+        data = endpoint.store_fetch_wallet()
+        embed = GetEmbed.point(endpoint.player, data, response, self.bot)
+        
+        await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+
+
+    @app_commands.command(description='あなたのアカウントのランク/RRを表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.guild_only()
+    # @dynamic_cooldown(cooldown_5s)
+    async def rank(self, interaction: Interaction, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # data
+        data = endpoint.fetch_player_mmr()
+        embed = GetEmbed.rank(endpoint.player, data, response, endpoint, self.bot)
+        
+        await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+    
+
+    @app_commands.command(description='過去の対戦結果を表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', matches='読み込むマッチ数 (1～8)')
+    # @dynamic_cooldown(cooldown_5s)
+    async def career(self, interaction: Interaction, matches: int = 1, queue: Literal['All', 'Competitive', 'Unrated', 'Deathmatch', 'Escalation', 'Replication', 'Spike Rush', 'Custom', 'Snowball Fight', 'New Map']="Competitive", username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # limit of argument "matches"
+        match_limit = 8
         
         # check if user is logged in
         is_private_message = True if username is not None or password is not None else False
@@ -165,22 +218,84 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
-        # setup emoji 
-        await setup_emoji(self.bot, interaction.guild, interaction.locale)
-        
         # endpoint
-        endpoint = await self.get_endpoint(interaction.user.id, locale_code=interaction.locale)
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+
+        # queue
+        if queue == "All":
+            queue = ""
+        elif queue=="Competitive":
+            queue="competitive"
+        elif queue=="Unrated":
+            queue="unrated"
+        elif queue=="Deathmatch":
+            queue="deathmatch"
+        elif queue=="Escalation":
+            queue="ggteam"
+        elif queue=="Replication":
+            queue="onefa"
+        elif queue=="Spike Rush":
+            queue="spikerush"
+        elif queue=="Custom":
+            queue="custom"
+        elif queue=="Snowball Fight":
+            queue="snowball"
+        elif queue=="newmap":
+            queue="newmap"
         
         # data
-        data = endpoint.store_fetch_wallet()
-        embed = GetEmbed.point(endpoint.player, data, response, self.bot)
+        if matches<=0 or matches>match_limit:
+            raise ValorantBotError(response.get('FAILED').format(limit=match_limit))
+        data = endpoint.fetch_match_history(index=20, queue=queue, not_found_error=False)
+        endpoint._debug_output_json(data, "data.json")
+        if len(data.get("Matches", [])) > matches:
+            data["Matches"] = data["Matches"][:matches]
         
-        await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+        embeds = GetEmbed.career(endpoint.player, endpoint.puuid, data, response, endpoint, queue, self.bot)
+        
+        await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+
+    @app_commands.command(description='対戦結果の詳細を表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', match_id='マッチのID (任意)')
+    # @dynamic_cooldown(cooldown_5s)
+    async def match(self, interaction: Interaction, match_id: str = "", username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        response = ResponseLanguage("match", interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # data
+        if len(match_id)==0:
+            data = endpoint.fetch_match_history(index=1)["Matches"]
+            if len(data)==1:
+                match_id = data[0]["MatchID"]
+
+        ret = GetEmbed.match(endpoint.player, endpoint.puuid, match_id, response, endpoint, self.bot)
+        embeds, graph = ret[0], ret[1]
+
+        if graph==None:
+            await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+        else:
+            if len(embeds)>2:
+                await interaction.followup.send(embeds=embeds[:2], file=graph[0], view=View.share_button(interaction, embeds[:2]) if is_private_message else MISSING)
+                await interaction.followup.send(embeds=embeds[2:4], view=View.share_button(interaction, embeds[2:4]) if is_private_message else MISSING)
+                await interaction.followup.send(embeds=embeds[4:], file=graph[1], view=View.share_button(interaction, embeds[4:]) if is_private_message else MISSING)
+            else:
+                await interaction.followup.send(embeds=embeds, files=graph, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
-    @app_commands.command(description='View your daily/weekly mission progress')
+    @app_commands.command(description='あなたのアカウントのデイリー/ウィークリーミッションの進捗を表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
     # @dynamic_cooldown(cooldown_5s)
     async def mission(self, interaction: Interaction, username: str = None, password: str = None) -> None:
-        
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         # check if user is logged in
         is_private_message = True if username is not None or password is not None else False
         
@@ -197,17 +312,16 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
     
-    @app_commands.command(description='Show skin offers on the nightmarket')
+    @app_commands.command(description='あなたのアカウントのナイトマーケットを表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
     # @dynamic_cooldown(cooldown_5s)
     async def nightmarket(self, interaction: Interaction, username: str = None, password: str = None) -> None:
-        
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         # check if user is logged in
         is_private_message = True if username is not None or password is not None else False
         
         await interaction.response.defer(ephemeral=is_private_message)
-        
-        # setup emoji 
-        await setup_emoji(self.bot, interaction.guild, interaction.locale)
         
         # language
         response = ResponseLanguage(interaction.command.name, interaction.locale)
@@ -225,15 +339,18 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
-    @app_commands.command(description='View your battlepass current tier')
+    @app_commands.command(description='あなたのアカウントのバトルパスのティアを表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
     # @dynamic_cooldown(cooldown_5s)
     async def battlepass(self, interaction: Interaction, username: str = None, password: str = None) -> None:
-        
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         # check if user is logged in
         is_private_message = True if username is not None or password is not None else False
         
         await interaction.response.defer(ephemeral=is_private_message)
         
+        # language
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
         # endpoint
@@ -249,18 +366,16 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
     
     # inspired by https://github.com/giorgi-o
-    @app_commands.command(description="inspect a specific bundle")
-    @app_commands.describe(bundle="The name of the bundle you want to inspect!")
+    @app_commands.command(description="スキンセットの詳細を表示します")
+    @app_commands.describe(bundle="スキンセットの名前")
     @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def bundle(self, interaction: Interaction, bundle: str) -> None:
-        
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         await interaction.response.defer()
         
         response = ResponseLanguage(interaction.command.name, interaction.locale)
-        
-        # setup emoji 
-        await setup_emoji(self.bot, interaction.guild, interaction.locale)
         
         # cache
         cache = self.db.read_cache()
@@ -278,10 +393,11 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await view.start()
     
     # inspired by https://github.com/giorgi-o
-    @app_commands.command(description="Show the current featured bundles")
+    @app_commands.command(description="注目のスキンセットを表示します")
     # @dynamic_cooldown(cooldown_5s)
     async def bundles(self, interaction: Interaction) -> None:
-        
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         await interaction.response.defer()
         
         response = ResponseLanguage(interaction.command.name, interaction.locale)
@@ -296,13 +412,59 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view = View.BaseBundle(interaction, bundle_entries, response)
         await view.start_furture()
     
+    @app_commands.command(description="エージェントの詳細を表示します")
+    @app_commands.describe(agent="エージェントの名前")
+    @app_commands.guild_only()
+    # @dynamic_cooldown(cooldown_5s)
+    async def agent(self, interaction: Interaction, agent: str) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer()
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # cache
+        cache = self.db.read_cache()
+        
+        # default language language
+        default_language = 'en-US'
+        
+        
+        # find agents
+        find_agent_en_US = []
+        find_agent_locale = []
+
+        
+        for item_key, item_agent in cache['agents'].items():
+            if agent == "all":
+                data = item_agent
+                data["uuid"] = item_key
+                find_agent_en_US.append(data)
+            else:
+                if agent.lower() in cache['agents'][item_key]['name'][default_language].lower():
+                    data = item_agent
+                    data["uuid"] = item_key
+                    find_agent_en_US.append(data)
+                
+                if agent.lower() in cache['agents'][item_key]['name'][str(VLR_locale)].lower():
+                    data = item_agent
+                    data["uuid"] = item_key
+                    find_agent_locale.append(data)
+            
+        find_agent = find_agent_en_US if len(find_agent_en_US) > 0 else find_agent_locale
+
+        # agents view
+        view = View.BaseAgent(interaction, find_agent, response)
+        await view.start()
+
     # credit https://github.com/giorgi-o
     # https://github.com/giorgi-o/SkinPeek/wiki/How-to-get-your-Riot-cookies
     @app_commands.command()
-    @app_commands.describe(cookie="Your cookie")
+    @app_commands.describe(cookie="Cookie")
     async def cookies(self, interaction: Interaction, cookie: str) -> None:
-        """ Login to your account with a cookie """
-        
+        """ Cookieを使用してあなたのアカウントにログインします """
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         await interaction.response.defer(ephemeral=True)
         
         # language
@@ -319,6 +481,32 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view.add_item(ui.Button(label="Tutorial", emoji="🔗", url="https://youtu.be/cFMNHEHEp2A"))
         await interaction.followup.send(f"{response.get('FAILURE')}", view=view, ephemeral=True)
     
+    @app_commands.command(description='あなたの所属するパーティの情報を表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    # @dynamic_cooldown(cooldown_5s)
+    async def party(self, interaction: Interaction, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # data
+        data = endpoint.fetch_partyid_from_puuid()
+        if data==None:
+            raise ValorantBotError("Failed to fetch partyid")
+        endpoint._debug_output_json(data)
+
+        embed = Embed("test command worked fine")
+        
+        await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+
     # ---------- ROAD MAP ---------- #
     
     # @app_commands.command()
@@ -337,12 +525,13 @@ class ValorantCog(commands.Cog, name='Valorant'):
     
     # ---------- DEBUGs ---------- #
     
-    @app_commands.command(description='The command debug for the bot')
-    @app_commands.describe(bug="The bug you want to fix")
+    @app_commands.command(description='このBotのデバッグをします')
+    @app_commands.describe(bug="直したいバグ")
     @app_commands.guild_only()
     @owner_only()
-    async def debug(self, interaction: Interaction, bug: Literal['Skin price not loading', 'Emoji not loading', 'Cache not loading']) -> None:
-        
+    async def debug(self, interaction: Interaction, bug: Literal['Skin price not loading', 'Emoji not loading', 'Cache not loading', 'Too much old emojis']) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         await interaction.response.defer(ephemeral=True)
         
         response = ResponseLanguage(interaction.command.name, interaction.locale)
@@ -354,16 +543,25 @@ class ValorantCog(commands.Cog, name='Valorant'):
             # fetch skin price
             skin_price = endpoint.store_fetch_offers()
             self.db.insert_skin_price(skin_price, force=True)
+
+            success = response.get('SUCCESS')
+            await interaction.followup.send(embed=Embed(success.format(bug=bug)))
         
         elif bug == 'Emoji not loading':
-            await setup_emoji(self.bot, interaction.guild, interaction.locale, force=True)
+            ret = await setup_emoji(self.bot, interaction.guild, interaction.locale, force=True)
+            success = response.get('SUCCESS')
+            await interaction.followup.send(embed=Embed(success.format(bug=bug) + "\n\n" + ret))
+        
+        elif bug == 'Too much old emojis':
+            ret = await setup_emoji(self.bot, interaction.guild, interaction.locale, force=True, reset=True)
+            success = response.get('SUCCESS')
+            await interaction.followup.send(embed=Embed(success.format(bug=bug) + "\n\n" + ret))
         
         elif bug == 'Cache not loading':
             self.funtion_reload_cache(force=True)
+            success = response.get('SUCCESS')
+            await interaction.followup.send(embed=Embed(success.format(bug=bug)))
         
-        success = response.get('SUCCESS')
-        await interaction.followup.send(embed=Embed(success.format(bug=bug)))
-
 
 async def setup(bot: ValorantBot) -> None:
     await bot.add_cog(ValorantCog(bot))

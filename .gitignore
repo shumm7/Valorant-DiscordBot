@@ -2,4 +2,9 @@
 .vscode
 venv/
 data/
-.idea/
+
+/*.json
+.env
+/Valorant-DiscordBot.code-workspace
+/heatmap.png
+/*.png
