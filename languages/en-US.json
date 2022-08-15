@@ -1,6 +1,23 @@
 {
   "translation_by": "nekomata#1136",
   "commands": {
+    "about":{
+      "NAME": "about",
+      "TITLE": "",
+      "PROJECT_URL": "https://github.com/shumm7/Valorant-DiscordBot",
+      "FIELD1":{
+        "TITLE": "DEV:",
+        "RESPONSE": "[ꜱᴛᴀᴄɪᴀ.#7475](https://discord.com/users/240059262297047041)\n[しゅう#0909](https://discord.com/users/247342034522734592)"
+      },
+      "FIELD2":{
+        "TITLE": "ᴄᴏɴᴛʀɪʙᴜᴛᴏʀꜱ:",
+        "RESPONSE": "[kiznick](https://github.com/kiznick)\n[KANATAISGOD](https://github.com/KANATAISGOD)\n[TMADZ2007](https://github.com/KANATAISGOD')\n[sevzin](https://github.com/sevzin)\n[miigoxyz](https://github.com/miigoxyz)\n[Connor](https://github.com/ConnorDoesDev)\n[KohanaSann](https://github.com/KohanaSann)\n[RyugaXhypeR](https://github.com/RyugaXhypeR)\n[Austin Hornhead](https://github.com/marchingon12)\n"
+      },
+      "FIELD3":{
+        "TITLE": "",
+        "RESPONSE": ""
+      } 
+    },
     "login": {
       "NAME": "login",
       "DESCRIPTION": "Log in with your Riot acoount",
@@ -31,6 +48,26 @@
       "DESCRIPTION": "View your remaining Valorant and Radiant Points (VP/RP)",
       "POINT": "Points"
     },
+    "rank": {
+      "NAME": "rank",
+      "DESCRIPTION": "View your competitive tier and MMR",
+      "TITLE": "Competitive Tier",
+      "CURRENT_RANK": "Current Rank",
+      "CURRENT_RR": "Rank Rating",
+      "RESPONSE": "{rankrating} RR",
+      "TIER_MATCHMAKING": {
+        "TITLE": "Allowed Range of Ranks",
+        "RESPONSE": "`{rank1} to {rank2}`"
+      },
+      "WINS": {
+        "TITLE": "Wins",
+        "RESPONSE": "{wins} (Number of Games: {games})\nWin%: {win_rate}"
+      },
+      "LEADERBOARD": {
+        "TITLE": "Leaderboard",
+        "RESPONSE": "# {leaderboard}"
+      }
+    },
     "mission": {
       "NAME": "mission",
       "DESCRIPTION": "View your daily/weekly mission progress",
@@ -41,6 +78,97 @@
       "NO_MISSION": "No missions available",
       "DAILY_RESET": "Resets {duration}",
       "REFILLS": "Refills {duration}"
+    },
+    "career":{
+      "NAME": "career",
+      "DESCRIPTION": "View your match history",
+      "DESCRIBE": {
+        "username": "Input username! (temporary login)",
+        "password": "Input password! (temporary login)"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
+        "HEADER": "",
+        "FOOTER": "",
+        "NO_MATCH": "No match found"
+      },
+      "TITLE": "{map} {duration}:  {point}",
+      "RESPONSE": "Match History of **{username}**",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "RESULT": {
+        "TITLE": "Stats",
+        "RESPONSE": "{agent_emoji}{agent} ({role_emoji}{role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}\nACS: {acs}/Econ: {eco_rating}/ADR: {adr}",
+        "DEATHMATCH": "{agent_emoji}{agent} **{result}** #{deathmatch}\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}/ACS: {acs}",
+        "WIN": "Win",
+        "LOSE": "Lose",
+        "DRAW": "Draw"
+      },
+      "QUEUE":{
+        "unknown": "不明",
+        "unrated": "アンレート",
+        "competitive": "コンペティティブ",
+        "deathmatch": "デスマッチ",
+        "ggteam": "エスカレーション",
+        "onefa": "レプリケーション",
+        "custom": "カスタム",
+        "newmap": "新マップ",
+        "snowball": "スノーボールファイト",
+        "spikerush": "スパイクラッシュ"
+      },
+      "RANK":{
+        "TITLE": "Rank Rating",
+        "RESPONSE": "**{result}** {earned_rr} RR\n`{match_id: str, match_data: Dict, response: Dict, endpoint, puuid: str, queue: str, bot: ValorantBot)} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
+      },
+      "FAILED": "Argument \"matches\" should be between 1 and {limit}"
+    },
+    "match":{
+      "NAME": "match",
+      "TITLE": "{map} {time}:  {point} ({result})",
+      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "TEAM_A": "Team A",
+      "TEAM_B": "Team B",
+      "PLAYERS":{
+        "TITLE": "Players",
+        "RESPONSE": "{team} ({result}): {point}",
+        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
+        "DEATHMATCH": "Results"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
+      },
+      "ECONOMY": {
+        "TITLE": "Economy",
+        "TITLE_TEAM_DIFF": "**Team A - Team B**",
+        "TITLE_TEAM_A": "**Team A**",
+        "TITLE_TEAM_B": "**Team B**",
+        "RESPONSE": "{result_emoji}`R{align_number}: Loadout {align_loadout}｜Bank {align_remain}｜Total {align_total}`",
+        "RESPONSE_TEAM": "`R{align_number} {result}｜Loadout {align_loadout}｜{align_start} - {align_spent} = {align_remain}`"
+      },
+      "QUEUE":{
+        "unknown": "Unknown",
+        "unrated": "Unrated",
+        "competitive": "Competitive",
+        "deathmatch": "Deathmatch",
+        "ggteam": "Escalation",
+        "onefa": "Replication",
+        "custom": "Custom",
+        "newmap": "New Map",
+        "snowball": "Snowball Fight",
+        "spikerush": "Spike Rush"
+      },
+      "RESULT": {
+        "TITLE": "Stats",
+        "RESPONSE": "{agent} ({role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}  KDA: {kda}",
+        "WIN": "WIN ",
+        "LOSE": "LOSE",
+        "DRAW": "DRAW"
+      }
     },
     "nightmarket": {
       "NAME": "nightmarket",
@@ -152,6 +280,7 @@
   },
   "errors": {
     "UNKNOW_ERROR": "An unknown error occurred.",
+    "NOT_FOUND": "Your request was not found.",
     "AUTH": {
       "INVALID_PASSWORD": "Your username or password may be incorrect!",
       "RATELIMIT": "Please wait a few minutes and try again.",
@@ -176,8 +305,9 @@
       "REQUEST_FAILED": "API Response Failed !"
     },
     "SETUP_EMOJI": {
-      "MISSING_PERM": "I don't have permission to create emojis!",
-      "FAILED_CREATE_EMOJI": "I can't create emojis, please try again"
+      "MISSING_PERM": "I don't have permission to manage emojis!",
+      "FAILED_MANAGE_EMOJI": "I can't create/delete emojis, please try again",
+      "NOT_MAINSERVER": "I can't create emojis because it is not the main server."
     }
   }
 }

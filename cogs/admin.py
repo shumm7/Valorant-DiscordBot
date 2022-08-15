@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from typing import Literal, TYPE_CHECKING
 
+import os
 import discord
+import datetime
 from discord import app_commands, Interaction, ui
 from discord.ext import commands
+from utils.valorant.local import ResponseLanguage
+from bot import bot_option
+
 
 if TYPE_CHECKING:
     from bot import ValorantBot
@@ -47,39 +52,32 @@ class Admin(commands.Cog):
             await self.bot.tree.sync()
             await ctx.reply(f"Un-Synced global !")
     
-    @app_commands.command(description='Shows basic information about the bot.')
+    @app_commands.command(description='Botの基本情報を表示します')
     async def about(self, interaction: Interaction) -> None:
         """ Shows basic information about the bot. """
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         
-        owner_url = f'https://discord.com/users/240059262297047041'
-        github_project = 'https://github.com/staciax/Valorant-DiscordBot'
-        support_url = 'https://discord.gg/FJSXPqQZgz'
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        owner_url = f"https://discord.com/users/{os.getenv('OWNER_ID')}"
+        titles = [response.get("FIELD1")["TITLE"], response.get("FIELD2")["TITLE"], response.get("FIELD3")["TITLE"]]
         
         embed = discord.Embed(color=0xffffff)
-        embed.set_author(name='VALORANT BOT PROJECT', url=github_project)
-        embed.set_thumbnail(url='https://i.imgur.com/ZtuNW0Z.png')
-        embed.add_field(
-            name='DEV:',
-            value=f"[ꜱᴛᴀᴄɪᴀ.#7475]({owner_url})",
-            inline=False
-        )
-        embed.add_field(
-            name='ᴄᴏɴᴛʀɪʙᴜᴛᴏʀꜱ:',
-            value=f"[kiznick](https://github.com/kiznick)\n"
-                    "[KANATAISGOD](https://github.com/KANATAISGOD)\n"
-                    "[TMADZ2007](https://github.com/KANATAISGOD')\n"
-                    "[sevzin](https://github.com/sevzin)\n"
-                    "[miigoxyz](https://github.com/miigoxyz)\n"
-                    "[Connor](https://github.com/ConnorDoesDev)\n"
-                    "[KohanaSann](https://github.com/KohanaSann)\n"
-                    "[RyugaXhypeR](https://github.com/RyugaXhypeR)\n"
-                    "[Austin Hornhead](https://github.com/marchingon12)\n",
-            inline=False
-        )
+        bot_version = bot_option["version"]
+        embed.set_footer(text = f"Version: {bot_version}")
+        embed.set_author(name=response.get("TITLE"), url=response.get("PROJECT_URL"))
+        embed.set_thumbnail(url=self.bot.user.avatar)
+        if len(titles[0])>0:
+            embed.add_field(name=titles[0], value=response.get("FIELD1")["RESPONSE"], inline=False)
+        if len(titles[1])>0:
+            embed.add_field(name=titles[1], value=response.get("FIELD2")["RESPONSE"], inline=False)
+        if len(titles[2])>0:
+            embed.add_field(name=titles[2], value=response.get("FIELD2")["RESPONSE"], inline=False)
         view = ui.View()
-        view.add_item(ui.Button(label='GITHUB', url=github_project, row=0))
-        view.add_item(ui.Button(label='KO-FI', url='https://ko-fi.com/staciax', row=0))
-        view.add_item(ui.Button(label='SUPPORT SERVER', url=support_url, row=0))
+        view.add_item(ui.Button(label='PROJECT', url=response.get("PROJECT_URL"), row=0))
+        view.add_item(ui.Button(label='BOT OWNER', url=owner_url, row=0))
+        view.add_item(ui.Button(label="SUPPORT", url="https://discord.gg/FJSXPqQZgz"))
         
         await interaction.response.send_message(embed=embed, view=view)
 

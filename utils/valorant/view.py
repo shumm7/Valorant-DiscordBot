@@ -468,6 +468,108 @@ class BaseBundle(ui.View):
         self.update_button()
         await self.interaction.followup.send(embeds=self.embeds[0], view=self)
 
+class BaseAgent(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        super().__init__()
+        self.clear_items()
+    
+    def agent_format(self, format: str, agent: Dict) -> str:
+        default_language = 'en-US'
+
+        return format.format(
+            name = agent['name'][self.language],
+            description = agent['description'][self.language],
+            role = agent["role"]["name"][self.language],
+
+            name_en = agent["name"][default_language],
+            role_en = agent["role"]["name"][default_language],
+            name_en_capital = agent["name"][default_language].upper(),
+            role_en_capital = agent["role"]["name"][default_language].upper(),
+
+            icon = agent['icon'],
+            portrait = agent['portrait'],
+            bust_portrait = agent['bust_portrait'],
+            killfeed_portrait = agent["killfeed_portrait"],
+            background = agent["background"],
+
+            agent_emoji = GetEmoji.agent_by_bot(agent["uuid"], self.bot),
+            role_emoji = GetEmoji.role_by_bot(agent["uuid"], self.bot)
+        )
+
+    def build_embeds(self, selected_agent: str) -> None:
+        """ Builds the agent embeds """
+        
+        embeds = []
+
+        for agent in self.entries:
+            if agent["uuid"] == selected_agent:
+                color, subcolor = agent['color'][0], agent['color'][1]
+
+                embed = discord.Embed(
+                    title=self.agent_format("{name}", agent),
+                    description=self.agent_format("{role_emoji} **{role}**\n{description}", agent),
+                    color=color
+                )
+                embed.set_thumbnail(url=self.agent_format("{icon}", agent))
+                embed.set_image(url=self.agent_format("{bust_portrait}", agent))
+
+                embeds.append(embed)
+                
+                i = 0
+                keys = ["Q", "E", "C", "X", "Passive"]
+                for ability in agent["abilities"]:
+                    name, description, icon = ability["name"][self.language], ability["description"][self.language], ability["icon"]
+                    embed_ability = discord.Embed(title=f"{keys[i]} - {name}", description=f"{description}", color=subcolor).set_thumbnail(url=icon)
+                    embeds.append(embed_ability)
+                    
+                    i = i + 1
+
+        self.embeds = embeds
+
+    
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, agent in enumerate(sorted(self.entries, key=lambda c: c['name']['en-US']), start=1):
+            self.select_agent.add_option(label=agent['name'][self.language], value=agent["uuid"])
+    
+    @ui.select(placeholder='Select an agent:')
+    async def select_agent(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0])
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=self)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the agent view """
+        
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"])
+            embeds = self.embeds
+            return await self.interaction.followup.send(embeds=embeds, view=self)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_agent)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_agent.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self)
+        
+        not_found_agent = self.response.get('NOT_FOUND_BUNDLE')
+        raise ValorantBotError(not_found_agent)
+
 
 class SelectionFeaturedBundleView(ui.View):
     def __init__(self, bundles: Dict, other_view: Union[ui.View, BaseBundle] = None):

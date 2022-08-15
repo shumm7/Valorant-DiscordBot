@@ -4,6 +4,7 @@ import asyncio
 import os
 import sys
 import traceback
+import datetime
 
 import aiohttp
 import discord
@@ -29,7 +30,11 @@ intents.message_content = True
 
 BOT_PREFIX = '-'
 
-# todo claer white space
+bot_option = {
+    "version": 'fork-1.0.0',
+    "presence": "/login | VALORANT"
+}
+
 
 class ValorantBot(commands.Bot):
     debug: bool
@@ -38,9 +43,9 @@ class ValorantBot(commands.Bot):
     def __init__(self) -> None:
         super().__init__(command_prefix=BOT_PREFIX, case_insensitive=True, intents=intents)
         self.session: aiohttp.ClientSession = None
-        self.bot_version = '3.3.5'
+        self.bot_version = bot_option["version"]
         self.tree.interaction_check = self.interaction_check
-    
+        
     @staticmethod
     async def interaction_check(interaction: discord.Interaction) -> bool:
         locale_v2.set_interaction_locale(interaction.locale)  # bot responses localized # wait for update
@@ -53,12 +58,13 @@ class ValorantBot(commands.Bot):
     
     async def on_ready(self) -> None:
         await self.tree.sync()
-        print(f"\nLogged in as: {self.user}\n\n BOT IS READY !")
-        print(f"Version: {self.bot_version}")
+        print(f"[{datetime.datetime.now()}] Bot logged in as: {self.user}")
+        print(f"[{datetime.datetime.now()}] Valorant Bot is ready !")
+        print(f"[{datetime.datetime.now()}] Version: {self.bot_version}")
         
         # bot presence
         activity_type = discord.ActivityType.listening
-        await self.change_presence(activity=discord.Activity(type=activity_type, name="(╯•﹏•╰)"))
+        await self.change_presence(activity=discord.Game(name=bot_option["presence"]))
     
     async def setup_hook(self) -> None:
         if self.session is None:
@@ -72,7 +78,6 @@ class ValorantBot(commands.Bot):
         
         self.setup_cache()
         await self.load_cogs()
-        # await self.tree.sync()
     
     async def load_cogs(self) -> None:
         for ext in initial_extensions:
@@ -85,18 +90,18 @@ class ValorantBot(commands.Bot):
             ):
                 print(f'Failed to load extension {ext}.', file=sys.stderr)
                 traceback.print_exc()
-
+    
     @staticmethod
     def setup_cache() -> None:
         try:
             open('data/cache.json')
         except FileNotFoundError:
             get_cache()
-
+    
     async def close(self) -> None:
         await self.session.close()
         await super().close()
-
+    
     async def start(self, debug: bool = False) -> None:
         self.debug = debug
         return await super().start(os.getenv('TOKEN'), reconnect=True)
@@ -104,7 +109,7 @@ class ValorantBot(commands.Bot):
 
 def run_bot() -> None:
     bot = ValorantBot()
-    asyncio.run(bot.start())
+    asyncio.run(bot.start(debug=False))
 
 
 if __name__ == '__main__':

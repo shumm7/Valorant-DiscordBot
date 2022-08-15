@@ -60,7 +60,7 @@ def LocalErrorResponse(value: str, local_code: str) -> Dict[str, Any]:
         local_dict = __LocalRead(local_code)
         local = local_dict['errors'][value]
     return local
-
+    
 
 def __verify_localcode(local_code: str) -> str:
     if local_code in ['en-US', 'en-GB']:

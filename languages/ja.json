@@ -1,8 +1,25 @@
 {
-  "translation_by": "uwaaaa#3107 | KANATA IS GOD#6356",
+  "translation_by": "uwaaaa#3107 | KANATA IS GOD#6356 | しゅう#0909",
   "commands": {
+    "about":{
+      "NAME": "about",
+      "TITLE": "",
+      "PROJECT_URL": "https://github.com/shumm7/Valorant-DiscordBot",
+      "FIELD1":{
+        "TITLE": "DEV:",
+        "RESPONSE": "[ꜱᴛᴀᴄɪᴀ.#7475](https://discord.com/users/240059262297047041)\n[しゅう#0909](https://discord.com/users/247342034522734592)"
+      },
+      "FIELD2":{
+        "TITLE": "ᴄᴏɴᴛʀɪʙᴜᴛᴏʀꜱ:",
+        "RESPONSE": "[kiznick](https://github.com/kiznick)\n[KANATAISGOD](https://github.com/KANATAISGOD)\n[TMADZ2007](https://github.com/KANATAISGOD')\n[sevzin](https://github.com/sevzin)\n[miigoxyz](https://github.com/miigoxyz)\n[Connor](https://github.com/ConnorDoesDev)\n[KohanaSann](https://github.com/KohanaSann)\n[RyugaXhypeR](https://github.com/RyugaXhypeR)\n[Austin Hornhead](https://github.com/marchingon12)\n"
+      },
+      "FIELD3":{
+        "TITLE": "",
+        "RESPONSE": ""
+      } 
+    },
     "login": {
-      "NAME": "ログイン",
+      "NAME": "login",
       "DESCRIPTION": "Riotアカウントでログインします。",
       "DESCRIBE": {
         "username": "ユーザー名を入力してください",
@@ -12,13 +29,13 @@
       "FAILED": "ログインに失敗しました。再度お試しください。"
     },
     "logout": {
-      "NAME": "ログアウト",
+      "NAME": "logout",
       "DESCRIPTION": "ログアウトし、データベースからアカウントを削除します。",
       "SUCCESS": "ログアウトが完了しました。",
       "FAILED": "ログアウトに失敗しました。再度お試しください。"
     },
     "store": {
-      "NAME": "ストア",
+      "NAME": "store",
       "DESCRIPTION": "アカウントのデイリーストアを表示します。",
       "DESCRIBE": {
         "username": "ユーザー名を入力してください。（一時的ログイン）",
@@ -27,12 +44,126 @@
       "RESPONSE": "**{username}**のデイリーストア | 残り時間 {duration}"
     },
     "point": {
-      "NAME": "ポイント",
+      "NAME": "point",
       "DESCRIPTION": "残りのヴァロラントポイント（VP）・レディアナイトポイント（RP）の所持数を表示します。",
       "POINT": "ポイント"
     },
+    "agent": {
+      "NAME": "agent"
+    },
+    "rank": {
+      "NAME": "rank",
+      "DESCRIPTION": "コンペティティブのランクとランクレーティングを表示します",
+      "TITLE": "ランク",
+      "CURRENT_RANK": "現在のランク",
+      "CURRENT_RR": "ランクレーティング",
+      "RESPONSE": "{rankrating} RR",
+      "TIER_MATCHMAKING": {
+        "TITLE": "同時にマッチ可能なランク帯",
+        "RESPONSE": "`{rank1} から {rank2}`"
+      },
+      "WINS": {
+        "TITLE": "勝利数",
+        "RESPONSE": "{wins} (マッチの総数: {games})\n勝率: {win_rate}%"
+      },
+      "LEADERBOARD": {
+        "TITLE": "リーダーボード",
+        "RESPONSE": "{leaderboard} 位"
+      }
+    },
+    "career":{
+      "NAME": "career",
+      "DESCRIPTION": "過去の対戦結果を表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名を入力してください。（一時的ログイン）",
+        "password": "パスワードを入力してください。（一時的ログイン）"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
+        "HEADER": "",
+        "FOOTER": "",
+        "NO_MATCH": "マッチが見つかりませんでした"
+      },
+      "TITLE": "{map} {duration}:  {point}",
+      "RESPONSE": "**{username}**の対戦結果",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "RESULT": {
+        "TITLE": "戦績",
+        "RESPONSE": "{agent_emoji}{agent} ({role_emoji}{role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}\nACS: {acs}/Econ: {eco_rating}/ADR: {adr}",
+        "DEATHMATCH": "{agent_emoji}{agent} **{result}** #{deathmatch}\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}/ACS: {acs}",
+        "WIN": "勝利",
+        "LOSE": "敗北",
+        "DRAW": "引き分け"
+      },
+      "QUEUE":{
+        "unknown": "不明",
+        "unrated": "アンレート",
+        "competitive": "コンペティティブ",
+        "deathmatch": "デスマッチ",
+        "ggteam": "エスカレーション",
+        "onefa": "レプリケーション",
+        "custom": "カスタム",
+        "newmap": "新マップ",
+        "snowball": "スノーボールファイト",
+        "spikerush": "スパイクラッシュ"
+      },
+      "RANK":{
+        "TITLE": "ランクレーティング",
+        "RESPONSE": "**{result}** {earned_rr} RR\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
+      },
+      "FAILED": "マッチ数は{limit}個までにしてください。"
+    },
+    "match":{
+      "NAME": "match",
+      "TITLE": "{map} {time}:  {point} ({result})",
+      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "TEAM_A": "チームA",
+      "TEAM_B": "チームB",
+      "PLAYERS":{
+        "TITLE": "プレイヤー",
+        "RESPONSE": "{team} ({result}): {point}",
+        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
+        "DEATHMATCH": "対戦結果"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
+      },
+      "ECONOMY": {
+        "TITLE": "マネー",
+        "TITLE_TEAM_DIFF": "**チームA - チームB**",
+        "TITLE_TEAM_A": "**チームA**",
+        "TITLE_TEAM_B": "**チームB**",
+        "RESPONSE": "{result_emoji}`R{align_number}: Loadout {align_loadout}｜Bank {align_remain}｜Total {align_total}`",
+        "RESPONSE_TEAM": "`R{align_number} {result}｜Loadout {align_loadout}｜{align_start} - {align_spent} = {align_remain}`"
+      },
+      "QUEUE":{
+        "unknown": "不明",
+        "unrated": "アンレート",
+        "competitive": "コンペティティブ",
+        "deathmatch": "デスマッチ",
+        "ggteam": "エスカレーション",
+        "onefa": "レプリケーション",
+        "custom": "カスタム",
+        "newmap": "新マップ",
+        "snowball": "スノーボールファイト",
+        "spikerush": "スパイクラッシュ"
+      },
+      "RESULT": {
+        "TITLE": "戦績",
+        "RESPONSE": "{agent} ({role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}  KDA: {kda}",
+        "WIN": "勝利",
+        "LOSE": "敗北",
+        "DRAW": "引き分け"
+      }
+    },
     "mission": {
-      "NAME": "ミッション",
+      "NAME": "mission",
       "DESCRIPTION": "自分のデイリーミッション・ウィークリーミッションの進行度を表示します。",
       "TITLE": "ミッション",
       "DAILY": "デイリー",
@@ -43,13 +174,13 @@
       "REFILLS": "更新まで {duration}"
     },
     "nightmarket": {
-      "NAME": "ナイトマーケット",
+      "NAME": "nightmarket",
       "DESCRIPTION": "ナイトマーケットのスキンオファー一覧を表示します。",
       "RESPONSE": "**{username}**のナイトマーケット | 残り時間 {duration}",
       "NIGMARKET_HAS_END": "**ナイトマーケット**が終了しました"
     },
     "battlepass": {
-      "NAME": "バトルパス",
+      "NAME": "battlepass",
       "DESCRIPTION": "自分の現在のバトルパスレベルを表示します。",
       "RESPONSE": "**次報酬:** {next}\n**種類:** {type}\n**XP:** {xp}\n**ACT終了時間:** {end}",
       "TIER": "レベル",
@@ -61,7 +192,7 @@
       "SKIN": "スキン"
     },
     "notify_add": {
-      "NAME": "追加",
+      "NAME": "add",
       "DESCRIPTION": "ストアに登場した際に通知するスキンを指定します。",
       "DESCRIBE": {
           "skin": "登場時に通知してほしいスキンの名前"
@@ -73,14 +204,14 @@
       "REMOVED_NOTIFY": "**{skin}**が通知対象から削除されました"
     },
     "notify_list": {
-      "NAME": "一覧",
+      "NAME": "list",
       "DESCRIPTION": "通知対象として設定しているスキンの一覧を表示します。",
       "TITLE": "自分の通知対象一覧",
       "DONT_HAVE_NOTIFY": "通知がありません。",
       "REMOVE_NOTIFY": "通知対象から削除したい場合は、ボタンを押してください。"
     },
     "notify_mode": {
-      "NAME": "モード",
+      "NAME": "mode",
       "DESCRIPTION": "通知モードを変更します。",
       "DESCRIBE": {
           "mode": "次からの通知モード"
@@ -89,7 +220,7 @@
       "TURN_OFF": "通知モードをOFFにする"
     },
     "notify_test": {
-      "NAME": "試す",
+      "NAME": "test",
       "DESCRIPTION": "通知をテストします。",
       "NOTIFY_IS_WORKING": "通知機能は正常です。",
       "NOTIFY_TURN_OFF": "通知モードがOFFになっています",
@@ -103,15 +234,15 @@
       "RESPONSE_ALL": "**{username}**のデイリーストア | 残り時間 {duration}"
     },
     "notify_channel": {
-      "NAME": "チャンネル",
+      "NAME": "channel",
       "DESCRIPTION": "通知を送信するチャンネルを変更します。",
       "DESCRIBE": {
           "channel": "変更先のチャンネルを選択してください。"
       },
-      "SUCCESS": "通知を送信するチャンネルが **{channel}** に送信されました。"
+      "SUCCESS": "通知を送信するチャンネルが **{channel}** に設定されました。"
     },
     "bundle": {
-      "NAME": "セット",
+      "NAME": "bundle",
       "DESCRIPTION": "セットの進行状況を表示します。",
       "DESCRIBE": {
           "bundle": "チェックしたいセットの名前"
@@ -121,7 +252,7 @@
       "NOT_FOUND_BUNDLE": "セットが1つも見つかりませんでした。"
     },
     "bundles": {
-      "NAME": "セット一覧",
+      "NAME": "bundles",
       "DESCRIPTION": "セットの進行状況を表示します。",
       "TITLE": "注目のセット: {bundle}コレクション",
       "DURATION": "残り時間 {duration}",
@@ -142,16 +273,17 @@
     },
     "cookies": {
       "NAME": "cookies",
-      "DESCRIPTION": "Login your riot account with a browser cookie",
+      "DESCRIPTION": "ブラウザのCookieを使用してRiotアカウントへログインします",
       "DESCRIBE": {
-        "cookie": "Your cookie"
+        "cookie": "Cookie"
       },
       "SUCCESS": "ログインが完了しました！",
-      "FAILED": "Invalid cookie"
+      "FAILED": "不正なCookieです"
     }
   },
   "errors": {
     "UNKNOW_ERROR": "未知のエラーが発生しました。",
+    "NOT_FOUND": "リクエストが見つかりませんでした。",
     "AUTH": {
       "INVALID_PASSWORD": "ユーザー名、またはパスワードが間違っている可能性があります。",
       "RATELIMIT": "数分後に再度お試しください。",
@@ -176,8 +308,9 @@
       "REQUEST_FAILED": "APIのレスポンスが失敗しました。"
     },
     "SETUP_EMOJI": {
-      "MISSING_PERM": "Botに絵文字作成の権限がありません。",
-      "FAILED_CREATE_EMOJI": "絵文字の作成に失敗しました。再度お試しください。"
+      "MISSING_PERM": "Botに絵文字管理の権限がありません。",
+      "FAILED_MANAGE_EMOJI": "絵文字の作成/削除に失敗しました。再度お試しください。",
+      "NOT_MAINSERVER": "メインサーバーではないため、絵文字を追加できませんでした。"
     }
   }
 }

@@ -123,15 +123,16 @@ class Notify(commands.Cog):
     @notifys.before_loop
     async def before_daily_send(self) -> None:
         await self.bot.wait_until_ready()
-        print('Checking new store skins for notifys...')
+        print(f'[{datetime.now()}] Checking new store skins for notifys.')
     
     notify = app_commands.Group(name='notify', description='Notify commands')
     
-    @notify.command(name='add', description='Set a notification when a specific skin is available on your store')
-    @app_commands.describe(skin='The name of the skin you want to notify')
+    @notify.command(name='add', description='特定のスキンがストアに出現したときに通知します')
+    @app_commands.describe(skin='スキンの名前')
     @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def notify_add(self, interaction: Interaction, skin: str) -> None:
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.") 
         
         await interaction.response.defer()
         
@@ -199,7 +200,7 @@ class Notify(commands.Cog):
         
         raise ValorantBotError(response.get('NOT_FOUND'))
     
-    @notify.command(name='list', description='View skins you have set a for notification.')
+    @notify.command(name='list', description='あなたが設定している通知の一覧を表示します')
     # @dynamic_cooldown(cooldown_5s)
     async def notify_list(self, interaction: Interaction) -> None:
         
@@ -211,11 +212,13 @@ class Notify(commands.Cog):
         view = View.NotifyViewList(interaction, response)
         await view.start()
     
-    @notify.command(name='mode', description='Change notification mode/channel.')
-    @app_commands.describe(mode='Select the mode you want to change.')
+    @notify.command(name='mode', description='通知のモードやチャンネルを変更します')
+    @app_commands.describe(mode='モード')
     # @dynamic_cooldown(cooldown_5s)
     async def notify_mode(self, interaction: Interaction, mode: Literal['Specified Skin', 'All Skin', 'Off']) -> None:
-        
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")        
+
+
         await interaction.response.defer(ephemeral=True)
         
         # language
@@ -241,11 +244,12 @@ class Notify(commands.Cog):
         
         await interaction.followup.send(embed=embed, ephemeral=True)
     
-    @notify.command(name='channel', description='Change notification channel.')
-    @app_commands.describe(channel='Select the channel you want to change.')
+    @notify.command(name='channel', description='通知するチャンネルを変更します')
+    @app_commands.describe(channel='チャンネル')
     # @dynamic_cooldown(cooldown_5s)
     async def notify_channel(self, interaction: Interaction, channel: Literal['DM Message', 'Channel']) -> None:
-        
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
         await interaction.response.defer(ephemeral=True)
         
         # language
@@ -262,9 +266,10 @@ class Notify(commands.Cog):
         
         await interaction.followup.send(embed=embed, ephemeral=True)
     
-    @notify.command(name='test', description='Testing notification')
+    @notify.command(name='test', description='通知をテストします')
     # @dynamic_cooldown(cooldown_5s)
     async def notify_test(self, interaction: Interaction) -> None:
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
         
         await interaction.response.defer(ephemeral=True)
         

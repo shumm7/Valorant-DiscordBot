@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import json
 import os
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
@@ -9,7 +9,7 @@ import uuid
 
 import discord
 
-from .resources import get_item_type, points as points_emoji, tiers as tiers_resources
+from .resources import get_item_type, tiers as tiers_resources
 from ..errors import ValorantBotError
 from ..locale_v2 import ValorantTranslator
 
@@ -85,6 +85,17 @@ def format_relative(dt: datetime) -> str:
     """ datatime to relative time format """
     return format_dt(dt, 'R')
 
+def format_timedelta(timedelta: timedelta) -> str:
+    total_sec = timedelta.total_seconds()
+
+    hours = total_sec // 3600 
+    remain = total_sec - (hours * 3600)
+     
+    minutes = remain // 60
+    seconds = remain - (minutes * 60)
+
+    # total time
+    return '{:02}:{:02}:{:02}'.format(int(hours), int(minutes), int(seconds))
 
 # ---------- JSON LOADER ---------- #
 
@@ -252,7 +263,7 @@ class GetItems:
         bundle = None
         with contextlib.suppress(Exception):
             bundle = data["bundles"][uuid]
-        return bundle
+        return bundle    
 
 
 # ---------- GET EMOJI ---------- #
@@ -263,9 +274,10 @@ class GetEmoji:
         """ Get tier emoji """
 
         data = JSON.read('cache')
+        emoji_list = JSON.read('emoji')
         uuid = data['skins'][skin_uuid]['tier']
         uuid = data['tiers'][uuid]['uuid']
-        emoji = tiers_resources[uuid]['emoji']
+        emoji = emoji_list.get(tiers_resources[uuid]['emoji'], "")
         return emoji
 
     @classmethod
@@ -279,16 +291,78 @@ class GetEmoji:
 
     def point_by_bot(point: str, bot: ValorantBot) -> discord.Emoji:
         """ Get point emoji from bot"""
+        emoji_list = JSON.read("emoji")
 
         emoji = discord.utils.get(bot.emojis, name=point)
         if emoji is None:
-            return points_emoji.get(point)
+            return emoji_list.get(point)
         return emoji
+    
+    def roundresult_by_bot(result: str, win: bool, bot: ValorantBot) -> discord.Emoji:
+        """ Get round result icon from bot"""
+        emoji_list = JSON.read("emoji")
+
+        if win:
+            name="Won"
+        else:
+            name="Lost"
+
+        if result == "Elimination":
+            name = result+name
+        elif result == "Defuse":
+            name = result+name
+        elif result == "Detonate":
+            name = result+name
+        elif result == "" or result=="Timeup":
+            name = "Timeup"+name
+
+        emoji = discord.utils.get(bot.emojis, name=name)
+        if emoji is None:
+            return emoji_list.get(name, "")
+        return emoji
+    
+    def agent_by_bot(agent_id: str, bot: ValorantBot) -> discord.Emoji:
+        """ Get agent emoji from bot"""
+        agent = JSON.read("cache")["agents"]
+        emoji_list = JSON.read("emoji")
+
+        name = "Agent" + agent[agent_id]["name"]["en-US"].replace("/", "")
+
+        emoji = discord.utils.get(bot.emojis, name=name)
+        if emoji is None:
+            return emoji_list.get(name)
+        return emoji
+    
+    def role_by_bot(agent_id: str, bot: ValorantBot) -> discord.Emoji:
+        """ Get agent role from bot"""
+        agent = JSON.read("cache")["agents"]
+        emoji_list = JSON.read("emoji")
+
+        name = agent[agent_id]["role"]["name"]["en-US"]
+
+        emoji = discord.utils.get(bot.emojis, name=name)
+        if emoji is None:
+            return emoji_list.get(name)
+        return emoji
+
 
 
 # ---------- UTILS FOR STORE EMBED ---------- #
 
 class GetFormat:
+
+    def get_kdrate(kills: int, deaths: int) -> float:
+        if deaths <= 0:
+            deaths = 1
+        return round(float(kills)/float(deaths) ,1)
+    
+    def get_kdarate(kills: int, deaths: int, assists: int) -> float:
+        if deaths <= 0:
+            deaths = 1
+        return round(float(kills+assists)/float(deaths) ,1)
+    
+    def get_trackergg_link(match_id: str) -> str:
+        return f"https://tracker.gg/valorant/match/{match_id}"
 
     def offer_format(data: Dict) -> Dict:
         """Get skins list"""
@@ -484,6 +558,86 @@ class GetFormat:
             return {"success": True, 'tier': TIER, 'xp': XP, 'reward': REWARD, 'act': ACT}
 
         return {"success": False, "error": "Failed to get battlepass info"}
+    
+    # ---------- UTILS FOR RANK EMBED ---------- #
+
+    def get_competitive_tier_name(tier: int) -> str:
+        """Get competitive tier name"""
+        ranks = JSON.read('cache')
+        return ranks['competitive_tiers'][str(tier)]['name'][str(VLR_locale)]
+    
+    def get_competitive_tier_matching(tier: int) -> List[List]:
+        """Get competitive tier matching"""
+
+        rank_tier = []
+        if tier>=3 and tier<=8:
+            rank_tier = [[3, 11]]
+        elif tier>=6 and tier<=8:
+            rank_tier = [[3, 11]]
+        elif tier>=9 and tier<=11:
+            rank_tier = [[3, 11], [9, 14]]
+        elif tier>=12 and tier<=14:
+            rank_tier = [[9, 14], [12, 17]]
+        elif tier==15:
+            rank_tier = [[12, 17], [15, 18]]
+        elif tier==16:
+            rank_tier = [[12, 17], [15, 18], [16, 19]]
+        elif tier==17:
+            rank_tier = [[12, 17], [15, 18], [16, 19], [17, 20]]
+        elif tier==18:
+            rank_tier = [[15, 18], [16, 19], [17, 20], [18, 21]]
+        elif tier==19:
+            rank_tier = [[16, 19], [17, 20], [18, 21], [19, 22]]
+        elif tier==20:
+            rank_tier = [[17, 20], [18, 21], [19, 22], [20, 23]]
+        elif tier==21:
+            rank_tier = [[18, 21], [19, 22], [20, 23], [21, 24]]
+        elif tier==22:
+            rank_tier = [[19, 22], [20, 23], [21, 24], [22, 25]]
+        elif tier==23:
+            rank_tier = [[20, 23], [21, 24], [22, 25], [23, 26]]
+        elif tier==24:
+            rank_tier = [[21, 24], [22, 25], [23, 26], [24, 27]]
+        elif tier==25:
+            rank_tier = [[22, 25], [23, 26], [24, 27]]
+        elif tier==26:
+            rank_tier = [[23, 26], [24, 27]]
+        elif tier==27:
+            rank_tier = [[24, 27]]
+        else:
+            rank_tier = []
+
+        return rank_tier
+
+    def get_mapuuid_from_mapid(mapid: str) -> str:
+        """Get a map uuid from MapID"""
+        maps = JSON.read('cache')['maps']
+        
+        for key,map in maps.items():
+            if map['mapId'] == mapid:
+                return key
+    
+    def get_uuid_from_ceremony_id(ceremony: str, only_ingame: bool = True) -> str:
+        if ceremony=="CeremonyDefault": # default
+            return ""
+        elif ceremony=="CeremonyFlawless": # perfect
+            return "eb651c62-421f-98fc-8008-68bee9ec942d"
+        elif ceremony=="CeremonyClutch": # clutch
+            return "a6100421-4ecb-bd55-7c23-e4899643f230"
+        elif ceremony=="CeremonyThrifty": # thrifty
+            return "bf94f35e-4794-8add-dc7d-fb90a08d3d04"
+        elif ceremony=="CeremonyAce": # ace
+            return "1e71c55c-476e-24ac-0687-e48b547dbb35"
+        elif ceremony=="CeremonyTeamAce": # team ace
+            return "87c91747-4de4-635e-a64b-6ba4faeeae78"
+        elif ceremony=="CeremonyCloser": # closer
+            if only_ingame:
+                return ""
+            else:
+                return "b41f4d69-4f9d-ffa9-2be8-e2878cf7f03b"
+        else: # error
+            return None
+
 
     @classmethod
     def battlepass_format(cls, data: Dict, season: str, response: Dict) -> Dict[str, Any]:
