@@ -31,7 +31,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.0.0',
+    "version": 'fork-1.0.1',
     "presence": "/login | VALORANT"
 }
 
@@ -78,6 +78,7 @@ class ValorantBot(commands.Bot):
         
         self.setup_cache()
         await self.load_cogs()
+        # await self.tree.sync()
     
     async def load_cogs(self) -> None:
         for ext in initial_extensions:
