@@ -1345,7 +1345,7 @@ class GetEmbed:
                 "rr": current_season[season_id]['RankedRating'],
                 "leaderboard": current_season[season_id]["LeaderboardRank"] if current_season[season_id]["LeaderboardRank"]>0 else "-",
                 "ready": response.get("READY") if p["IsReady"] else response.get("NO_READY"),
-                "owner": response.get("OWNER") if p["IsOwner"] else "",
+                "owner": response.get("OWNER") if p.get("IsOwner", False) else "",
                 "membership": response.get("MEMBERSHIP", {}).get("DEFAULT")
             }
 
