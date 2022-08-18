@@ -376,18 +376,19 @@ class GetFormat:
         for uuid in offer_list:
             skin = GetItems.get_skin(uuid)
             name, icon = skin['names'][str(VLR_locale)], skin['icon']
+            video = skin.get('video')
 
             price = GetItems.get_skin_price(uuid)
             tier_icon = GetItems.get_skin_tier_icon(uuid)
 
             if skin_count == 0:
-                skin1 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid)
+                skin1 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
             elif skin_count == 1:
-                skin2 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid)
+                skin2 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
             elif skin_count == 2:
-                skin3 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid)
+                skin3 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
             elif skin_count == 3:
-                skin4 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid)
+                skin4 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
             skin_count += 1
 
         skin_source = {

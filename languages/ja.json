@@ -41,7 +41,9 @@
         "username": "ユーザー名を入力してください。（一時的ログイン）",
         "password": "パスワードを入力してください。（一時的ログイン）"
       },
-      "RESPONSE": "**{username}**のデイリーストア | 残り時間 {duration}"
+      "RESPONSE": "**{username}**のデイリーストア | 残り時間 {duration}",
+      "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
+      "VIDEO": "動画を見る"
     },
     "point": {
       "NAME": "point",
@@ -237,7 +239,7 @@
       "TEAM_A": "アタッカー",
       "TEAM_B": "ディフェンダー",
       "NO_MEMBER": "なし",
-      "NOT_CUSTOM_MODE": "プレイヤーが見つかりませんでした。\nカスタムマッチの設定に変更してください。"
+      "FAILED": "パーティ情報の取得に失敗しました。"
     },
     "battlepass": {
       "NAME": "battlepass",
