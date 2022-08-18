@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 # Standard
-import json
+import json, discord
 from typing import Any, Dict, Mapping
 
+import io
 import datetime
 import requests
 import urllib3
+import urllib.parse
 
 from .local import LocalErrorResponse
 from .useful import JSON
 # Local
-from .resources import (base_endpoint, base_endpoint_glz, base_endpoint_shared, region_shard_override,
+from .resources import (base_endpoint, base_endpoint_glz, base_endpoint_shared, base_endpoint_henrik, region_shard_override,
                         shard_region_override)
 from ..errors import HandshakeError, ResponseError
 
@@ -172,7 +174,7 @@ class API_ENDPOINT:
         if len(queue)>0:
             key = f"&queue={queue}"
         
-        if len(puuid)>0:
+        if len(puuid)==0:
             puuid = self.puuid
 
         data = self.fetch(endpoint=f'/mmr/v1/players/{puuid}/competitiveupdates?startIndex=0&endIndex={index}{key}', url='pd', not_found_error=not_found_error)
@@ -288,6 +290,35 @@ class API_ENDPOINT:
 
     # useful endpoints
 
+    def fetch_crosshair(self, code: str = None, file_name: str = "image.png"):
+        self.locale_response()
+
+        code = urllib.parse.quote(code)
+        endpoint_url = getattr(self, "henrik")
+        endpoint = f'/valorant/v1/crosshair/generate?id={code}'
+
+        r = requests.get(f'{endpoint_url}{endpoint}')#, headers=self.headers)
+        print(f"[{datetime.datetime.now()}] Fetching {endpoint_url}{endpoint} (RAW).")
+
+        if r.status_code == 400:
+            response = LocalErrorResponse('AUTH', self.locale_code)
+            print(f"[{datetime.datetime.now()}] Fetching failed (400): {endpoint_url}{endpoint}.")
+            raise ResponseError(response.get('COOKIES_EXPIRED'))
+        elif r.status_code == 404:
+            print(f"[{datetime.datetime.now()}] Fetching failed (404): {endpoint_url}{endpoint}.")
+            response = LocalErrorResponse('NOT_FOUND', self.locale_code)
+            raise ResponseError(response)
+        elif r.status_code == 200:
+            with open("temp/"+file_name, "wb") as f:
+                f.write(r.content)
+            f.close()
+            with open("temp/"+file_name, "rb") as f:
+                file = io.BytesIO(f.read())
+            image = discord.File(file, filename=file_name)
+            return image
+        return None
+
+
     def fetch_mission(self) -> Mapping[str, Any]:
         """
         Get player daily/weekly missions
@@ -344,6 +375,7 @@ class API_ENDPOINT:
         self.pd = base_endpoint.format(shard=self.shard)
         self.shared = base_endpoint_shared.format(shard=self.shard)
         self.glz = base_endpoint_glz.format(region=self.region, shard=self.shard)
+        self.henrik = base_endpoint_henrik
 
     def __build_headers(self, headers: Mapping) -> Mapping[str, Any]:
         """ build headers """

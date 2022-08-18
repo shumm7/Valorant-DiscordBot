@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 base_endpoint = "https://pd.{shard}.a.pvp.net"
 base_endpoint_glz = "https://glz-{region}-1.{shard}.a.pvp.net"
 base_endpoint_shared = "https://shared.{shard}.a.pvp.net"
+base_endpoint_henrik = "https://api.henrikdev.xyz"
 
 regions: list = ["na", "eu", "latam", "br", "ap", "kr", "pbe"]
 region_shard_override = {
