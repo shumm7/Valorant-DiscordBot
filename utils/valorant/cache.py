@@ -93,9 +93,11 @@ def fetch_skin() -> None:
             skinone = skin['levels'][0]
             json[skinone['uuid']] = {
                 'uuid': skinone['uuid'],
+                'skin_uuid': skin['uuid'],
                 'names': skin['displayName'],
                 'icon': skinone['displayIcon'],
-                'tier': skin['contentTierUuid']
+                'tier': skin['contentTierUuid'],
+                'video': skinone['streamedVideo'] if skinone['streamedVideo']!=None else None
             }
         data['skins'] = json
         JSON.save('cache', data)

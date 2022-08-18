@@ -37,15 +37,21 @@ class Embed(discord.Embed):  # Custom Embed
 
 class GetEmbed:
     
-    def __giorgio_embed(skin: Dict, bot: ValorantBot) -> discord.Embed:
+    def __giorgio_embed(skin: Dict, bot: ValorantBot, response: Dict) -> discord.Embed:
         """EMBED DESIGN Giorgio"""
         
-        uuid, name, price, icon = skin['uuid'], skin['name'], skin['price'], skin['icon']
+        uuid, name, price, icon, video_url = skin['uuid'], skin['name'], skin['price'], skin['icon'], skin.get('video')
         emoji = GetEmoji.tier_by_bot(uuid, bot)
+
+        if video_url!=None:
+            video_text = response.get("VIDEO", "")
+            video = f"[{video_text}]({video_url})"
+        else:
+            video = ""
         
         vp_emoji = GetEmoji.point_by_bot('ValorantPointIcon', bot)
         
-        embed = Embed(f"{emoji} **{name}**\n{vp_emoji} {price}", color=0x0F1923)
+        embed = Embed(response.get("SKIN").format(emoji=emoji, name=name, vp_emoji=vp_emoji, price=price, video=video), color=0x0F1923)
         embed.set_thumbnail(url=icon)
         return embed
     
@@ -63,7 +69,7 @@ class GetEmbed:
         
         embed = Embed(description)
         embeds = [embed]
-        [embeds.append(cls.__giorgio_embed(data[skin], bot)) for skin in data]
+        [embeds.append(cls.__giorgio_embed(data[skin], bot, response)) for skin in data]
         
         return embeds
     
@@ -1461,8 +1467,13 @@ class GetEmbed:
         teamA_members = data.get("CustomGameData", {}).get("Membership", {}).get("teamOne", [])
         teamB_members = data.get("CustomGameData", {}).get("Membership", {}).get("teamTwo", [])
 
-        if len(teamA_members)+len(teamB_members)<=0:
-            raise ValorantBotError(response.get("NOT_CUSTOM_MODE"))
+        if teamA_members==None:
+            teamA_members = []
+        if teamB_members==None:
+            teamB_members = []
+
+        #if len(teamA_members)+len(teamB_members)<=0:
+        #    raise ValorantBotError(response.get("NOT_CUSTOM_MODE"))
 
         # player data
         players = {}
@@ -1547,7 +1558,7 @@ class GetEmbed:
 
 
 
-        sorted_players = sorted(players_data_list, key=lambda x: x['custom_rating'], reverse=True)
+        sorted_players = sorted(players_data_list, key=lambda x: x.get('custom_rating', 0), reverse=True)
         
         def format_team_description(format: str, player_data: Dict):
             return format.format(
@@ -1570,10 +1581,11 @@ class GetEmbed:
 
         teamA_description, teamB_description = "", ""
         if mode_rand:
+            i = 0
             for p in sorted_players:
                 r = random.random()
 
-                if r>=0.5 and member[0]<member[2]:
+                if (r<=0.3 and member[0]<member[2]) or (i%2==0 and member[0]<member[2]):
                     if len(teamA_description)!=0:
                         teamA_description += "\n"
                     teamA_description += format_team_description(response.get("MEMBER"), p)
@@ -1583,6 +1595,7 @@ class GetEmbed:
                         teamB_description += "\n"
                     teamB_description += format_team_description(response.get("MEMBER"), p)
                     member[1] += 1
+                i += 1
         else:
             i = 0
             for p in sorted_players:

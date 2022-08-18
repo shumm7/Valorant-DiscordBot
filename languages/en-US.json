@@ -41,7 +41,9 @@
         "username": "Input username! (temporary login)",
         "password": "Input password! (temporary login)"
       },
-      "RESPONSE": "Daily store for **{username}** \nResets {duration}"
+      "RESPONSE": "Daily store for **{username}** \nResets {duration}",
+      "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
+      "VIDEO": "Watch Video"
     },
     "point": {
       "NAME": "point",
@@ -234,7 +236,7 @@
       "TEAM_A": "Attacker",
       "TEAM_B": "Defender",
       "NO_MEMBER": "None",
-      "NOT_CUSTOM_MODE": "Player not found.\nYou must be set to custom mode."
+      "FAILED": "Failed to fetch the party info."
     },
     "battlepass": {
       "NAME": "battlepass",
