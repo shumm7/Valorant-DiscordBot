@@ -11,6 +11,7 @@ import requests
 import urllib3
 
 from .local import LocalErrorResponse
+from .useful import JSON
 # Local
 from .resources import (base_endpoint, base_endpoint_glz, base_endpoint_shared, region_shard_override,
                         shard_region_override)
@@ -160,7 +161,7 @@ class API_ENDPOINT:
         data = self.fetch(endpoint=f'/mmr/v1/players/{puuid}', url='pd')
         return data
     
-    def fetch_match_history(self, index: int = 20, queue: str = "competitive", not_found_error: bool = True) -> Mapping[str, Any]:
+    def fetch_match_history(self, index: int = 20, queue: str = "competitive", puuid: str = "", not_found_error: bool = True) -> Mapping[str, Any]:
         """
         Get the competitive history
         """
@@ -170,8 +171,11 @@ class API_ENDPOINT:
         key = ""
         if len(queue)>0:
             key = f"&queue={queue}"
+        
+        if len(puuid)>0:
+            puuid = self.puuid
 
-        data = self.fetch(endpoint=f'/mmr/v1/players/{self.puuid}/competitiveupdates?startIndex=0&endIndex={index}{key}', url='pd', not_found_error=not_found_error)
+        data = self.fetch(endpoint=f'/mmr/v1/players/{puuid}/competitiveupdates?startIndex=0&endIndex={index}{key}', url='pd', not_found_error=not_found_error)
         return data
     
     def fetch_match_details(self, match_id: str, not_found_error: bool = True) -> Mapping[str, Any]:
@@ -310,6 +314,14 @@ class API_ENDPOINT:
         current_season = data["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
         current_Tier = current_season[season_id]['CompetitiveTier']
         return current_Tier
+    
+    def get_discord_userid_from_puuid(self, puuid: str) -> str:
+        users = JSON.read("users")
+
+        for id,value in users.items():
+            if value.get("puuid")==puuid:
+                return id
+        return ""
 
     # local utility functions
 

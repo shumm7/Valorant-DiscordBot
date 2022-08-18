@@ -222,6 +222,20 @@
       },
       "FAILED": "Failed to fetch the party info."
     },
+    "custom": {
+      "NAME": "custom",
+      "DESCRIPTION": "Decide on the map and team members for the custom match.",
+      "TITLE": {
+        "MAP": "Map",
+        "TEAM": "Member"
+      },
+      "MAP": "Selected: **{name}**",
+      "MEMBER": "{user} **{name}** ({rating})",
+      "TEAM_A": "Attacker",
+      "TEAM_B": "Defender",
+      "NO_MEMBER": "None",
+      "NOT_CUSTOM_MODE": "Player not found.\nYou must be set to custom mode."
+    },
     "battlepass": {
       "NAME": "battlepass",
       "DESCRIPTION": "View your battlepass current tier",

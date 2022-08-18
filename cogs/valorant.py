@@ -503,7 +503,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
         if user_data.get("CurrentPartyID")==None:
             raise ValorantBotError(response.get("FAILED"))
         party_details = endpoint.fetch_party_details(party_id = user_data.get("CurrentPartyID", ""))
-        endpoint._debug_output_json(party_details, "data.json")
 
         temp_embeds = GetEmbed.party(endpoint.player, endpoint.puuid, party_details, endpoint, response)
         main_embed, embeds = temp_embeds[0], temp_embeds[1]
@@ -517,6 +516,51 @@ class ValorantCog(commands.Cog, name='Valorant'):
         else:
             embeds.insert(0, main_embed)
             await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+    
+    @app_commands.command(description='カスタムマッチのマップとチームをランダムで決定します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', random='チームメンバーをランダムに割り振る')
+    # @dynamic_cooldown(cooldown_5s)
+    async def custom(self, interaction: Interaction, random: bool = False, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        response["RESULT"] = {
+            "WIN": "VICTORY",
+            "LOSE": "DEFEAT",
+            "DRAW": "DRAW"
+        }
+        response["QUEUE"] = {
+            "unknown": "Unknown",
+            "unrated": "Unrated",
+            "competitive": "Competitive",
+            "deathmatch": "Deathmatch",
+            "ggteam": "Escalation",
+            "onefa": "Replication",
+            "custom": "Custom",
+            "newmap": "New Map",
+            "snowball": "Snowball Fight",
+            "spikerush": "Spike Rush"
+        }
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # data
+        user_data = endpoint.fetch_partyid_from_puuid(False)
+        if user_data.get("CurrentPartyID")==None:
+            raise ValorantBotError(response.get("FAILED"))
+        party_details = endpoint.fetch_party_details(party_id = user_data.get("CurrentPartyID", ""))
+        
+        # Embeds
+        embeds = GetEmbed.custom(endpoint.puuid, party_details, endpoint, response)
+        
+        await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+            
 
     # ---------- ROAD MAP ---------- #
     
