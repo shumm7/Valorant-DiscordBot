@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import contextlib
 import datetime
-import math
+import math, os
 from typing import Literal, TYPE_CHECKING  # noqa: F401
 
-from discord import app_commands, Interaction, ui
+from discord import app_commands, Interaction, ui, File
 from discord.ext import commands, tasks
 from discord.utils import MISSING
 
@@ -19,6 +19,7 @@ from utils.valorant.embed import Embed, GetEmbed
 from utils.valorant.endpoint import API_ENDPOINT
 from utils.valorant.local import ResponseLanguage
 from utils.valorant.resources import setup_emoji
+from utils.valorant.useful import JSON
 from utils.locale_v2 import ValorantTranslator
 
 VLR_locale = ValorantTranslator()
@@ -457,6 +458,94 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # agents view
         view = View.BaseAgent(interaction, find_agent, response)
         await view.start()
+
+    @app_commands.command(description="クロスヘアのプロファイルから画像を生成します")
+    @app_commands.describe(code="クロスヘアプロファイル", player="選手名")
+    @app_commands.guild_only()
+    async def crosshair(self, interaction: Interaction, code: str = "", player: str = "") -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer()
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale)
+
+        # crosshair template
+        template = {
+            "TenZ": "0;s;1;P;c;5;h;0;m;1;0l;4;0o;2;0a;1;0f;0;1b;0;S;c;4;o;1",
+            "Shroud": "0;P;h;0;0l;5;0o;0;0a;1;0f;0;1b;0",
+            "Boaster": "0;s;1;P;c;5;o;1;0t;1;0l;3;0a;1;0f;0;1b;0;S;o;1",
+            "Derke": "0;s;1;P;o;1;d;1;f;0;s;0;0t;0;0l;1;0o;0;0a;1;0f;0;1t;0;1l;1;1o;0;1a;1;1m;0;1f;0;S;o;1",
+            "Mistic": "0;s;1;P;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "Magnum": "0;s;1;P;c;1;o;1;d;1;z;3;0t;0;0l;0;0o;0;0a;0;1t;0;1l;0;1a;0;S;c;1;s;0.762;o;1",
+            "otom": "0;s;1;P;c;5;h;0;f;0;0t;1;0o;1;0a;1;0f;0;1b;0;S;s;0.8",
+            "NagZ": "0;s;1;P;c;1;o;1;d;1;0l;0;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;S;c;1;o;1",
+            "Klaus": "0;P;c;1;o;1;0t;1;0l;3;0o;1;0a;1;0f;0;1t;0;1l;0;1a;0",
+            "Mazino": "0;P;c;1;h;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "delz1k": "0;P;c;1;o;0;f;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "keznit": "0;P;c;4;h;0;0b;0;1l;4;1o;2;1a;1;1m;0;1f;0",
+            "FNS": "0;P;c;1;o;1;0l;3;0o;5;0a;1;0f;0;1b;0",
+            "Victor": "0;P;h;0;f;0;0l;4;0a;1;0f;0;1b;0",
+            "crashies": "0;s;1;P;c;1;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "yay": "0;P;h;0;f;0;0l;4;0o;0;0a;1;0f;0;1b;0",
+            "Marved": "0;P;c;1;h;0;f;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "stax": "0;P;c;4;h;0;f;0;s;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "Rb": "0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0;S;o;1",
+            "Zest": "0;s;1;P;c;1;o;1;f;0;0l;4;0a;1;0f;0;1b;0",
+            "BuZz": "0;P;c;5;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "MaKo": "0;s;1;P;c;1;o;1;f;0;0l;4;0a;1;0f;0;1b;0",
+            "foxz": "0;P;c;1;h;0;f;0;0l;5;0o;2;0a;1;0f;0;1b;0",
+            "sushiboys": "0;P;c;5;h;0;f;0;0l;5;0o;2;0a;1;0f;0;1b;0",
+            "sScary": "0;s;1;P;c;5;o;1;d;1;z;3;f;0;s;0;0b;0;1b;0",
+            "Crws": "0;c;1;s;1;P;c;1;h;0;0l;3;0o;2;0a;1;0f;0;1b;0;S;c;1;s;0.884;o;0.798",
+            "Surf": "0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0;S;o;1",
+            "Laz": "0;p;0;c;1;s;1;P;o;1;f;0;m;1;0t;1;0l;3;0a;1;0f;0;1b;0;A;c;7;o;0;d;1;z;3;f;0;s;0;m;1;0t;3;0l;2;0o;0;0a;0.5;0f;0;1b;0;S;d;0",
+            "crow": "0;s;1;P;o;1;f;0;0t;1;0l;1;0o;1;0a;1;0f;0;1b;0;S;c;0;s;0.5;o;1",
+            "Dep": "0;s;1;P;o;0.1;f;0;s;0;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0",
+            "SugarZ3ro": "0;P;c;1;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "TENNN": "0;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0",
+            "Asuna": "0;P;o;1;0t;1;0l;2;0a;1;0f;0;1b;0",
+            "Hiko": "0;P;c;1;h;0;d;1;z;1;0t;1;0l;2;0a;1;0f;0;1l;5;1o;4;1a;1;1m;0;1f;0",
+            "aspas": "0;P;c;5;o;1;d;1;z;3;f;0;0b;0;1b;0",
+            "Less": "0;P;o;0;0t;1;0l;2;0o;0;0a;1;0f;0;1b;0",
+            "pANcada": "0;P;c;1;h;0;s;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "Saadhak": "0;P;c;1;o;1;f;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "Sacy": "0;P;h;0;0t;1;0l;4;0o;1;0a;1;0f;0;1t;3;1o;2;1a;1;1m;0;1f;0",
+            "soulcas": "0;s;1;P;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;00;s;1;P;o;1;d;1;z;3;f;0;0b;0;1b;0;S;s;0.762",
+            "ScreaM": "0;s;1;P;c;5;o;1;d;1;z;3;f;0;0t;6;0l;0;0a;1;0f;0;1b;0;S;c;6;s;0.949;o;1",
+            "Jamppi": "0;s;1;P;h;0;0t;1;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1m;0;1f;0;S;o;0.502",
+            "Nivera": "0;s;1;P;o;1;0t;1;0l;2;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;S;c;1;o;0.5",
+            "L1NK": "0;s;1;P;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "mindfreak": "0;P;c;1;o;0.723;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "f0rsakeN": "0;s;1;P;o;1;0t;1;0l;1;0o;4;0a;1;0f;0;1t;1;1l;1;1o;3;1a;0;1m;0;1f;0;S;c;0;o;1",
+            "Benkai": "0;P;c;5;o;1;d;1;f;0;0t;0;0l;0;0o;0;0a;0;0f;0;1b;0",
+            "d4v41": "0;s;1;P;h;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "Jinggg": "0;s;1;P;c;1;o;1;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0;S;c;5",
+            "neT": "0;P;c;1;h;0;m;1;0l;4;0o;2;0a;1;0f;0;1t;6;1l;0;1o;3;1a;0;1m;0;1f;0",
+            "valyn": "0;s;1;P;h;0;f;0;0l;5;0o;0;0a;1;0f;0;1b;0",
+            "JonahP": "0;P;c;5;o;1;0t;1;0l;3;0o;1;0a;1;0f;0;1b;0",
+            "Sayaplayer": "0;s;1;P;c;1;0t;1;0l;3;0o;1;0a;1;0f;0;1b;0;S;c;1;s;0.75;o;1",
+            "trent": "0;P;c;5;h;0;0l;4;0o;2;0a;1;0f;0;1a;0;1m;0;1f;0"
+        }
+
+        if len(player)>0:
+            code = template.get(player, "")
+        else:
+            player = endpoint.player
+
+        if len(code)==0:
+            ValorantBotError("Error")
+        
+        # data
+        file = endpoint.fetch_crosshair(code, "crosshair.png")
+        if file==None:
+            ValorantBotError("Error")
+        
+        # embed
+        embed = Embed(title="クロスヘア", description=f"**{player}**\n{code}").set_image(url=f"attachment://crosshair.png")
+        await interaction.followup.send(embed=embed, file=file)
 
     # credit https://github.com/giorgi-o
     # https://github.com/giorgi-o/SkinPeek/wiki/How-to-get-your-Riot-cookies

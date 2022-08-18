@@ -736,10 +736,10 @@ class GetEmbed:
 
         plt.xticks(x)
         plt.yticks(y)
-        plt.savefig("graph.png", bbox_inches='tight', transparent=True)
+        plt.savefig("temp/graph.png", bbox_inches='tight', transparent=True)
         plt.close()
 
-        with open("graph.png", "rb") as f:
+        with open("temp/graph.png", "rb") as f:
             file = io.BytesIO(f.read())
         image = discord.File(file, filename="graph.png")
 
@@ -819,10 +819,10 @@ class GetEmbed:
         plt.xticks(range(5), ls, fontname="Noto Sans CJK JP", fontsize=8, rotation=45, horizontalalignment="right")
 
         # save image
-        plt.savefig("heatmap.png", bbox_inches='tight', transparent=True)
+        plt.savefig("temp/heatmap.png", bbox_inches='tight', transparent=True)
         plt.close()
 
-        with open("heatmap.png", "rb") as f:
+        with open("temp/heatmap.png", "rb") as f:
             file = io.BytesIO(f.read())
         image = discord.File(file, filename="heatmap.png")
 
