@@ -225,6 +225,20 @@
       },
       "FAILED": "パーティ情報の取得に失敗しました。"
     },
+    "custom": {
+      "NAME": "custom",
+      "DESCRIPTION": "カスタムマッチのマップとチームをランダムで決定します",
+      "TITLE": {
+        "MAP": "マップ",
+        "TEAM": "チームメンバー"
+      },
+      "MAP": "選択されたマップ: **{name}**",
+      "MEMBER": "{user} **{name}** ({rating})",
+      "TEAM_A": "アタッカー",
+      "TEAM_B": "ディフェンダー",
+      "NO_MEMBER": "なし",
+      "NOT_CUSTOM_MODE": "プレイヤーが見つかりませんでした。\nカスタムマッチの設定に変更してください。"
+    },
     "battlepass": {
       "NAME": "battlepass",
       "DESCRIPTION": "自分の現在のバトルパスレベルを表示します。",
