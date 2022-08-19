@@ -290,7 +290,9 @@
     },
     "notify_send": {
       "RESPONSE_SPECIFIED": "{emoji} **{name}** is in your daily store!\nRemaining {duration}",
-      "RESPONSE_ALL": "Daily store for **{username}** | Remaining {duration}"
+      "RESPONSE_ALL": "Daily store for **{username}** | Remaining {duration}",
+      "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
+      "VIDEO": "Watch Video"
     },
     "notify_channel": {
       "NAME": "channel",
@@ -329,6 +331,14 @@
         }
       },
       "SUCCESS": "Successfully debugged: **{bug}**"
+    },
+    "crosshair": {
+      "NAME": "crosshair",
+      "DESCRIPTION": "Generate the image from crosshair profile.",
+      "TITLE": "Crosshair",
+      "RESPONSE": "**{player}**\n{code}",
+      "NO_CODE": "No crosshair profile.",
+      "ERROR": "Failed to fetch the crosshair image."
     },
     "cookies": {
       "NAME": "cookies",

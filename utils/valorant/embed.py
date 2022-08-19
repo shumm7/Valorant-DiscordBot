@@ -51,7 +51,7 @@ class GetEmbed:
         
         vp_emoji = GetEmoji.point_by_bot('ValorantPointIcon', bot)
         
-        embed = Embed(response.get("SKIN").format(emoji=emoji, name=name, vp_emoji=vp_emoji, price=price, video=video), color=0x0F1923)
+        embed = Embed(response.get("SKIN", "").format(emoji=emoji, name=name, vp_emoji=vp_emoji, price=price, video=video), color=0x0F1923)
         embed.set_thumbnail(url=icon)
         return embed
     
@@ -1655,6 +1655,6 @@ class GetEmbed:
         description = description_format.format(username=player, duration=format_relative(datetime.utcnow() + timedelta(seconds=duration)))
         embed = Embed(description)
         embeds = [embed]
-        [embeds.append(cls.__giorgio_embed(data[skin], bot)) for skin in data]
+        [embeds.append(cls.__giorgio_embed(data[skin], bot, response)) for skin in data]
         
         return embeds
