@@ -158,7 +158,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
     
     @app_commands.command(description='あなたのアカウントのVP/RPを表示します')
     @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
-    @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def point(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -182,7 +181,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
     @app_commands.command(description='あなたのアカウントのランク/RRを表示します')
     @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
-    @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def rank(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -370,7 +368,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
     # inspired by https://github.com/giorgi-o
     @app_commands.command(description="スキンセットの詳細を表示します")
     @app_commands.describe(bundle="スキンセットの名前")
-    @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def bundle(self, interaction: Interaction, bundle: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -416,7 +413,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
     
     @app_commands.command(description="エージェントの詳細を表示します")
     @app_commands.describe(agent="エージェントの名前")
-    @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def agent(self, interaction: Interaction, agent: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -461,7 +457,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
     @app_commands.command(description="クロスヘアのプロファイルから画像を生成します")
     @app_commands.describe(code="クロスヘアプロファイル", player="選手名")
-    @app_commands.guild_only()
     async def crosshair(self, interaction: Interaction, code: str = "", player: str = "") -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
@@ -535,16 +530,16 @@ class ValorantCog(commands.Cog, name='Valorant'):
         else:
             player = endpoint.player
 
-        if len(code)==0:
-            ValorantBotError("Error")
+        if len(code)<=0:
+            raise ValorantBotError(response.get("NO_CODE"))
         
         # data
         file = endpoint.fetch_crosshair(code, "crosshair.png")
         if file==None:
-            ValorantBotError("Error")
+            raise ValorantBotError(response.get("ERROR"))
         
         # embed
-        embed = Embed(title="クロスヘア", description=f"**{player}**\n{code}").set_image(url=f"attachment://crosshair.png")
+        embed = Embed(title=response.get("TITLE"), description=response.get("RESPONSE").format(player=player, code=code)).set_image(url=f"attachment://crosshair.png")
         await interaction.followup.send(embed=embed, file=file)
 
     # credit https://github.com/giorgi-o

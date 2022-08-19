@@ -293,7 +293,9 @@
     },
     "notify_send": {
       "RESPONSE_SPECIFIED": "{emoji} **{name}**がデイリーストアに登場しました！\n残り {duration}",
-      "RESPONSE_ALL": "**{username}**のデイリーストア | 残り時間 {duration}"
+      "RESPONSE_ALL": "**{username}**のデイリーストア | 残り時間 {duration}",
+      "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
+      "VIDEO": "動画を見る"
     },
     "notify_channel": {
       "NAME": "channel",
@@ -332,6 +334,14 @@
             }
         },
         "SUCCESS": "**{bug}**のデバッグが完了しました。"
+    },
+    "crosshair": {
+      "NAME": "crosshair",
+      "DESCRIPTION": "クロスヘアのプロファイルから画像を生成します",
+      "TITLE": "クロスヘア",
+      "RESPONSE": "**{player}**\n{code}",
+      "NO_CODE": "クロスヘアプロファイルがありません。",
+      "ERROR": "クロスヘアの取得に失敗しました。"
     },
     "cookies": {
       "NAME": "cookies",
