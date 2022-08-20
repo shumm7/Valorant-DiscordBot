@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import json
 import os
+import math
 from typing import Dict, Optional
 
 # Standard
@@ -78,6 +79,91 @@ def fetch_agents() -> None:
         JSON.save('cache', data)
 
 
+def fetch_weapon() -> None:
+    """ Fetch the weapon from valorant-api.com """
+    
+    data = JSON.read('cache')
+
+    url = f'https://valorant-api.com/v1/weapons?language=all'
+    print(f'[{datetime.datetime.now()}] Fetching weapons: {url}')
+
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        json = {}
+        for weapon in resp.json()['data']:
+            json[weapon['uuid']] = {
+                'uuid': weapon['uuid'],
+                'names': weapon['displayName'],
+                'icon': weapon['displayIcon'],
+                'killfeed_icon': weapon['killStreamIcon'],
+            }
+
+            # Stats
+            if weapon.get("weaponStats", {})!=None:
+                json[weapon['uuid']]['stats'] = {
+                    "firerate": weapon.get("weaponStats", {}).get("fireRate"),
+                    "run_speed": 6.75 * weapon.get("weaponStats", {}).get("runSpeedMultiplier", 1),
+                    "equip_time": weapon.get("weaponStats", {}).get("equipTimeSeconds"),
+                    "reload_time": weapon.get("weaponStats", {}).get("reloadTimeSeconds"),
+                    "magazine": weapon.get("weaponStats", {}).get("magazineSize"),
+                    "shotgun_pellet": weapon.get("weaponStats", {}).get("shotgunPelletCount", 0),
+                    "wall": weapon.get("weaponStats", {}).get("wallPenetration", "").replace("EWallPenetrationDisplayType::", ""),
+                    "damage": []
+                }
+
+                # Damage
+                for d in weapon.get("weaponStats", {}).get("damageRanges", []):
+                    json[weapon['uuid']]['stats']['damage'].append(
+                        {
+                            "range": [d.get("rangeStartMeters"), d.get("rangeEndMeters")],
+                            "damage": [math.floor(d.get("headDamage", 0)), math.floor(d.get("bodyDamage", 0)), math.floor(d.get("legDamage", 0))]
+                        }
+                    )
+            
+                # Fire mode
+                if weapon.get("weaponStats", {}).get("fireMode")!=None:
+                    json[weapon['uuid']]["stats"]["fire_mode"] = weapon.get("weaponStats", {}).get("fireMode", "").replace("EWeaponFireModeDisplayType::", "")
+                
+                # Alt mode
+                if weapon.get("weaponStats", {}).get("altFireType")!=None:
+                    json[weapon['uuid']]["stats"]["alt_fire_mode"] = weapon.get("weaponStats", {}).get("altFireType", "").replace("EWeaponAltFireDisplayType::", "")
+                
+                # Feature
+                if weapon.get("weaponStats", {}).get("feature")!=None:
+                    json[weapon['uuid']]["stats"]["feature"] = weapon.get("weaponStats", {}).get("feature", "").replace("EWeaponStatsFeature::", "")
+
+                # ADS
+                if weapon.get("weaponStats", {}).get("adsStats")!=None:
+                    json[weapon['uuid']]["stats"]["accuracy"] = [weapon.get("weaponStats", {}).get("firstBulletAccuracy"), weapon.get("weaponStats", {}).get("adsStats", {}).get("firstBulletAccuracy")]
+                    json[weapon['uuid']]["stats"]["zoom"] = weapon.get("weaponStats", {}).get("adsStats", {}).get("zoomMultiplier")
+                    json[weapon['uuid']]["stats"]["ads_firerate"] = weapon.get("weaponStats", {}).get("adsStats", {}).get("fireRate")
+                    json[weapon['uuid']]["stats"]["ads_run_speed"] = 6.75 * weapon.get("weaponStats", {}).get("adsStats", {}).get("runSpeedMultiplier", 1)
+                    json[weapon['uuid']]["stats"]["ads_burst"] = weapon.get("weaponStats", {}).get("adsStats", {}).get("burstCount", 1)
+                else:
+                    json[weapon['uuid']]["stats"]["accuracy"] = [weapon.get("weaponStats", {}).get("firstBulletAccuracy"), None]
+                # Classic
+                if weapon.get("weaponStats", {}).get("altShotgunStats")!=None:
+                    json[weapon['uuid']]["stats"]["alt_shotgun_pellet"] = weapon.get("weaponStats", {}).get("altShotgunStats", {}).get("shotgunPelletCount")
+                    json[weapon['uuid']]["stats"]["alt_burst"] = weapon.get("weaponStats", {}).get("altShotgunStats", {}).get("burstRate")
+                
+                # Buckey
+                if weapon.get("weaponStats", {}).get("airBurstStats")!=None:
+                    json[weapon['uuid']]["stats"]["air_shotgun_pellet"] = weapon.get("weaponStats", {}).get("airBurstStats", {}).get("shotgunPelletCount")
+                    json[weapon['uuid']]["stats"]["air_burst"] = weapon.get("weaponStats", {}).get("airBurstStats", {}).get("burstRate")
+            
+            # Shop Data
+            if weapon.get("shopData") != None:
+                json[weapon['uuid']]["cost"] = weapon.get("shopData", {}).get("cost", 0)
+                json[weapon['uuid']]["category"] = {
+                    "name": weapon.get("shopData", {}).get("category"),
+                    "text": weapon.get("shopData", {}).get("categoryText")
+                }
+                json[weapon['uuid']]['shop_icon'] = weapon.get("shopData", {}).get("newImage") if weapon.get("shopData", {}).get("newImage2")==None else weapon.get("shopData", {}).get("newImage2")
+
+        data['weapon'] = json
+        JSON.save('cache', data)
+
+
 def fetch_skin() -> None:
     """ Fetch the skin from valorant-api.com """
     
@@ -91,9 +177,8 @@ def fetch_skin() -> None:
         json = {}
         for skin in resp.json()['data']:
             skinone = skin['levels'][0]
-            json[skinone['uuid']] = {
+            json[skin['uuid']] = {
                 'uuid': skinone['uuid'],
-                'skin_uuid': skin['uuid'],
                 'names': skin['displayName'],
                 'icon': skinone['displayIcon'],
                 'tier': skin['contentTierUuid'],
@@ -404,6 +489,8 @@ def fetch_buddies() -> None:
 
 def fetch_price(data_price: Dict) -> None:
     """ Fetch the price of a skin """
+
+    print(f'[{datetime.datetime.now()}] Fetching skin price')
     
     data = JSON.read('cache')
     payload = {}
@@ -538,6 +625,7 @@ def get_cache() -> None:
     create_json('cache', {"valorant_version": get_valorant_version()})
     
     fetch_agents()
+    fetch_weapon()
     fetch_skin()
     fetch_tier()
     pre_fetch_price()
