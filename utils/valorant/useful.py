@@ -110,10 +110,10 @@ def data_folder() -> None:
 
 class JSON:
 
-    def read(filename: str, force: bool = True) -> Dict:
+    def read(filename: str, force: bool = True, dir: str = "data") -> Dict:
         """Read json file"""
         try:
-            with open("data/" + filename + ".json", "r", encoding='utf-8') as json_file:
+            with open(dir + "/" + filename + ".json", "r", encoding='utf-8') as json_file:
                 data = json.load(json_file)
         except FileNotFoundError:
             from .cache import create_json
@@ -122,10 +122,10 @@ class JSON:
                 return JSON.read(filename, False)
         return data
 
-    def save(filename: str, data: Dict) -> None:
+    def save(filename: str, data: Dict, dir: str = "data") -> None:
         """Save data to json file"""
         try:
-            with open("data/" + filename + ".json", 'w', encoding='utf-8') as json_file:
+            with open(dir + "/" + filename + ".json", 'w', encoding='utf-8') as json_file:
                 json.dump(data, json_file, indent=2, ensure_ascii=False)
         except FileNotFoundError:
             from .cache import create_json
@@ -344,6 +344,14 @@ class GetEmoji:
         if emoji is None:
             return emoji_list.get(name)
         return emoji
+    
+    def get(name: str, bot: ValorantBot) -> discord.Emoji:
+        emoji_list = JSON.read("emoji")
+        emoji = discord.utils.get(bot.emojis, name=name)
+        if emoji is None:
+            return emoji_list.get(name)
+        return emoji
+
 
 
 

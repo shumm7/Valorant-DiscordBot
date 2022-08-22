@@ -82,7 +82,7 @@ def get_valorant_locale() -> str:
 def set_valorant_locale(locale: Optional[str]) -> None:
     """ Set the locale for valorant api """
     
-    language_files = os.listdir('languages')
+    language_files = os.listdir('lang')
     locale_json = str(locale) + '.json'
     if locale_json not in language_files:
         _valorant_current_locale.set("en-US")

@@ -56,7 +56,11 @@ emoji_icon_assests = {
     "TimeupLost": "https://trackercdn.com/cdn/tracker.gg/valorant/icons/timeloss1.png",
     "TimeupWon": "https://trackercdn.com/cdn/tracker.gg/valorant/icons/timewin1.png",
     "DetonateLost": "https://trackercdn.com/cdn/tracker.gg/valorant/icons/explosionloss1.png",
-    "DetonateWon": "https://trackercdn.com/cdn/tracker.gg/valorant/icons/explosionwin1.png"
+    "DetonateWon": "https://trackercdn.com/cdn/tracker.gg/valorant/icons/explosionwin1.png",
+
+    "Credits": "https://static.wikia.nocookie.net/valorant/images/8/81/Credits_icon.png",
+    "WallPenetration": "https://static.wikia.nocookie.net/valorant/images/9/93/WallPenetration.png",
+    "FireMode": "https://static.wikia.nocookie.net/valorant/images/2/29/Firemode.png"
 }
 
 tiers = {

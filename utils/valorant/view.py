@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import contextlib
+import contextlib, math
 from datetime import datetime, timedelta
 from typing import Awaitable, Dict, List, TYPE_CHECKING, Union
 
@@ -504,7 +504,7 @@ class BaseAgent(ui.View):
             role_emoji = GetEmoji.role_by_bot(agent["uuid"], self.bot)
         )
 
-    def build_embeds(self, selected_agent: str) -> None:
+    def build_embeds(self, selected_agent: str, response: Dict) -> None:
         """ Builds the agent embeds """
         
         embeds = []
@@ -514,18 +514,19 @@ class BaseAgent(ui.View):
                 color, subcolor = agent['color'][0], agent['color'][1]
 
                 embed = discord.Embed(
-                    title=self.agent_format("{role_emoji} {role}", agent),
-                    description=self.agent_format("{description}", agent),
+                    title=self.agent_format(response.get("TITLE", ""), agent),
+                    description=self.agent_format(response.get("RESPONSE", ""), agent),
                     color=color
                 )
-                embed.set_author(name=self.agent_format("{name} // {name_en_capital}", agent))
-                embed.set_thumbnail(url=self.agent_format("{icon}", agent))
-                embed.set_image(url=self.agent_format("{portrait}", agent))
+                embed.set_author(name=self.agent_format(response.get("HEADER", ""), agent))
+                embed.set_thumbnail(url=self.agent_format(response.get("THUMBNAIL", ""), agent))
+                embed.set_image(url=self.agent_format("IMAGE", agent))
 
                 embeds.append(embed)
                 
                 i = 0
-                keys = ["Q", "E", "C", "X", "Passive"]
+                key_text = response.get("KEYS", {})
+                keys = [key_text.get("KEY1", ""), key_text.get("KEY2", ""), key_text.get("KEY3", ""), key_text.get("KEY4", ""), key_text.get("PASSIVE", "")]
                 for ability in agent["abilities"]:
                     name, description, icon = ability["name"][self.language], ability["description"][self.language], ability["icon"]
                     embed_ability = discord.Embed(title=f"{keys[i]} - {name}", description=f"{description}", color=subcolor).set_thumbnail(url=icon)
@@ -544,7 +545,7 @@ class BaseAgent(ui.View):
     @ui.select(placeholder='Select an agent:')
     async def select_agent(self, interaction: Interaction, select: ui.Select):
         self.clear_items()
-        self.build_embeds(select.values[0])
+        self.build_embeds(select.values[0], self.response)
         embeds = self.embeds
         await interaction.response.edit_message(embeds=embeds, view=self)
     
@@ -570,6 +571,231 @@ class BaseAgent(ui.View):
         
         not_found_agent = self.response.get('NOT_FOUND_BUNDLE')
         raise ValorantBotError(not_found_agent)
+
+
+class BaseWeapon(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        super().__init__()
+        self.clear_items()
+    
+    
+    def floor(self, n: float, m: int = 2) -> float:
+        return math.floor(n * 10 ** m) / (10 ** m)
+    
+    def weapon_format(self, format: str, weapon: Dict) -> str:
+        default_language = 'en-US'
+
+        
+        alt_fire_mode = weapon.get("stats", {}).get("alt_fire_mode")
+        alt = None
+        if alt_fire_mode!=None:
+            alt=self.response.get("ALT_MODE", {}).get(alt_fire_mode, "")
+        
+        feature = weapon.get("stats", {}).get("feature")
+        feature_str = None
+        if feature!=None:
+            feature_str = self.response.get("FEATURE", {}).get(feature, "")
+
+        accuracy = ""
+        if weapon.get("stats", {}).get("accuracy", [None, None])[1]!=None:
+            accuracy = str(self.floor(weapon.get("stats", {}).get("accuracy", [-1, -1])[0], 3)) + "/" + str(self.floor(weapon.get("stats", {}).get("accuracy", [-1, -1])[1], 3))
+        else:
+            accuracy = str(self.floor(weapon.get("stats", {}).get("accuracy", [-1, -1])[0], 3))
+
+        return format.format(
+            # name
+            name = weapon['names'][self.language],
+            name_en = weapon["names"][default_language],
+            name_en_capital = weapon["names"][default_language].upper(),
+
+            # image
+            icon = weapon['icon'],
+            killfeed_icon = weapon["killfeed_icon"],
+            shop_icon = weapon.get("shop_icon", ""),
+            fire_mode_emoji = GetEmoji.get("FireMode", self.bot),
+            wall_emoji = GetEmoji.get("WallPenetration", self.bot),
+            credits_emoji = GetEmoji.get("Credits", self.bot),
+
+            # detail
+            wall = self.response.get("WALL", {}).get(weapon.get("stats", {}).get("wall", "")),
+            fire_mode = self.response.get("FIREMODE", {}).get(weapon.get("stats", {}).get("fire_mode", "Automatic")),
+
+            firerate = self.floor(weapon.get("stats", {}).get("firerate", -1), 2),
+            run_speed = self.floor(weapon.get("stats", {}).get("run_speed", -1), 2),
+            run_speed_multiplier = math.floor(weapon.get("stats", {}).get("run_speed_multiplier", 0) * 100),
+            equip_time = weapon.get("stats", {}).get("equip_time", -1),
+            accuracy = accuracy,
+            reload_time = weapon.get("stats", {}).get("reload_time", -1),
+            magazine = weapon.get("stats", {}).get("magazine", -1),
+            shotgun_pellet = weapon.get("stats", {}).get("shotgun_pellet", 1),
+
+            # alt
+            alt = alt,
+
+            ads_zoom = weapon.get("stats", {}).get("zoom", -1),
+            ads_firerate = self.floor(weapon.get("stats", {}).get("ads_firerate", -1), 3),
+            ads_firerate_multiplier = math.floor(weapon.get("stats", {}).get("ads_firerate", 0) / weapon.get("stats", {}).get("firerate", -1) * 100),
+            ads_run_speed = self.floor(weapon.get("stats", {}).get("ads_run_speed", -1), 3),
+            ads_run_speed_multiplier = math.floor(weapon.get("stats", {}).get("ads_run_speed_multiplier", 0) * 100),
+            ads_burst = weapon.get("stats", {}).get("ads_burst", 1),
+
+            air_shotgun_pellet = weapon.get("stats", {}).get("air_shotgun_pellet", 1),
+            air_distance = weapon.get("stats", {}).get("air_distance", -1),
+
+            alt_shotgun_pellet = weapon.get("stats", {}).get("alt_shotgun_pellet", 1),
+            alt_shotgun_burst = weapon.get("stats", {}).get("alt_burst", -1),
+
+            # feature
+            feature = feature_str,
+
+            # shop
+            category = weapon.get("category", {}).get("text", {}).get(self.language, ""),
+            category_en = weapon.get("category", {}).get("text", {}).get(default_language, ""),
+            credits = weapon.get("cost", 0)
+        )
+
+    def build_embeds(self, selected_weapon: str) -> None:
+        """ Builds the weapon embeds """
+        
+        embeds = []
+        lang = self.response
+
+        for weapon in self.entries:
+            if weapon["uuid"] == selected_weapon:
+                if weapon["uuid"]=="2f59173c-4bed-b6c3-2191-dea9b58be9c7": #Melee
+                    # Main
+                    embed = discord.Embed(title=self.weapon_format(lang.get("DETAIL", {}).get("TITLE", ""), weapon))
+
+                    embed.set_author(name=self.weapon_format(lang.get("DETAIL", {}).get("HEADER", ""), weapon))
+                    embed.set_footer(text=self.weapon_format(lang.get("DETAIL", {}).get("FOOTER", ""), weapon))
+                    embed.set_thumbnail(url=self.weapon_format(lang.get("DETAIL", {}).get("THUMBNAIL", ""), weapon))
+                    embed.set_image(url=self.weapon_format(lang.get("DETAIL", {}).get("IMAGE", ""), weapon))
+                    embeds.append(embed)
+
+                    # Damage
+                    embed = discord.Embed(
+                        title=self.weapon_format(lang.get("DAMAGE", {}).get("TITLE", ""), weapon),
+                        description=self.weapon_format(lang.get("DAMAGE", {}).get("MELEE", ""), weapon)
+                    )
+                    embeds.append(embed)
+
+                else:
+                    # Main
+                    embed = discord.Embed(
+                        title=self.weapon_format(lang.get("DETAIL", {}).get("TITLE", ""), weapon),
+                        description=self.weapon_format(lang.get("DETAIL", {}).get("DESCRIPTION", ""), weapon)
+                    )
+                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME1", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE1", ""), weapon))
+                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME2", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE2", ""), weapon))
+                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME3", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE3", ""), weapon))
+                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME4", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE4", ""), weapon))
+                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME5", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE5", ""), weapon))
+                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME6", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE6", ""), weapon))
+
+                    embed.set_author(name=self.weapon_format(lang.get("DETAIL", {}).get("HEADER", ""), weapon))
+                    embed.set_footer(text=self.weapon_format(lang.get("DETAIL", {}).get("FOOTER", ""), weapon))
+                    embed.set_thumbnail(url=self.weapon_format(lang.get("DETAIL", {}).get("THUMBNAIL", ""), weapon))
+                    embed.set_image(url=self.weapon_format(lang.get("DETAIL", {}).get("IMAGE", ""), weapon))
+
+                    embeds.append(embed)
+
+                    # Damage
+                    embed = discord.Embed(
+                        title=self.weapon_format(lang.get("DAMAGE", {}).get("TITLE", ""), weapon),
+                        description=self.weapon_format(lang.get("DAMAGE", {}).get("DESCRIPTION", ""), weapon)
+                    )
+                    count = 0
+                    for damage in weapon.get("stats", {}).get("damage", []):
+                        def damage_format(format: str)->str:
+                            shotgun = ""
+                            if weapon.get("stats", {}).get("shotgun_pellet", 1)>1 and count==len(damage):
+                                shotgun = self.weapon_format(lang.get("DAMAGE", {}).get("SHOTGUN", ""), weapon)
+
+                            return format.format(
+                                range_start=damage.get("range", [0, 0])[0],
+                                range_end=damage.get("range", [0, 0])[1],
+
+                                head=damage.get("damage", [0, 0, 0])[0],
+                                body=damage.get("damage", [0, 0, 0])[1],
+                                leg=damage.get("damage", [0, 0, 0])[2],
+                                shotgun = shotgun
+                            )
+
+                        embed.add_field(name=damage_format(lang.get("DAMAGE", {}).get("RANGE", "")), value=damage_format(lang.get("DAMAGE", {}).get("RESPONSE", "")), inline=False)
+                        count += 1
+
+                    embeds.append(embed)
+
+                    # Alt
+                    alt_fire_mode = weapon.get("stats", {}).get("alt_fire_mode")
+                    if alt_fire_mode!=None:
+                        embed = discord.Embed(
+                            title=self.weapon_format(lang.get("ALT_FIRE", {}).get("TITLE", ""), weapon),
+                            description=self.weapon_format(lang.get("ALT_FIRE", {}).get("DESCRIPTION", ""), weapon)
+                        )
+
+                        if weapon.get("stats", {}).get("ads_burst", 1)==1:
+                            embed.add_field(name=self.weapon_format(lang.get("ALT_FIRE", {}).get("ALT_TITLE", ""), weapon), value=self.weapon_format(lang.get("ALT_FIRE", {}).get(f"ALT_DESCRIPTION_{alt_fire_mode}", ""), weapon), inline=False)
+                        else:
+                            embed.add_field(name=self.weapon_format(lang.get("ALT_FIRE", {}).get("ALT_TITLE", ""), weapon), value=self.weapon_format(lang.get("ALT_FIRE", {}).get(f"ALT_DESCRIPTION_{alt_fire_mode}_BURST", ""), weapon), inline=False)
+                        embeds.append(embed)
+                    
+                    # Feature
+                    feature = weapon.get("stats", {}).get("feature")
+                    if feature!=None:
+                        embed = discord.Embed(
+                            title=self.weapon_format(lang.get("FEATURE", {}).get("TITLE", ""), weapon),
+                            description=self.weapon_format(lang.get("FEATURE", {}).get("DESCRIPTION", ""), weapon)
+                        )
+                        embed.add_field(name=self.weapon_format(lang.get("FEATURE", {}).get("FEATURE_TITLE", ""), weapon), value=self.weapon_format(lang.get("FEATURE", {}).get(f"FEATURE_DESCRIPTION_{feature}", ""), weapon), inline=False)
+                        embeds.append(embed)
+
+
+        self.embeds = embeds
+
+    
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, weapon in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_weapon.add_option(label=weapon['names'][self.language], value=weapon["uuid"])
+    
+    @ui.select(placeholder='Select a weapon:')
+    async def select_weapon(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0])
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=self)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the weapon view """
+        
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"])
+            embeds = self.embeds
+            return await self.interaction.followup.send(embeds=embeds, view=self)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_weapon)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_weapon.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self)
+        
+        not_found_weapon = self.response.get('NOT_FOUND_BUNDLE')
+        raise ValorantBotError(not_found_weapon)
 
 
 class SelectionFeaturedBundleView(ui.View):

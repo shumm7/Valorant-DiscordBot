@@ -45,6 +45,88 @@
       "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
       "VIDEO": "Watch Video"
     },
+    "agent": {
+      "NAME": "agent",
+      "DESCRIPTION": "Show the details of a specified agent",
+      "TITLE": "{role_emoji} {role}",
+      "RESPONSE": "{description}",
+      "HEADER": "{name_en_capital}",
+      "THUMBNAIL": "{icon}",
+      "IMAGE": "{portrait}",
+      "KEYS": {
+        "KEY1": "Q",
+        "KEY2": "E",
+        "KEY3": "C",
+        "KEY4": "X",
+        "PASSIVE": "Passive"
+      }
+    },
+    "weapon": {
+      "NAME": "agent",
+      "DESCRIPTION": "Show the details of a specified weapon",
+      "DETAIL": {
+        "TITLE": "{name_en_capital}",
+        "DESCRIPTION": "{fire_mode_emoji} **{fire_mode}**｜{wall_emoji} **{wall}**｜{credits_emoji} {credits}",
+        "NAME1": "Fire Rate",
+        "NAME2": "Run Speed",
+        "NAME3": "Equp Speed",
+        "NAME4": "1st Shot Spread",
+        "NAME5": "Reload Speed",
+        "NAME6": "Magazine",
+        "VALUE1": "**{firerate}** rds/sec",
+        "VALUE2": "**{run_speed}** m/sec\n({run_speed_multiplier} %)",
+        "VALUE3": "**{equip_time}** sec",
+        "VALUE4": "**{accuracy}** deg\n(HIP/ADS)",
+        "VALUE5": "**{reload_time}** sec",
+        "VALUE6": "**{magazine}** rds",
+        "HEADER": "{category}",
+        "FOOTER": "", 
+        "THUMBNAIL": "{shop_icon}",
+        "IMAGE": "{icon}"
+      },
+      "DAMAGE": {
+        "TITLE": "Damage",
+        "DESCRIPTION": "",
+        "RANGE": "{range_start}-{range_end} m{shotgun}",
+        "RESPONSE": "Head **{head}**｜Body **{body}**｜Legs **{leg}**",
+        "SHOTGUN": " (x{shotgun_pellet} Pellets)",
+        "MELEE": "Front: **50** (Alt **75**)\n背Back **100** (Alt **150**)"
+      },
+      "ALT_FIRE": {
+        "TITLE": "Alt Fire",
+        "DESCRIPTION": "",
+        "ALT_TITLE": "{alt}",
+        "ALT_DESCRIPTION_ADS": "・Zoom: **{ads_zoom}**x\n・Fire Rate: **{ads_firerate_multiplier}**% ({ads_firerate} rounds/sec)\n・Move Speed: **{ads_run_speed_multiplier}**% ({ads_run_speed} m/sec)\n・Slight spread and recoil reduction\n・Crosshair follows recoil",
+        "ALT_DESCRIPTION_ADS_BURST": "・Zoom: **{ads_zoom}**x\n・Fire Rate: **{ads_firerate_multiplier}**% ({ads_firerate} rounds/sec)\n・Move Speed: **{ads_run_speed_multiplier}**% ({ads_run_speed} m/sec)\n・Slight spread and recoil reduction\n・Crosshair follows recoil\n・Burst Fire: **{ads_burst}** round burst",
+        "ALT_DESCRIPTION_AirBurst": "・Fires a canister that detonates after a short distance, spraying pellets\n・Canister does no damage until it detonates\n・Detonation Distance: **{air_distance}** m\n・Pellet Count: **{air_shotgun_pellet}**",
+        "ALT_DESCRIPTION_Shotgun": "・Pellet Count: **{alt_shotgun_pellet}**\n・Fire Rate: **{alt_shotgun_burst}** bursts/sec"
+      },
+      "FEATURE": {
+        "TITLE": "Feature",
+        "DESCRIPTION": "",
+        "Silenced": "Silenced",
+        "DualZoom": "Dual Zoom",
+        "ROFIncrease": "Fire Rate Increase",
+        "FEATURE_TITLE": "{feature}",
+        "FEATURE_DESCRIPTION_Silenced": "・Tracers not visible to enemies\n・Firing sound can't be heard at distances of 40m+ except in direction of fire",
+        "FEATURE_DESCRIPTION_DualZoom": "・Toggles between 2.5x and 5.0x DualZoom",
+        "FEATURE_DESCRIPTION_ROFIncrease": "・Rate of fire increases over time"
+      },
+      "WALL": {
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High"
+      },
+      "FIREMODE": {
+        "SemiAutomatic": "Semi",
+        "Automatic": "Auto"
+      },
+      "ALT_MODE": {
+        "ADS": "Aim Down Sights",
+        "AirBurst": "Air Burst",
+        "Shotgun": "Shotgun"
+      }
+    },
     "point": {
       "NAME": "point",
       "DESCRIPTION": "View your remaining Valorant and Radiant Points (VP/RP)",
@@ -108,16 +190,16 @@
         "DRAW": "Draw"
       },
       "QUEUE":{
-        "unknown": "不明",
-        "unrated": "アンレート",
-        "competitive": "コンペティティブ",
-        "deathmatch": "デスマッチ",
-        "ggteam": "エスカレーション",
-        "onefa": "レプリケーション",
-        "custom": "カスタム",
-        "newmap": "新マップ",
-        "snowball": "スノーボールファイト",
-        "spikerush": "スパイクラッシュ"
+        "unknown": "Unknown",
+        "unrated": "Unrated",
+        "competitive": "Competitive",
+        "deathmatch": "Deathmatch",
+        "ggteam": "Escalation",
+        "onefa": "Replication",
+        "custom": "Custom",
+        "newmap": "New Map",
+        "snowball": "Snowball Fight",
+        "spikerush": "Spike Rush"
       },
       "RANK":{
         "TITLE": "Rank Rating",
