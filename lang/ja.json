@@ -64,7 +64,9 @@
         "KEY3": "C",
         "KEY4": "X",
         "PASSIVE": "Passive"
-      }
+      },
+      "DROPDOWN_CHOICE_TITLE": "エージェントを選択",
+      "NOT_FOUND": "入力されたキーワードと一致するエージェントが見つかりませんでした。"
     },
     "weapon": {
       "NAME": "agent",
@@ -130,7 +132,9 @@
         "ADS": "照準 (ADS)",
         "AirBurst": "エアバースト",
         "Shotgun": "ショットガン"
-      }
+      },
+      "DROPDOWN_CHOICE_TITLE": "武器を選択",
+      "NOT_FOUND": "入力されたキーワードと一致する武器が見つかりませんでした。"
     },
     "rank": {
       "NAME": "rank",
