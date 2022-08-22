@@ -569,7 +569,7 @@ class BaseAgent(ui.View):
             self.build_select()
             return await self.interaction.followup.send('\u200b', view=self)
         
-        not_found_agent = self.response.get('NOT_FOUND_BUNDLE')
+        not_found_agent = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found_agent)
 
 
@@ -794,7 +794,7 @@ class BaseWeapon(ui.View):
             self.build_select()
             return await self.interaction.followup.send('\u200b', view=self)
         
-        not_found_weapon = self.response.get('NOT_FOUND_BUNDLE')
+        not_found_weapon = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found_weapon)
 
 
