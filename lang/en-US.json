@@ -59,7 +59,9 @@
         "KEY3": "C",
         "KEY4": "X",
         "PASSIVE": "Passive"
-      }
+      },
+      "DROPDOWN_CHOICE_TITLE": "Select the Agent",
+      "NOT_FOUND": "No agents found that match your keyword entries."
     },
     "weapon": {
       "NAME": "agent",
@@ -125,7 +127,9 @@
         "ADS": "Aim Down Sights",
         "AirBurst": "Air Burst",
         "Shotgun": "Shotgun"
-      }
+      },
+      "DROPDOWN_CHOICE_TITLE": "Select the Weapon",
+      "NOT_FOUND": "No weapons found that match your keyword entries."
     },
     "point": {
       "NAME": "point",
