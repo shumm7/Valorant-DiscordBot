@@ -103,6 +103,7 @@ def fetch_weapon() -> None:
                 json[weapon['uuid']]['stats'] = {
                     "firerate": weapon.get("weaponStats", {}).get("fireRate"),
                     "run_speed": 6.75 * weapon.get("weaponStats", {}).get("runSpeedMultiplier", 1),
+                    "run_speed_multiplier": weapon.get("weaponStats", {}).get("runSpeedMultiplier", 1),
                     "equip_time": weapon.get("weaponStats", {}).get("equipTimeSeconds"),
                     "reload_time": weapon.get("weaponStats", {}).get("reloadTimeSeconds"),
                     "magazine": weapon.get("weaponStats", {}).get("magazineSize"),
@@ -137,8 +138,12 @@ def fetch_weapon() -> None:
                     json[weapon['uuid']]["stats"]["accuracy"] = [weapon.get("weaponStats", {}).get("firstBulletAccuracy"), weapon.get("weaponStats", {}).get("adsStats", {}).get("firstBulletAccuracy")]
                     json[weapon['uuid']]["stats"]["zoom"] = weapon.get("weaponStats", {}).get("adsStats", {}).get("zoomMultiplier")
                     json[weapon['uuid']]["stats"]["ads_firerate"] = weapon.get("weaponStats", {}).get("adsStats", {}).get("fireRate")
-                    json[weapon['uuid']]["stats"]["ads_run_speed"] = 6.75 * weapon.get("weaponStats", {}).get("adsStats", {}).get("runSpeedMultiplier", 1)
+                    json[weapon['uuid']]["stats"]["ads_run_speed"] = 6.75 * weapon.get("weaponStats", {}).get("runSpeedMultiplier", 1) * weapon.get("weaponStats", {}).get("adsStats", {}).get("runSpeedMultiplier", 1)
+                    json[weapon['uuid']]["stats"]["ads_run_speed_multiplier"] = weapon.get("weaponStats", {}).get("adsStats", {}).get("runSpeedMultiplier", 1)
                     json[weapon['uuid']]["stats"]["ads_burst"] = weapon.get("weaponStats", {}).get("adsStats", {}).get("burstCount", 1)
+
+                    if json[weapon['uuid']]["stats"]["accuracy"][1]==-1:
+                        json[weapon['uuid']]["stats"]["accuracy"][1]=0
                 else:
                     json[weapon['uuid']]["stats"]["accuracy"] = [weapon.get("weaponStats", {}).get("firstBulletAccuracy"), None]
                 # Classic
@@ -149,7 +154,7 @@ def fetch_weapon() -> None:
                 # Buckey
                 if weapon.get("weaponStats", {}).get("airBurstStats")!=None:
                     json[weapon['uuid']]["stats"]["air_shotgun_pellet"] = weapon.get("weaponStats", {}).get("airBurstStats", {}).get("shotgunPelletCount")
-                    json[weapon['uuid']]["stats"]["air_burst"] = weapon.get("weaponStats", {}).get("airBurstStats", {}).get("burstRate")
+                    json[weapon['uuid']]["stats"]["air_distance"] = weapon.get("weaponStats", {}).get("airBurstStats", {}).get("burstDistance")
             
             # Shop Data
             if weapon.get("shopData") != None:
@@ -160,7 +165,7 @@ def fetch_weapon() -> None:
                 }
                 json[weapon['uuid']]['shop_icon'] = weapon.get("shopData", {}).get("newImage") if weapon.get("shopData", {}).get("newImage2")==None else weapon.get("shopData", {}).get("newImage2")
 
-        data['weapon'] = json
+        data['weapons'] = json
         JSON.save('cache', data)
 
 
@@ -177,7 +182,7 @@ def fetch_skin() -> None:
         json = {}
         for skin in resp.json()['data']:
             skinone = skin['levels'][0]
-            json[skin['uuid']] = {
+            json[skinone['uuid']] = {
                 'uuid': skinone['uuid'],
                 'names': skin['displayName'],
                 'icon': skinone['displayIcon'],

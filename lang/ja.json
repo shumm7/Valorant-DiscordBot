@@ -51,7 +51,86 @@
       "POINT": "ポイント"
     },
     "agent": {
-      "NAME": "agent"
+      "NAME": "agent",
+      "DESCRIPTION": "エージェントの詳細を表示します",
+      "TITLE": "{role_emoji} {role}",
+      "RESPONSE": "{description}",
+      "HEADER": "{name} // {name_en_capital}",
+      "THUMBNAIL": "{icon}",
+      "IMAGE": "{portrait}",
+      "KEYS": {
+        "KEY1": "Q",
+        "KEY2": "E",
+        "KEY3": "C",
+        "KEY4": "X",
+        "PASSIVE": "Passive"
+      }
+    },
+    "weapon": {
+      "NAME": "agent",
+      "DESCRIPTION": "武器の詳細を表示します",
+      "DETAIL": {
+        "TITLE": "{name} // {name_en_capital}",
+        "DESCRIPTION": "{fire_mode_emoji} **{fire_mode}**｜{wall_emoji} **{wall}**｜{credits_emoji} {credits}",
+        "NAME1": "発射速度",
+        "NAME2": "移動速度",
+        "NAME3": "構える速さ",
+        "NAME4": "初弾の拡散率",
+        "NAME5": "リロード速度",
+        "NAME6": "マガジン",
+        "VALUE1": "**{firerate}** 発/秒",
+        "VALUE2": "**{run_speed}** m/秒\n({run_speed_multiplier} %)",
+        "VALUE3": "**{equip_time}** 秒",
+        "VALUE4": "**{accuracy}** 角度\n(腰だめ/照準)",
+        "VALUE5": "**{reload_time}** 秒",
+        "VALUE6": "**{magazine}** 発",
+        "HEADER": "{category}",
+        "FOOTER": "", 
+        "THUMBNAIL": "{shop_icon}",
+        "IMAGE": "{icon}"
+      },
+      "DAMAGE": {
+        "TITLE": "ダメージ",
+        "DESCRIPTION": "",
+        "RANGE": "{range_start}-{range_end} m{shotgun}",
+        "RESPONSE": "頭部 **{head}**｜胴体 **{body}**｜脚部 **{leg}**",
+        "SHOTGUN": " (x{shotgun_pellet} ペレット)",
+        "MELEE": "正面: **50** (オルト **75**)\n背後: **100** (オルト **150**)"
+      },
+      "ALT_FIRE": {
+        "TITLE": "オルト射撃",
+        "DESCRIPTION": "",
+        "ALT_TITLE": "{alt}",
+        "ALT_DESCRIPTION_ADS": "・ズーム: **{ads_zoom}**x\n・発射速度: **{ads_firerate_multiplier}**% ({ads_firerate} 発/秒)\n・移動速度: **{ads_run_speed_multiplier}**% ({ads_run_speed} m/秒)\n・集弾率と反動軽減率がわずかに向上\n・クロスヘアは反動を追従",
+        "ALT_DESCRIPTION_ADS_BURST": "・ズーム: **{ads_zoom}**x\n・発射速度: **{ads_firerate_multiplier}**% ({ads_firerate} 発/秒)\n・移動速度: **{ads_run_speed_multiplier}**% ({ads_run_speed} m/秒)\n・集弾率と反動軽減率がわずかに向上\n・クロスヘアは反動を追従\n・バースト射撃: **{ads_burst}**点バースト",
+        "ALT_DESCRIPTION_AirBurst": "・少し飛んでから炸裂してペレットを飛散させる弾筒を発射する\n・弾筒が炸裂するまでダメージは発生しない\n・炸裂までの距離: **{air_distance}** (m)\n・ペレット数: **{air_shotgun_pellet}**",
+        "ALT_DESCRIPTION_Shotgun": "・ペレット数: **{alt_shotgun_pellet}**\n・発射速度: **{alt_shotgun_burst}** 発/秒"
+      },
+      "FEATURE": {
+        "TITLE": "特徴",
+        "DESCRIPTION": "",
+        "Silenced": "サイレンサー",
+        "DualZoom": "2段階ズーム",
+        "ROFIncrease": "発射速度上昇",
+        "FEATURE_TITLE": "{feature}",
+        "FEATURE_DESCRIPTION_Silenced": "・弾の軌跡は敵からは見えない\n・射線上にいる場合を除き、発砲音は40メートル以上離れると聞こえなくなる",
+        "FEATURE_DESCRIPTION_DualZoom": "・ズーム倍率を 2.5x と 5.0x で切り替え可能",
+        "FEATURE_DESCRIPTION_ROFIncrease": "・時間経過による発射速度の上昇率"
+      },
+      "WALL": {
+        "Low": "低",
+        "Medium": "中",
+        "High": "高"
+      },
+      "FIREMODE": {
+        "SemiAutomatic": "セミ",
+        "Automatic": "オート"
+      },
+      "ALT_MODE": {
+        "ADS": "照準 (ADS)",
+        "AirBurst": "エアバースト",
+        "Shotgun": "ショットガン"
+      }
     },
     "rank": {
       "NAME": "rank",

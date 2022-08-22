@@ -36,6 +36,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         self.bot: ValorantBot = bot
         self.endpoint: API_ENDPOINT = None
         self.db: DATABASE = None
+        #self.response = ResponseLanguage(None, JSON.read("config", dir="config").get("default-language", str(VLR_locale)))
         self.reload_cache.start()
     
     def cog_unload(self) -> None:
@@ -395,7 +396,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
     # inspired by https://github.com/giorgi-o
     @app_commands.command(description="注目のスキンセットを表示します")
     # @dynamic_cooldown(cooldown_5s)
-    async def bundles(self, interaction: Interaction) -> None:
+    async def feature(self, interaction: Interaction) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         await interaction.response.defer()
@@ -435,7 +436,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
         
         for item_key, item_agent in cache['agents'].items():
-            if agent == "all":
+            if agent.lower() == "all":
                 data = item_agent
                 data["uuid"] = item_key
                 find_agent_en_US.append(data)
@@ -456,8 +457,54 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view = View.BaseAgent(interaction, find_agent, response)
         await view.start()
 
+    @app_commands.command(description="武器の詳細を表示します")
+    @app_commands.describe(weapon="武器の名前")
+    # @dynamic_cooldown(cooldown_5s)
+    async def weapon(self, interaction: Interaction, weapon: str) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer()
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # cache
+        cache = self.db.read_cache()
+        
+        # default language language
+        default_language = 'en-US'
+        
+        
+        # find weapon
+        find_weapon_en_US = []
+        find_weapon_locale = []
+
+        
+        for item_key, item_weapon in cache['weapons'].items():
+            if weapon.lower() == "all":
+                data = item_weapon
+                data["uuid"] = item_key
+                find_weapon_en_US.append(data)
+            else:
+                if weapon.lower() in cache['weapons'][item_key]['names'][default_language].lower():
+                    data = item_weapon
+                    data["uuid"] = item_key
+                    find_weapon_en_US.append(data)
+                
+                if weapon.lower() in cache['weapons'][item_key]['names'][str(VLR_locale)].lower():
+                    data = item_weapon
+                    data["uuid"] = item_key
+                    find_weapon_locale.append(data)
+            
+        find_weapon = find_weapon_en_US if len(find_weapon_en_US) > 0 else find_weapon_locale
+
+        # weapon view
+        view = View.BaseWeapon(interaction, find_weapon, response)
+        await view.start()
+
+ 
+
     @app_commands.command(description="クロスヘアのプロファイルから画像を生成します")
-    @app_commands.describe(code="クロスヘアプロファイル", player="選手名")
+    @app_commands.describe(code="クロスヘアプロファイル (任意)", player="選手名 (任意)")
     async def crosshair(self, interaction: Interaction, code: str = "", player: str = "") -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
@@ -469,7 +516,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         endpoint = await self.get_endpoint(interaction.user.id, interaction.locale)
 
         # crosshair template
-        template = JSON.read("crosshair")
+        template = JSON.read("crosshair", dir="config")
 
         if len(player)>0:
             max = 0
@@ -498,7 +545,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
     # credit https://github.com/giorgi-o
     # https://github.com/giorgi-o/SkinPeek/wiki/How-to-get-your-Riot-cookies
-    @app_commands.command()
+    @app_commands.command(description="Cookieを用いてログインを行います")
     @app_commands.describe(cookie="Cookie")
     async def cookies(self, interaction: Interaction, cookie: str) -> None:
         """ Cookieを使用してあなたのアカウントにログインします """
