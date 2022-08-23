@@ -31,7 +31,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.1.5',
+    "version": 'fork-1.1.6',
     "presence": "/login | VALORANT"
 }
 
@@ -97,7 +97,7 @@ class ValorantBot(commands.Bot):
         try:
             open('data/cache.json')
         except FileNotFoundError:
-            get_cache()
+            get_cache(bot_option["version"])
     
     async def close(self) -> None:
         await self.session.close()
