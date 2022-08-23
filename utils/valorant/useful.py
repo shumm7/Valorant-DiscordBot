@@ -385,18 +385,19 @@ class GetFormat:
             skin = GetItems.get_skin(uuid)
             name, icon = skin['names'][str(VLR_locale)], skin['icon']
             video = skin.get('video')
+            levels = skin.get('levels', {})
 
             price = GetItems.get_skin_price(uuid)
             tier_icon = GetItems.get_skin_tier_icon(uuid)
 
             if skin_count == 0:
-                skin1 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
+                skin1 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video, levels=levels)
             elif skin_count == 1:
-                skin2 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
+                skin2 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video, levels=levels)
             elif skin_count == 2:
-                skin3 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
+                skin3 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video, levels=levels)
             elif skin_count == 3:
-                skin4 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video)
+                skin4 = dict(name=name, icon=icon, price=price, tier=tier_icon, uuid=uuid, video=video, levels=levels)
             skin_count += 1
 
         skin_source = {

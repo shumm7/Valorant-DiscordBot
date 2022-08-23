@@ -40,12 +40,29 @@ class GetEmbed:
     def __giorgio_embed(skin: Dict, bot: ValorantBot, response: Dict) -> discord.Embed:
         """EMBED DESIGN Giorgio"""
         
-        uuid, name, price, icon, video_url = skin['uuid'], skin['name'], skin['price'], skin['icon'], skin.get('video')
+        uuid, name, price, icon, video_url, levels = skin['uuid'], skin['name'], skin['price'], skin['icon'], skin.get('video'), skin["levels"]
         emoji = GetEmoji.tier_by_bot(uuid, bot)
 
-        if video_url!=None:
-            video_text = response.get("VIDEO", "")
-            video = f"[{video_text}]({video_url})"
+        i = 1
+        response.get("VIDEO", "")
+        video_text, video = "", ""
+        is_video = False
+        for level in levels.values():
+            video_url = level.get("video")
+            if len(video_text)>0:
+                video_text += " "
+
+            if video_url!=None:
+                video_url = f"[[{str(i)}]]({video_url})"
+                is_video = True
+            else:
+                video_url = f"[{str(i)}]"
+            video_text += video_url
+            i += 1
+        video_text = response.get("VIDEO", "") + video_text
+
+        if is_video:
+            video = video_text
         else:
             video = ""
         
