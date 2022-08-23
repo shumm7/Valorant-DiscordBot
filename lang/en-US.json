@@ -398,7 +398,7 @@
       "DROPDOWN_CHOICE_TITLE": "Select a bundle:",
       "NOT_FOUND_BUNDLE": "Bundle not found"
     },
-    "bundles": {
+    "feature": {
       "NAME": "bundles",
       "DESCRIPTION": "View featured bundles in store",
       "TITLE": "Featured Bundle: {bundle} Collection",
