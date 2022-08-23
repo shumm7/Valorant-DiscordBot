@@ -398,7 +398,7 @@
       "DROPDOWN_CHOICE_TITLE": "セットを選択してください:",
       "NOT_FOUND_BUNDLE": "セットが1つも見つかりませんでした。"
     },
-    "bundles": {
+    "feature": {
       "NAME": "bundles",
       "DESCRIPTION": "セットの進行状況を表示します。",
       "TITLE": "注目のセット: {bundle}コレクション",
