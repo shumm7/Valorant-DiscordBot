@@ -47,8 +47,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         with contextlib.suppress(Exception):
             cache = self.db.read_cache()
             valorant_version = Cache.get_valorant_version()
-            if valorant_version != cache['valorant_version'] or force:
-                Cache.get_cache()
+            bot_version = self.bot.bot_version
+            if valorant_version != cache['valorant_version'] or bot_version != cache["bot_version"] or force:
+                Cache.get_cache(self.bot.bot_version)
                 cache = self.db.read_cache()
                 cache['valorant_version'] = valorant_version
                 self.db.insert_cache(cache)
@@ -204,6 +205,28 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
     
 
+    @app_commands.command(description='あなたのアカウントのコレクションを表示します')
+    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    # @dynamic_cooldown(cooldown_5s)
+    async def collection(self, interaction: Interaction, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # data
+        data = endpoint.fetch_player_inventory(endpoint.puuid)
+        view = View.BaseCollection(interaction, data, endpoint, response)
+        await view.start()
+    
+
     @app_commands.command(description='過去の対戦結果を表示します')
     @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', matches='読み込むマッチ数 (1～8)', queue='読み込むマッチキュー')
     # @dynamic_cooldown(cooldown_5s)
@@ -249,7 +272,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
         if matches<=0 or matches>match_limit:
             raise ValorantBotError(response.get('FAILED').format(limit=match_limit))
         data = endpoint.fetch_match_history(index=20, queue=queue, not_found_error=False)
-        endpoint._debug_output_json(data, "data.json")
         if len(data.get("Matches", [])) > matches:
             data["Matches"] = data["Matches"][:matches]
         

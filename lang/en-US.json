@@ -399,11 +399,25 @@
       "NOT_FOUND_BUNDLE": "Bundle not found"
     },
     "feature": {
-      "NAME": "bundles",
+      "NAME": "feature",
       "DESCRIPTION": "View featured bundles in store",
       "TITLE": "Featured Bundle: {bundle} Collection",
       "DURATION": "Expires {duration}",
       "DROPDOWN_CHOICE_TITLE": "Select a bundle:"
+    },
+    "collection": {
+      "NAME": "collection",
+      "DESCRIPTION": "Shows your collection in your accounts",
+      "TITLE": "**{name}**'s Collection",
+      "LEVELBORDERS": "LEVEL {level} BORDER",
+      "ITEMS": {
+        "PLAYER_CARD": "Banners",
+        "PLAYER_TITLE": "Titles",
+        "LEVELBORDER": "Level Borders",
+        "SPRAY_BEFORE": "Preround Spray",
+        "SPRAY_INGAME": "Midround Spray",
+        "SPRAY_AFTER": "Postround Spray"
+      }
     },
     "debug": {
       "NAME": "debug",

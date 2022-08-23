@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import contextlib, math
 from datetime import datetime, timedelta
+from pydoc import describe
+from turtle import title
 from typing import Awaitable, Dict, List, TYPE_CHECKING, Union
 
 # Standard
 import discord
 from discord import ButtonStyle, Interaction, TextStyle, ui
 
+from utils.valorant.endpoint import API_ENDPOINT
 from .resources import get_item_type
 # Local
 from .useful import format_relative, GetEmoji, GetItems, JSON
@@ -572,7 +575,6 @@ class BaseAgent(ui.View):
         not_found_agent = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found_agent)
 
-
 class BaseWeapon(ui.View):
     def __init__(self, interaction: Interaction, entries: Dict, response: Dict) -> None:
         self.interaction: Interaction = interaction
@@ -797,6 +799,175 @@ class BaseWeapon(ui.View):
         not_found_weapon = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found_weapon)
 
+class BaseCollection(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, endpoint: API_ENDPOINT, response: Dict) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.endpoint = endpoint
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[List[discord.Embed]] = []
+        self.page_format = {}
+        super().__init__()
+        self.clear_items()
+    
+    def fill_items(self, force=False) -> None:
+        self.clear_items()
+        if len(self.embeds) > 1 or force:
+            self.add_item(self.back_button)
+            self.add_item(self.next_button)
+    
+    def base_embed(self, title: str, description: str, icon: str, color: int = 0x0F1923) -> discord.Embed:
+        """ Base embed for the view """
+        
+        embed = discord.Embed(title=title, description=description, color=color)
+        embed.set_thumbnail(url=icon)
+        return embed
+    
+    def build_embeds(self) -> None:
+        """ Builds the bundle embeds """
+        
+        embeds_list = []
+        embeds = []
+        lang = self.response
+
+        cache = JSON.read('cache')
+        conv = JSON.read('conv')
+
+        # Main
+        embeds.append(
+            discord.Embed(description=lang.get("TITLE", "").format(name=self.endpoint.player), color=0x0F1923)
+        )
+        
+        # Identity
+        item = self.entries.get("Identity", [])
+
+        # Player Card
+        card_embed = discord.Embed(
+            title=cache["playercards"][item["PlayerCardID"]]["names"][self.language],
+            color = 0x45FD9C
+        ).set_author(name = self.response.get("ITEMS", {})["PLAYER_CARD"])
+        #card_embed.set_thumbnail(url=cache["playercards"][item["PlayerCardID"]]["icon"]["small"])
+        card_embed.set_thumbnail(url=cache["playercards"][item["PlayerCardID"]]["icon"]["large"])
+        card_embed.set_image(url=cache["playercards"][item["PlayerCardID"]]["icon"]["wide"])
+        embeds.append(card_embed)
+
+        # Title
+        title_embed = discord.Embed(
+            title=cache["titles"][item["PlayerTitleID"]]["names"][self.language],
+            description= "`" + cache["titles"][item["PlayerTitleID"]]["text"][self.language] + "`",
+            color = 0x45FD9C
+        ).set_author(name = self.response.get("ITEMS", {})["PLAYER_TITLE"])
+        embeds.append(title_embed)
+
+        # Levelboarder
+        level_embed = discord.Embed(
+            title=self.response.get("LEVELBORDERS").format(level=cache["levelborders"][item["PreferredLevelBorderID"]]["level"]),
+            color = 0x45FD9C
+        )
+        level_embed.set_thumbnail(url = cache["levelborders"][item["PreferredLevelBorderID"]]["icon"])
+        level_embed.set_author(name = self.response.get("ITEMS", {})["LEVELBORDER"])
+        embeds.append(level_embed)
+
+        # Guns
+        for weapon in cache["weapons"].values():
+            weapon_uuid = weapon["uuid"]
+
+            for item in self.entries.get("Guns", []):
+                if item["ID"]==weapon_uuid:
+                    skin_uuid = conv["skins"][item["SkinID"]]
+                    chroma_uuid = item["ChromaID"]
+
+                    gun_embed = discord.Embed(
+                        title = cache["skins"][skin_uuid]["chromas"][chroma_uuid]["names"][self.language],
+                        color = 0xfd4554
+                    )
+                    if cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon")!=None:
+                        gun_embed.set_image(url=cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon"))
+                    else:
+                        gun_embed.set_image(url=cache["skins"][skin_uuid]["icon"])
+                    gun_embed.set_author(
+                        name = weapon["names"][self.language],
+                        icon_url = weapon.get("killfeed_icon", "")
+                    )
+
+                    if item.get("CharmID")!=None:
+                        buddy_uuid = conv["buddies"][item["CharmID"]]
+                        gun_embed.set_thumbnail(url=cache["buddies"][buddy_uuid]["icon"])
+                        gun_embed.description = cache["buddies"][buddy_uuid]["names"][self.language]
+
+                    embeds.append(gun_embed)
+
+        # Sprays
+        spray_slot = {
+            "0814b2fe-4512-60a4-5288-1fbdcec6ca48": 0,
+            "04af080a-4071-487b-61c0-5b9c0cfaac74": 1,
+            "5863985e-43ac-b05d-cb2d-139e72970014": 2
+        }
+        spray_author = [self.response.get("ITEMS", {})["SPRAY_BEFORE"], self.response.get("ITEMS", {})["SPRAY_INGAME"], self.response.get("ITEMS", {})["SPRAY_AFTER"]]
+        spray_embeds = [None,None,None]
+        for item in self.entries.get("Sprays", []):
+            slot = spray_slot[item["EquipSlotID"]]
+            embed = discord.Embed(
+                title = cache["sprays"][item["SprayID"]]["names"][self.language],
+                color = 0x4563FD
+            )
+            if cache["sprays"][item["SprayID"]].get("animation_gif")!=None:
+                embed.set_thumbnail(url=cache["sprays"][item["SprayID"]]["animation_gif"])
+            else:
+                embed.set_thumbnail(url=cache["sprays"][item["SprayID"]]["icon"])
+            embed.set_author(name = spray_author[slot])
+
+            spray_embeds[slot] = embed
+        embeds.extend(spray_embeds)
+        
+        # Make embeds list
+        while len(embeds) > 0:
+            if len(embeds) > 10:
+                embeds_list.append(embeds[:10])
+                embeds = embeds[10:]
+            else:
+                embeds_list.append(embeds)
+                embeds = []
+        
+        self.embeds = embeds_list
+    
+    @ui.button(label='Back')
+    async def back_button(self, interaction: Interaction, button: ui.Button):
+        self.current_page -= 1
+        embeds = self.embeds[self.current_page]
+        self.update_button()
+        await interaction.response.edit_message(embeds=embeds, view=self)
+    
+    @ui.button(label='Next')
+    async def next_button(self, interaction: Interaction, button: ui.Button):
+        self.current_page += 1
+        embeds = self.embeds[self.current_page]
+        self.update_button()
+        await interaction.response.edit_message(embeds=embeds, view=self)
+    
+    def update_button(self) -> None:
+        """ Updates the button """
+        self.next_button.disabled = self.current_page == len(self.embeds) - 1
+        self.back_button.disabled = self.current_page == 0
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the bundle view """
+        
+        self.build_embeds()
+        self.fill_items()
+        self.update_button()
+        embeds = self.embeds[0]
+        return await self.interaction.followup.send(embeds=embeds, view=self)
+    
 
 class SelectionFeaturedBundleView(ui.View):
     def __init__(self, bundles: Dict, other_view: Union[ui.View, BaseBundle] = None):

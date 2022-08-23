@@ -1449,7 +1449,6 @@ class GetEmbed:
 
         return [embed_main, embeds]
 
-
     # ---------- CUSTOM EMBED ---------- #
     @classmethod
     def custom(cls, puuid: str, data: Dict, endpoint: API_ENDPOINT, response: Dict, mode_rand: bool = False) -> discord.Embed:
