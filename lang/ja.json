@@ -43,7 +43,7 @@
       },
       "RESPONSE": "**{username}**のデイリーストア | 残り時間 {duration}",
       "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
-      "VIDEO": "動画を見る"
+      "VIDEO": "動画を見る: "
     },
     "point": {
       "NAME": "point",

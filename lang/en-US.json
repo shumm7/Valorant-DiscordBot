@@ -43,7 +43,7 @@
       },
       "RESPONSE": "Daily store for **{username}** \nResets {duration}",
       "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
-      "VIDEO": "Watch Video"
+      "VIDEO": "Watch Video: "
     },
     "agent": {
       "NAME": "agent",

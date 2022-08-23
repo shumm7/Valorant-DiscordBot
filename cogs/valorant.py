@@ -49,8 +49,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
             valorant_version = Cache.get_valorant_version()
             bot_version = self.bot.bot_version
             if valorant_version != cache['valorant_version'] or bot_version != cache["bot_version"] or force:
-                Cache.get_cache(self.bot.bot_version)
+                Cache.get_cache(bot_version)
                 cache = self.db.read_cache()
+                cache['bot_version'] = bot_version
                 cache['valorant_version'] = valorant_version
                 self.db.insert_cache(cache)
                 print('Updated cache')
