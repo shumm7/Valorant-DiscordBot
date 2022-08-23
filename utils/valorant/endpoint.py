@@ -145,19 +145,31 @@ class API_ENDPOINT:
         data = self.fetch(endpoint='/content-service/v3/content', url='shared')
         return data
 
-    def fetch_account_xp(self) -> Mapping[str, Any]:
+    def fetch_account_xp(self, puuid: str = None) -> Mapping[str, Any]:
         """
         AccountXP_GetPlayer
         Get the account level, XP, and XP history for the active player
         """
-        data = self.fetch(endpoint=f'/account-xp/v1/players/{self.puuid}', url='pd')
+        if puuid==None:
+            puuid = self.puuid
+        data = self.fetch(endpoint=f'/account-xp/v1/players/{puuid}', url='pd')
+        return data
+    
+    def fetch_player_inventory(self, puuid: str = None) -> Mapping[str, Any]:
+        """
+        AccountXP_GetPlayer
+        Get the account level, XP, and XP history for the active player
+        """
+        if puuid==None:
+            puuid = self.puuid
+        data = self.fetch(endpoint=f'/personalization/v2/players/{puuid}/playerloadout', url='pd')
         return data
 
-    def fetch_player_mmr(self, puuid: str = "") -> Mapping[str, Any]:
+    def fetch_player_mmr(self, puuid: str = None) -> Mapping[str, Any]:
         """
         Get the account mmr
         """
-        if puuid=="":
+        if puuid==None:
             puuid = self.puuid
 
         data = self.fetch(endpoint=f'/mmr/v1/players/{puuid}', url='pd')
@@ -408,7 +420,7 @@ class API_ENDPOINT:
         return data['version']
     
     def _debug_output_json(self, json_data: json, filename: str = "debug.json"):
-        f = open(filename, "w")
+        f = open(filename + ".json", "w")
         f.write(json.dumps(json_data, sort_keys=True, indent=4))
         f.close()
-        print(f"json file was dumped: {filename}")
+        print(f"json file was dumped: {filename}.json")

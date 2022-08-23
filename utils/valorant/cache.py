@@ -173,6 +173,7 @@ def fetch_skin() -> None:
     """ Fetch the skin from valorant-api.com """
     
     data = JSON.read('cache')
+    conv = JSON.read('conv')
 
     url = f'https://valorant-api.com/v1/weapons/skins?language=all'
     print(f'[{datetime.datetime.now()}] Fetching weapons skin: {url}')
@@ -180,17 +181,42 @@ def fetch_skin() -> None:
     resp = requests.get(url)
     if resp.status_code == 200:
         json = {}
+        json_conv = {}
         for skin in resp.json()['data']:
             skinone = skin['levels'][0]
             json[skinone['uuid']] = {
                 'uuid': skinone['uuid'],
+                'skin_uuid': skin['uuid'],
                 'names': skin['displayName'],
                 'icon': skinone['displayIcon'],
                 'tier': skin['contentTierUuid'],
-                'video': skinone['streamedVideo'] if skinone['streamedVideo']!=None else None
+                'video': skinone['streamedVideo'] if skinone['streamedVideo']!=None else None,
+                'chromas': {},
+                'levels': {}
             }
+
+            for chroma in skin.get("chromas", []):
+                json[skinone['uuid']]["chromas"][chroma["uuid"]] = {
+                    "uuid": chroma["uuid"],
+                    "names": chroma["displayName"],
+                    "icon": chroma["displayIcon"],
+                    "video": chroma["streamedVideo"] if chroma["streamedVideo"]!=None else None
+                }
+            
+            for level in skin.get("levels", []):
+                json[skinone['uuid']]["levels"][level["uuid"]] = {
+                    "uuid": level["uuid"],
+                    "names": level["displayName"],
+                    "icon": level["displayIcon"],
+                    "video": level["streamedVideo"] if level["streamedVideo"]!=None else None
+                }
+
+            json_conv[skin['uuid']] = skinone['uuid']
         data['skins'] = json
+        conv['skins'] = json_conv
+        
         JSON.save('cache', data)
+        JSON.save('conv', conv)
 
 
 def fetch_tier() -> None:
@@ -295,6 +321,27 @@ def fetch_titles() -> None:
         data['titles'] = payload
         JSON.save('cache', data)
 
+def fetch_levelborders() -> None:
+    """ Fetch the player titles from valorant-api.com """
+    
+    data = JSON.read('cache')
+    
+    url = f'https://valorant-api.com/v1/levelborders'
+    print(f'[{datetime.datetime.now()}] Fetching player levelborders: {url}')
+    
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        levelborder = {}
+        for item in resp.json()['data']:
+            levelborder[item['uuid']] = {
+                'uuid': item['uuid'],
+                'level': item['startingLevel'],
+                'icon': item['levelNumberAppearance'],
+                'small_icon': item['smallPlayerCardAppearance'],
+            }
+        data['levelborders'] = levelborder
+        JSON.save('cache', data)
+
 
 def fetch_spray() -> None:
     """ Fetch the spray from valorant-api.com"""
@@ -312,7 +359,9 @@ def fetch_spray() -> None:
             payload[spray['uuid']] = {
                 'uuid': spray['uuid'],
                 'names': spray['displayName'],
-                'icon': spray['fullTransparentIcon'] or spray['displayIcon']
+                'icon': spray['fullTransparentIcon'] or spray['displayIcon'],
+                'animation_png': spray.get("animationPng"),
+                'animation_gif': spray.get("animationGif"),
             }
         data['sprays'] = payload
         JSON.save('cache', data)
@@ -472,8 +521,9 @@ def fetch_currencies() -> None:
 
 def fetch_buddies() -> None:
     """ Fetch all buddies from valorant-api.com """
-    
+
     data = JSON.read('cache')
+    conv = JSON.read('conv')
     
     url = f'https://valorant-api.com/v1/buddies?language=all'
     print(f'[{datetime.datetime.now()}] Fetching buddies: {url}')
@@ -481,6 +531,7 @@ def fetch_buddies() -> None:
     resp = requests.get(url)
     if resp.status_code == 200:
         payload = {}
+        payload_conv = {}
         for buddy in resp.json()['data']:
             buddy_one = buddy['levels'][0]
             payload[buddy_one['uuid']] = {
@@ -488,8 +539,12 @@ def fetch_buddies() -> None:
                 'names': buddy['displayName'],
                 'icon': buddy_one['displayIcon']
             }
+            payload_conv[buddy['uuid']] = buddy_one['uuid']
         data['buddies'] = payload
+        conv['buddies'] = payload_conv
+
         JSON.save('cache', data)
+        JSON.save('conv', conv)
 
 
 def fetch_price(data_price: Dict) -> None:
@@ -624,10 +679,13 @@ def fetch_ceremony() -> None:
 
 #     session.close()
 
-def get_cache() -> None:
+def get_cache(bot_version: str) -> None:
     """ Get all cache from valorant-api.com """
     
-    create_json('cache', {"valorant_version": get_valorant_version()})
+    create_json('cache', {
+        "valorant_version": get_valorant_version(),
+        "bot_version": bot_version
+    })
     
     fetch_agents()
     fetch_weapon()
@@ -638,6 +696,7 @@ def get_cache() -> None:
     fetch_playercard()
     fetch_currencies()
     fetch_titles()
+    fetch_levelborders()
     fetch_spray()
     fetch_buddies()
     fetch_mission()
@@ -648,4 +707,4 @@ def get_cache() -> None:
     fetch_gamemode()
     # fetch_skinchromas() # next update
     
-    print('Loaded Cache')
+    print(f"[{datetime.datetime.now()}] *** Loaded Cache ***")
