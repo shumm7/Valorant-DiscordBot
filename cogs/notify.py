@@ -23,6 +23,7 @@ from utils.valorant.local import ResponseLanguage
 from utils.valorant.useful import (format_relative, GetEmoji, GetItems, JSON)
 
 VLR_locale = ValorantTranslator()
+clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
 
 if TYPE_CHECKING:
     from bot import ValorantBot
@@ -51,6 +52,7 @@ class Notify(commands.Cog):
     
     async def send_notify(self) -> None:
         notify_users = self.db.get_user_is_notify()
+        user_data = JSON.read('users')
         notify_data = JSON.read('notifys')
         
         for user_id in notify_users:
@@ -69,7 +71,8 @@ class Notify(commands.Cog):
                 channel_send = author if data['dm_message'] else self.bot.get_channel(int(data['notify_channel']))
                 
                 # get guild language
-                guild_locale = 'en-US'
+                default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+                guild_locale = user_data.get(user_id, {}).get("lang", default_language)
                 get_guild_locale = [guild.preferred_locale for guild in self.bot.guilds if channel_send in guild.channels]
                 if len(get_guild_locale) > 0:
                     guild_locale = guild_locale[0]
@@ -127,8 +130,8 @@ class Notify(commands.Cog):
     
     notify = app_commands.Group(name='notify', description='Notify commands')
     
-    @notify.command(name='add', description='特定のスキンがストアに出現したときに通知します')
-    @app_commands.describe(skin='スキンの名前')
+    @notify.command(name='add', description=clocal.get("notify_add", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(skin=clocal.get("notify_add", {}).get("DESCRIBE", {}).get("skin", ""))
     @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def notify_add(self, interaction: Interaction, skin: str) -> None:
@@ -184,7 +187,7 @@ class Notify(commands.Cog):
             
             # check if user is notify is on
             userdata = JSON.read('users')
-            notify_mode = userdata.get('notify_mode', None)
+            notify_mode = userdata.get(str(interaction.user.id), {}).get('notify_mode', None)
             if notify_mode is None:
                 userdata[str(interaction.user.id)]['notify_mode'] = 'Specified'
                 userdata[str(interaction.user.id)]['DM_Message'] = True
@@ -200,7 +203,7 @@ class Notify(commands.Cog):
         
         raise ValorantBotError(response.get('NOT_FOUND'))
     
-    @notify.command(name='list', description='あなたが設定している通知の一覧を表示します')
+    @notify.command(name='list', description=clocal.get("notify_list", {}).get("DESCRIPTION", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_list(self, interaction: Interaction) -> None:
         
@@ -212,8 +215,8 @@ class Notify(commands.Cog):
         view = View.NotifyViewList(interaction, response)
         await view.start()
     
-    @notify.command(name='mode', description='通知のモードやチャンネルを変更します')
-    @app_commands.describe(mode='モード')
+    @notify.command(name='mode', description=clocal.get("notify_mode", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(mode=clocal.get("notify_mode", {}).get("DESCRIBE", {}).get("mode", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_mode(self, interaction: Interaction, mode: Literal['Specified Skin', 'All Skin', 'Off']) -> None:
         print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")        
@@ -244,8 +247,8 @@ class Notify(commands.Cog):
         
         await interaction.followup.send(embed=embed, ephemeral=True)
     
-    @notify.command(name='channel', description='通知するチャンネルを変更します')
-    @app_commands.describe(channel='チャンネル')
+    @notify.command(name='channel', description=clocal.get("notify_channel", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(channel=clocal.get("notify_channel", {}).get("DESCRIBE", {}).get("channel", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_channel(self, interaction: Interaction, channel: Literal['DM Message', 'Channel']) -> None:
         print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -266,7 +269,7 @@ class Notify(commands.Cog):
         
         await interaction.followup.send(embed=embed, ephemeral=True)
     
-    @notify.command(name='test', description='通知をテストします')
+    @notify.command(name='test', description=clocal.get("notify_test", {}).get("DESCRIPTION", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_test(self, interaction: Interaction) -> None:
         print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")

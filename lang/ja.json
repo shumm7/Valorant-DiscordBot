@@ -3,6 +3,7 @@
   "commands": {
     "about":{
       "NAME": "about",
+      "DESCRIPTION": "Botの詳細を表示します",
       "TITLE": "",
       "PROJECT_URL": "https://github.com/shumm7/Valorant-DiscordBot",
       "FIELD1":{
@@ -20,26 +21,35 @@
     },
     "login": {
       "NAME": "login",
-      "DESCRIPTION": "Riotアカウントでログインします。",
+      "DESCRIPTION": "あなたのRiotアカウントにログインします",
       "DESCRIBE": {
-        "username": "ユーザー名を入力してください",
-        "password": "パスワードを入力してください"
+        "username": "ユーザー名",
+        "password": "パスワード"
       },
-      "SUCCESS": "ログインが完了しました。",
+      "SUCCESS": "**{name}** へログインしました。",
       "FAILED": "ログインに失敗しました。再度お試しください。"
     },
     "logout": {
       "NAME": "logout",
-      "DESCRIPTION": "ログアウトし、データベースからアカウントを削除します。",
+      "DESCRIPTION": "あなたのアカウントからログアウトします",
       "SUCCESS": "ログアウトが完了しました。",
       "FAILED": "ログアウトに失敗しました。再度お試しください。"
     },
+    "cookies": {
+      "NAME": "cookies",
+      "DESCRIPTION": "ブラウザのCookieを使用してRiotアカウントへログインします",
+      "DESCRIBE": {
+        "cookie": "Cookie"
+      },
+      "SUCCESS": "ログインが完了しました！",
+      "FAILED": "不正なCookieです"
+    },
     "store": {
       "NAME": "store",
-      "DESCRIPTION": "アカウントのデイリーストアを表示します。",
+      "DESCRIPTION": "あなたのアカウントのデイリーストアを表示します",
       "DESCRIBE": {
-        "username": "ユーザー名を入力してください。（一時的ログイン）",
-        "password": "パスワードを入力してください。（一時的ログイン）"
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
       },
       "RESPONSE": "**{username}**のデイリーストア | 残り時間 {duration}",
       "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
@@ -47,12 +57,219 @@
     },
     "point": {
       "NAME": "point",
-      "DESCRIPTION": "残りのヴァロラントポイント（VP）・レディアナイトポイント（RP）の所持数を表示します。",
+      "DESCRIPTION": "あなたのアカウントのVP/RPを表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
       "POINT": "ポイント"
+    },
+    "rank": {
+      "NAME": "rank",
+      "DESCRIPTION": "あなたのアカウントのランク/RRを表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "TITLE": "ランク",
+      "CURRENT_RANK": "現在のランク",
+      "CURRENT_RR": "ランクレーティング",
+      "RESPONSE": "{rankrating} RR",
+      "TIER_MATCHMAKING": {
+        "TITLE": "同時にマッチ可能なランク帯",
+        "RESPONSE": "`{rank1} から {rank2}`"
+      },
+      "WINS": {
+        "TITLE": "勝利数",
+        "RESPONSE": "{wins} (マッチの総数: {games})\n勝率: {win_rate}%"
+      },
+      "LEADERBOARD": {
+        "TITLE": "リーダーボード",
+        "RESPONSE": "{leaderboard} 位"
+      }
+    },
+    "collection": {
+      "NAME": "collection",
+      "DESCRIPTION": "あなたのアカウントのコレクションを表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "TITLE": "**{name}**のコレクション",
+      "LEVELBORDERS": "レベル {level} ボーダー",
+      "ITEMS": {
+        "PLAYER_CARD": "バナー",
+        "PLAYER_TITLE": "タイトル",
+        "LEVELBORDER": "レベルボーダー",
+        "SPRAY_BEFORE": "スプレー (ラウンド前)",
+        "SPRAY_INGAME": "スプレー (ラウンド中)",
+        "SPRAY_AFTER": "スプレー (ラウンド後)"
+      }
+    },
+    "career":{
+      "NAME": "career",
+      "DESCRIPTION": "過去の対戦結果を表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)",
+        "matches": "読み込むマッチ数 (1～8)",
+        "queue": "読み込むマッチキュー"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
+        "HEADER": "",
+        "FOOTER": "",
+        "NO_MATCH": "マッチが見つかりませんでした"
+      },
+      "TITLE": "{map} {duration}:  {point}",
+      "RESPONSE": "**{username}**の対戦結果",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "RESULT": {
+        "TITLE": "戦績",
+        "RESPONSE": "{agent_emoji}{agent} ({role_emoji}{role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}\nACS: {acs}/Econ: {eco_rating}/ADR: {adr}",
+        "DEATHMATCH": "{agent_emoji}{agent} **{result}** #{deathmatch}\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}/ACS: {acs}",
+        "WIN": "勝利",
+        "LOSE": "敗北",
+        "DRAW": "引き分け"
+      },
+      "QUEUE":{
+        "unknown": "不明",
+        "unrated": "アンレート",
+        "competitive": "コンペティティブ",
+        "deathmatch": "デスマッチ",
+        "ggteam": "エスカレーション",
+        "onefa": "レプリケーション",
+        "custom": "カスタム",
+        "newmap": "新マップ",
+        "snowball": "スノーボールファイト",
+        "spikerush": "スパイクラッシュ"
+      },
+      "RANK":{
+        "TITLE": "ランクレーティング",
+        "RESPONSE": "**{result}** {earned_rr} RR\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
+      },
+      "FAILED": "マッチ数は{limit}個までにしてください。"
+    },
+    "match":{
+      "NAME": "match",
+      "DESCRIPTION": "対戦結果の詳細を表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)",
+        "match_id": "マッチのID (任意)"
+      },
+      "TITLE": "{map} {time}:  {point} ({result})",
+      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "TEAM_A": "チームA",
+      "TEAM_B": "チームB",
+      "PLAYERS":{
+        "TITLE": "プレイヤー",
+        "RESPONSE": "{team} ({result}): {point}",
+        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
+        "DEATHMATCH": "対戦結果"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
+      },
+      "ECONOMY": {
+        "TITLE": "マネー",
+        "TITLE_TEAM_DIFF": "**チームA - チームB**",
+        "TITLE_TEAM_A": "**チームA**",
+        "TITLE_TEAM_B": "**チームB**",
+        "RESPONSE": "{result_emoji}`R{align_number}: Loadout {align_loadout}｜Bank {align_remain}｜Total {align_total}`",
+        "RESPONSE_TEAM": "`R{align_number} {result}｜Loadout {align_loadout}｜{align_start} - {align_spent} = {align_remain}`"
+      },
+      "QUEUE":{
+        "unknown": "不明",
+        "unrated": "アンレート",
+        "competitive": "コンペティティブ",
+        "deathmatch": "デスマッチ",
+        "ggteam": "エスカレーション",
+        "onefa": "レプリケーション",
+        "custom": "カスタム",
+        "newmap": "新マップ",
+        "snowball": "スノーボールファイト",
+        "spikerush": "スパイクラッシュ"
+      },
+      "RESULT": {
+        "TITLE": "戦績",
+        "RESPONSE": "{agent} ({role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}  KDA: {kda}",
+        "WIN": "勝利",
+        "LOSE": "敗北",
+        "DRAW": "引き分け"
+      }
+    },
+    "mission": {
+      "NAME": "mission",
+      "DESCRIPTION": "あなたのアカウントのデイリー/ウィークリーミッションの進捗を表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "TITLE": "ミッション",
+      "DAILY": "デイリー",
+      "WEEKLY": "ウィークリー",
+      "NEWPLAYER": "新規プレイヤー",
+      "NO_MISSION": "ミッションなし",
+      "DAILY_RESET": "リセットまで {duration}",
+      "REFILLS": "更新まで {duration}"
+    },
+    "nightmarket": {
+      "NAME": "nightmarket",
+      "DESCRIPTION": "あなたのアカウントのナイトマーケットを表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "RESPONSE": "**{username}**のナイトマーケット | 残り時間 {duration}",
+      "NIGMARKET_HAS_END": "**ナイトマーケット**が終了しました"
+    },
+    "battlepass": {
+      "NAME": "battlepass",
+      "DESCRIPTION": "あなたのアカウントのバトルパスのティアを表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "RESPONSE": "**次報酬:** {next}\n**種類:** {type}\n**XP:** {xp}\n**ACT終了時間:** {end}",
+      "TIER": "レベル",
+      "PLAYER_CARD": "プレイヤーカード",
+      "SPRAY": "スプレー",
+      "BUDDY": "バディー",
+      "POINT": "ポイント",
+      "PLAYER_TITLE": "タイトル",
+      "SKIN": "スキン"
+    },
+    "bundle": {
+      "NAME": "bundle",
+      "DESCRIPTION": "スキンセットの詳細を表示します",
+      "DESCRIBE": {
+          "bundle": "スキンセットの名前"
+      },
+      "TITLE": "コレクション",
+      "DROPDOWN_CHOICE_TITLE": "セットを選択してください:",
+      "NOT_FOUND_BUNDLE": "セットが見つかりませんでした。"
+    },
+    "feature": {
+      "NAME": "feature",
+      "DESCRIPTION": "注目のスキンセットを表示します",
+      "TITLE": "注目のセット: {bundle}コレクション",
+      "DURATION": "残り時間 {duration}",
+      "DROPDOWN_CHOICE_TITLE": "セットを選択してください:",
+      "NOT_FOUND": "スキンセットの取得に失敗しました。"
     },
     "agent": {
       "NAME": "agent",
       "DESCRIPTION": "エージェントの詳細を表示します",
+      "DESCRIBE": {
+        "agent": "エージェントの名前"
+      },
       "TITLE": "{role_emoji} {role}",
       "RESPONSE": "{description}",
       "HEADER": "{name} // {name_en_capital}",
@@ -69,8 +286,11 @@
       "NOT_FOUND": "入力されたキーワードと一致するエージェントが見つかりませんでした。"
     },
     "weapon": {
-      "NAME": "agent",
+      "NAME": "weapon",
       "DESCRIPTION": "武器の詳細を表示します",
+      "DESCRIBE": {
+        "weapon": "武器の名前"
+      },
       "DETAIL": {
         "TITLE": "{name} // {name_en_capital}",
         "DESCRIPTION": "{fire_mode_emoji} **{fire_mode}**｜{wall_emoji} **{wall}**｜{credits_emoji} {credits}",
@@ -136,137 +356,25 @@
       "DROPDOWN_CHOICE_TITLE": "武器を選択",
       "NOT_FOUND": "入力されたキーワードと一致する武器が見つかりませんでした。"
     },
-    "rank": {
-      "NAME": "rank",
-      "DESCRIPTION": "コンペティティブのランクとランクレーティングを表示します",
-      "TITLE": "ランク",
-      "CURRENT_RANK": "現在のランク",
-      "CURRENT_RR": "ランクレーティング",
-      "RESPONSE": "{rankrating} RR",
-      "TIER_MATCHMAKING": {
-        "TITLE": "同時にマッチ可能なランク帯",
-        "RESPONSE": "`{rank1} から {rank2}`"
-      },
-      "WINS": {
-        "TITLE": "勝利数",
-        "RESPONSE": "{wins} (マッチの総数: {games})\n勝率: {win_rate}%"
-      },
-      "LEADERBOARD": {
-        "TITLE": "リーダーボード",
-        "RESPONSE": "{leaderboard} 位"
-      }
-    },
-    "career":{
-      "NAME": "career",
-      "DESCRIPTION": "過去の対戦結果を表示します",
+    "crosshair": {
+      "NAME": "crosshair",
+      "DESCRIPTION": "クロスヘアのプロファイルから画像を生成します",
       "DESCRIBE": {
-        "username": "ユーザー名を入力してください。（一時的ログイン）",
-        "password": "パスワードを入力してください。（一時的ログイン）"
+        "code": "クロスヘアプロファイル (任意)",
+        "player": "選手名 (任意)"
       },
-      "STATS": {
-        "TITLE": "{name}",
-        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
-        "HEADER": "",
-        "FOOTER": "",
-        "NO_MATCH": "マッチが見つかりませんでした"
-      },
-      "TITLE": "{map} {duration}:  {point}",
-      "RESPONSE": "**{username}**の対戦結果",
-      "HEADER": "{queue} ({duration})",
-      "FOOTER": "🆔{match_id}",
-      "RESULT": {
-        "TITLE": "戦績",
-        "RESPONSE": "{agent_emoji}{agent} ({role_emoji}{role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}\nACS: {acs}/Econ: {eco_rating}/ADR: {adr}",
-        "DEATHMATCH": "{agent_emoji}{agent} **{result}** #{deathmatch}\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}/ACS: {acs}",
-        "WIN": "勝利",
-        "LOSE": "敗北",
-        "DRAW": "引き分け"
-      },
-      "QUEUE":{
-        "unknown": "不明",
-        "unrated": "アンレート",
-        "competitive": "コンペティティブ",
-        "deathmatch": "デスマッチ",
-        "ggteam": "エスカレーション",
-        "onefa": "レプリケーション",
-        "custom": "カスタム",
-        "newmap": "新マップ",
-        "snowball": "スノーボールファイト",
-        "spikerush": "スパイクラッシュ"
-      },
-      "RANK":{
-        "TITLE": "ランクレーティング",
-        "RESPONSE": "**{result}** {earned_rr} RR\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
-      },
-      "FAILED": "マッチ数は{limit}個までにしてください。"
-    },
-    "match":{
-      "NAME": "match",
-      "TITLE": "{map} {time}:  {point} ({result})",
-      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
-      "HEADER": "{queue} ({duration})",
-      "FOOTER": "🆔{match_id}",
-      "TEAM_A": "チームA",
-      "TEAM_B": "チームB",
-      "PLAYERS":{
-        "TITLE": "プレイヤー",
-        "RESPONSE": "{team} ({result}): {point}",
-        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
-        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
-        "DEATHMATCH": "対戦結果"
-      },
-      "STATS": {
-        "TITLE": "{name}",
-        "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
-      },
-      "ECONOMY": {
-        "TITLE": "マネー",
-        "TITLE_TEAM_DIFF": "**チームA - チームB**",
-        "TITLE_TEAM_A": "**チームA**",
-        "TITLE_TEAM_B": "**チームB**",
-        "RESPONSE": "{result_emoji}`R{align_number}: Loadout {align_loadout}｜Bank {align_remain}｜Total {align_total}`",
-        "RESPONSE_TEAM": "`R{align_number} {result}｜Loadout {align_loadout}｜{align_start} - {align_spent} = {align_remain}`"
-      },
-      "QUEUE":{
-        "unknown": "不明",
-        "unrated": "アンレート",
-        "competitive": "コンペティティブ",
-        "deathmatch": "デスマッチ",
-        "ggteam": "エスカレーション",
-        "onefa": "レプリケーション",
-        "custom": "カスタム",
-        "newmap": "新マップ",
-        "snowball": "スノーボールファイト",
-        "spikerush": "スパイクラッシュ"
-      },
-      "RESULT": {
-        "TITLE": "戦績",
-        "RESPONSE": "{agent} ({role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}  KDA: {kda}",
-        "WIN": "勝利",
-        "LOSE": "敗北",
-        "DRAW": "引き分け"
-      }
-    },
-    "mission": {
-      "NAME": "mission",
-      "DESCRIPTION": "自分のデイリーミッション・ウィークリーミッションの進行度を表示します。",
-      "TITLE": "ミッション",
-      "DAILY": "デイリー",
-      "WEEKLY": "ウィークリー",
-      "NEWPLAYER": "新規プレイヤー",
-      "NO_MISSION": "ミッションなし",
-      "DAILY_RESET": "リセットまで {duration}",
-      "REFILLS": "更新まで {duration}"
-    },
-    "nightmarket": {
-      "NAME": "nightmarket",
-      "DESCRIPTION": "ナイトマーケットのスキンオファー一覧を表示します。",
-      "RESPONSE": "**{username}**のナイトマーケット | 残り時間 {duration}",
-      "NIGMARKET_HAS_END": "**ナイトマーケット**が終了しました"
+      "TITLE": "クロスヘア",
+      "RESPONSE": "**{player}**\n{code}",
+      "NO_CODE": "クロスヘアプロファイルがありません。",
+      "ERROR": "クロスヘアの取得に失敗しました。"
     },
     "party": {
       "NAME": "party",
-      "DESCRIPTION": "現在のパーティの情報を取得します。",
+      "DESCRIPTION": "あなたの所属するパーティの情報を表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
       "TITLE": "{name} の所属するパーティ",
       "RESPONSE": "人数: **{members}**人\n選択中のキュー: **{queue}**\nパーティ:** {access}**",
       "ACCESS": {
@@ -313,6 +421,11 @@
     "custom": {
       "NAME": "custom",
       "DESCRIPTION": "カスタムマッチのマップとチームをランダムで決定します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)",
+        "random": "チームメンバーをランダムに割り振る"
+      },
       "TITLE": {
         "MAP": "マップ",
         "TEAM": "チームメンバー"
@@ -324,23 +437,19 @@
       "NO_MEMBER": "なし",
       "FAILED": "パーティ情報の取得に失敗しました。"
     },
-    "battlepass": {
-      "NAME": "battlepass",
-      "DESCRIPTION": "自分の現在のバトルパスレベルを表示します。",
-      "RESPONSE": "**次報酬:** {next}\n**種類:** {type}\n**XP:** {xp}\n**ACT終了時間:** {end}",
-      "TIER": "レベル",
-      "PLAYER_CARD": "プレイヤーカード",
-      "SPRAY": "スプレー",
-      "BUDDY": "バディー",
-      "POINT": "ポイント",
-      "PLAYER_TITLE": "タイトル",
-      "SKIN": "スキン"
+    "debug": {
+      "NAME": "debug",
+      "DESCRIPTION": "Botのデバッグを行います",
+      "DESCRIBE": {
+          "bug": "修正したいバグ"
+      },
+      "SUCCESS": "**{bug}**のデバッグが完了しました。"
     },
     "notify_add": {
       "NAME": "add",
-      "DESCRIPTION": "ストアに登場した際に通知するスキンを指定します。",
+      "DESCRIPTION": "特定のスキンがストアに出現したときに通知します",
       "DESCRIBE": {
-          "skin": "登場時に通知してほしいスキンの名前"
+          "skin": "通知してほしいスキンの名前"
       },
       "SUCCESS": "通知対象として {emoji} **{skin}**を指定しました",
       "SKIN_ALREADY_IN_LIST": "{emoji} **{skin}**は既に通知対象に追加されています",
@@ -350,23 +459,31 @@
     },
     "notify_list": {
       "NAME": "list",
-      "DESCRIPTION": "通知対象として設定しているスキンの一覧を表示します。",
+      "DESCRIPTION": "あなたが設定している通知対象のスキンの一覧を表示します",
       "TITLE": "自分の通知対象一覧",
       "DONT_HAVE_NOTIFY": "通知がありません。",
       "REMOVE_NOTIFY": "通知対象から削除したい場合は、ボタンを押してください。"
     },
     "notify_mode": {
       "NAME": "mode",
-      "DESCRIPTION": "通知モードを変更します。",
+      "DESCRIPTION": "通知モードを変更します",
       "DESCRIBE": {
-          "mode": "次からの通知モード"
+          "mode": "通知モード"
       },
       "SUCCESS": "通知モードを**{mode}**に変更しました。",
       "TURN_OFF": "通知モードをOFFにする"
     },
+    "notify_channel": {
+      "NAME": "channel",
+      "DESCRIPTION": "通知を送信するチャンネルを変更します",
+      "DESCRIBE": {
+          "channel": "通知先のチャンネル"
+      },
+      "SUCCESS": "通知を送信するチャンネルが **{channel}** に設定されました。"
+    },
     "notify_test": {
       "NAME": "test",
-      "DESCRIPTION": "通知をテストします。",
+      "DESCRIPTION": "通知をテストします",
       "NOTIFY_IS_WORKING": "通知機能は正常です。",
       "NOTIFY_TURN_OFF": "通知モードがOFFになっています",
       "EMPTY_LIST": "通知対象一覧が空です",
@@ -378,76 +495,7 @@
       "RESPONSE_SPECIFIED": "{emoji} **{name}**がデイリーストアに登場しました！\n残り {duration}",
       "RESPONSE_ALL": "**{username}**のデイリーストア | 残り時間 {duration}",
       "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
-      "VIDEO": "動画を見る"
-    },
-    "notify_channel": {
-      "NAME": "channel",
-      "DESCRIPTION": "通知を送信するチャンネルを変更します。",
-      "DESCRIBE": {
-          "channel": "変更先のチャンネルを選択してください。"
-      },
-      "SUCCESS": "通知を送信するチャンネルが **{channel}** に設定されました。"
-    },
-    "bundle": {
-      "NAME": "bundle",
-      "DESCRIPTION": "セットの進行状況を表示します。",
-      "DESCRIBE": {
-          "bundle": "チェックしたいセットの名前"
-      },
-      "TITLE": "コレクション",
-      "DROPDOWN_CHOICE_TITLE": "セットを選択してください:",
-      "NOT_FOUND_BUNDLE": "セットが1つも見つかりませんでした。"
-    },
-    "feature": {
-      "NAME": "feature",
-      "DESCRIPTION": "セットの進行状況を表示します。",
-      "TITLE": "注目のセット: {bundle}コレクション",
-      "DURATION": "残り時間 {duration}",
-      "DROPDOWN_CHOICE_TITLE": "セットを選択してください:"
-    },
-    "collection": {
-      "NAME": "collection",
-      "DESCRIPTION": "セットしているスキンやスプレーなどを表示します。",
-      "TITLE": "**{name}**のコレクション",
-      "LEVELBORDERS": "レベル {level} ボーダー",
-      "ITEMS": {
-        "PLAYER_CARD": "バナー",
-        "PLAYER_TITLE": "タイトル",
-        "LEVELBORDER": "レベルボーダー",
-        "SPRAY_BEFORE": "スプレー (ラウンド前)",
-        "SPRAY_INGAME": "スプレー (ラウンド中)",
-        "SPRAY_AFTER": "スプレー (ラウンド後)"
-      }
-    },
-      "debug": {
-        "NAME": "デバッグ",
-        "DESCRIPTION": "Botのデバッグ用コマンドです。",
-        "DESCRIBE": {
-            "bug": "修正したいバグ:",
-            "choice": {
-                "skin_price_not_loading": "スキン価格がロードされていません。",
-                "emoji_price_not_loading": "絵文字がロードされていません。",
-                "cache_price_not_loading": "キャッシュがロードされていません。"
-            }
-        },
-        "SUCCESS": "**{bug}**のデバッグが完了しました。"
-    },
-    "crosshair": {
-      "NAME": "crosshair",
-      "DESCRIPTION": "クロスヘアのプロファイルから画像を生成します",
-      "TITLE": "クロスヘア",
-      "RESPONSE": "**{player}**\n{code}",
-      "NO_CODE": "クロスヘアプロファイルがありません。",
-      "ERROR": "クロスヘアの取得に失敗しました。"
-    },
-    "cookies": {
-      "NAME": "cookies",
-      "DESCRIPTION": "ブラウザのCookieを使用してRiotアカウントへログインします",
-      "DESCRIBE": {
-        "cookie": "Cookie"
-      },
-      "SUCCESS": "ログインが完了しました！",
-      "FAILED": "不正なCookieです"
+      "VIDEO": "動画を見る: "
     }
   },
   "errors": {

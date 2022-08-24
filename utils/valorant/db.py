@@ -3,11 +3,16 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
+#from cogs.valorant import VLR_locale
+
 from .auth import Auth
 from .cache import fetch_price
-from .local import LocalErrorResponse
+from .local import verify_localcode, LocalErrorResponse
 from .useful import JSON
 from ..errors import DatabaseError
+from utils.locale_v2 import ValorantTranslator
+
+VLR_locale = ValorantTranslator()
 
 
 def timestamp_utc() -> datetime:
@@ -84,8 +89,11 @@ class DATABASE:
                 username=player_name,
                 region=region,
                 expiry_token=expiry_token,
-                notify_mode=None,
-                DM_Message=True
+                notify_mode="All",
+                DM_Message=True,
+                lang=str(VLR_locale),
+                article=True,
+                ignore_article_category = []
             )
             
             db[str(user_id)] = data
