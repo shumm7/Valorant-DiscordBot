@@ -3,6 +3,7 @@
   "commands": {
     "about":{
       "NAME": "about",
+      "DESCRIPTION": "Shows the detail of Valorant Bot",
       "TITLE": "",
       "PROJECT_URL": "https://github.com/shumm7/Valorant-DiscordBot",
       "FIELD1":{
@@ -22,10 +23,10 @@
       "NAME": "login",
       "DESCRIPTION": "Log in with your Riot acoount",
       "DESCRIBE": {
-        "username": "Input username!",
-        "password": "Input password!"
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
       },
-      "SUCCESS": "Successfully logged in",
+      "SUCCESS": "Successfully logged in **{name}**",
       "FAILED": "Failed to log in, please try again"
     },
     "logout": {
@@ -34,20 +35,241 @@
       "SUCCESS": "Successfully logged out!",
       "FAILED": "Failed to logout, please try again!"
     },
+    "cookies": {
+      "NAME": "cookies",
+      "DESCRIPTION": "Log into your riot account with a browser cookie",
+      "DESCRIBE": {
+        "cookie": "Your cookie"
+      },
+      "SUCCESS": "Successfully logged in",
+      "FAILED": "Invalid cookie"
+    },
     "store": {
       "NAME": "store",
       "DESCRIPTION": "Shows your daily store in your accounts",
       "DESCRIBE": {
-        "username": "Input username! (temporary login)",
-        "password": "Input password! (temporary login)"
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
       },
       "RESPONSE": "Daily store for **{username}** \nResets {duration}",
       "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
       "VIDEO": "Watch Video: "
     },
+    "point": {
+      "NAME": "point",
+      "DESCRIPTION": "View your remaining Valorant and Radiant Points (VP/RP)",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "POINT": "Points"
+    },
+    "rank": {
+      "NAME": "rank",
+      "DESCRIPTION": "View your competitive tier and RR",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "TITLE": "Competitive Tier",
+      "CURRENT_RANK": "Current Rank",
+      "CURRENT_RR": "Rank Rating",
+      "RESPONSE": "{rankrating} RR",
+      "TIER_MATCHMAKING": {
+        "TITLE": "Allowed Range of Ranks",
+        "RESPONSE": "`{rank1} to {rank2}`"
+      },
+      "WINS": {
+        "TITLE": "Wins",
+        "RESPONSE": "{wins} (Number of Games: {games})\nWin%: {win_rate}"
+      },
+      "LEADERBOARD": {
+        "TITLE": "Leaderboard",
+        "RESPONSE": "# {leaderboard}"
+      }
+    },
+    "collection": {
+      "NAME": "collection",
+      "DESCRIPTION": "Shows your collection in your accounts",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "TITLE": "**{name}**'s Collection",
+      "LEVELBORDERS": "LEVEL {level} BORDER",
+      "ITEMS": {
+        "PLAYER_CARD": "Banners",
+        "PLAYER_TITLE": "Titles",
+        "LEVELBORDER": "Level Borders",
+        "SPRAY_BEFORE": "Preround Spray",
+        "SPRAY_INGAME": "Midround Spray",
+        "SPRAY_AFTER": "Postround Spray"
+      }
+    },
+    "career":{
+      "NAME": "career",
+      "DESCRIPTION": "View your match history",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)",
+        "matches": "Number of Matches (1-8)",
+        "queue": "Name of Queue"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
+        "HEADER": "",
+        "FOOTER": "",
+        "NO_MATCH": "No match found"
+      },
+      "TITLE": "{map} {duration}:  {point}",
+      "RESPONSE": "Match History of **{username}**",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "RESULT": {
+        "TITLE": "Stats",
+        "RESPONSE": "{agent_emoji}{agent} ({role_emoji}{role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}\nACS: {acs}/Econ: {eco_rating}/ADR: {adr}",
+        "DEATHMATCH": "{agent_emoji}{agent} **{result}** #{deathmatch}\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}/ACS: {acs}",
+        "WIN": "Win",
+        "LOSE": "Lose",
+        "DRAW": "Draw"
+      },
+      "QUEUE":{
+        "unknown": "Unknown",
+        "unrated": "Unrated",
+        "competitive": "Competitive",
+        "deathmatch": "Deathmatch",
+        "ggteam": "Escalation",
+        "onefa": "Replication",
+        "custom": "Custom",
+        "newmap": "New Map",
+        "snowball": "Snowball Fight",
+        "spikerush": "Spike Rush"
+      },
+      "RANK":{
+        "TITLE": "Rank Rating",
+        "RESPONSE": "**{result}** {earned_rr} RR\n`{match_id: str, match_data: Dict, response: Dict, endpoint, puuid: str, queue: str, bot: ValorantBot)} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
+      },
+      "FAILED": "Argument \"matches\" should be between 1 and {limit}"
+    },
+    "match":{
+      "NAME": "match",
+      "DESCRIPTION": "View your match history",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)",
+        "match_id": "Match ID (Optional)"
+      },
+      "TITLE": "{map} {time}:  {point} ({result})",
+      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
+      "HEADER": "{queue} ({duration})",
+      "FOOTER": "🆔{match_id}",
+      "TEAM_A": "Team A",
+      "TEAM_B": "Team B",
+      "PLAYERS":{
+        "TITLE": "Players",
+        "RESPONSE": "{team} ({result}): {point}",
+        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
+        "DEATHMATCH": "Results"
+      },
+      "STATS": {
+        "TITLE": "{name}",
+        "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
+      },
+      "ECONOMY": {
+        "TITLE": "Economy",
+        "TITLE_TEAM_DIFF": "**Team A - Team B**",
+        "TITLE_TEAM_A": "**Team A**",
+        "TITLE_TEAM_B": "**Team B**",
+        "RESPONSE": "{result_emoji}`R{align_number}: Loadout {align_loadout}｜Bank {align_remain}｜Total {align_total}`",
+        "RESPONSE_TEAM": "`R{align_number} {result}｜Loadout {align_loadout}｜{align_start} - {align_spent} = {align_remain}`"
+      },
+      "QUEUE":{
+        "unknown": "Unknown",
+        "unrated": "Unrated",
+        "competitive": "Competitive",
+        "deathmatch": "Deathmatch",
+        "ggteam": "Escalation",
+        "onefa": "Replication",
+        "custom": "Custom",
+        "newmap": "New Map",
+        "snowball": "Snowball Fight",
+        "spikerush": "Spike Rush"
+      },
+      "RESULT": {
+        "TITLE": "Stats",
+        "RESPONSE": "{agent} ({role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}  KDA: {kda}",
+        "WIN": "WIN ",
+        "LOSE": "LOSE",
+        "DRAW": "DRAW"
+      }
+    },
+    "mission": {
+      "NAME": "mission",
+      "DESCRIPTION": "View your daily/weekly mission progress",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "TITLE": "Mission",
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "NEWPLAYER": "New Player",
+      "NO_MISSION": "No missions available",
+      "DAILY_RESET": "Resets {duration}",
+      "REFILLS": "Refills {duration}"
+    },
+    "nightmarket": {
+      "NAME": "nightmarket",
+      "DESCRIPTION": "Show skin offers on the nightmarket",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "RESPONSE": "NightMarket for **{username}** | Expires {duration}",
+      "NIGMARKET_HAS_END": "**NightMarket** has been ended"
+    },
+    "battlepass": {
+      "NAME": "battlepass",
+      "DESCRIPTION": "View your battlepass current tier",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "RESPONSE": "**Next Reward:** {next}\n**Type:** {type}\n**XP:** {xp}\n**ACT END:** {end}",
+      "TIER": "TIER",
+      "PLAYER_CARD": "Player Card",
+      "SPRAY": "Spray",
+      "BUDDY": "Buddie",
+      "POINT": "Point",
+      "PLAYER_TITLE": "Title",
+      "SKIN": "Skin"
+    },
+    "bundle": {
+      "NAME": "bundle",
+      "DESCRIPTION": "Inspect a specific bundle",
+      "DESCRIBE": {
+        "bundle": "The name of the bundle"
+      },
+      "TITLE": "Collection",
+      "DROPDOWN_CHOICE_TITLE": "Select a bundle:",
+      "NOT_FOUND_BUNDLE": "Bundle not found"
+    },
+    "feature": {
+      "NAME": "feature",
+      "DESCRIPTION": "View featured bundles in store",
+      "TITLE": "Featured Bundle: {bundle} Collection",
+      "DURATION": "Expires {duration}",
+      "DROPDOWN_CHOICE_TITLE": "Select a bundle:",
+      "NOT_FOUND": "Failed to fetch bundle's data."
+    },
     "agent": {
       "NAME": "agent",
       "DESCRIPTION": "Show the details of a specified agent",
+      "DESCRIBE": {
+        "agent": "The name of the agent"
+      },
       "TITLE": "{role_emoji} {role}",
       "RESPONSE": "{description}",
       "HEADER": "{name_en_capital}",
@@ -64,8 +286,11 @@
       "NOT_FOUND": "No agents found that match your keyword entries."
     },
     "weapon": {
-      "NAME": "agent",
+      "NAME": "weapon",
       "DESCRIPTION": "Show the details of a specified weapon",
+      "DESCRIBE": {
+        "weapon": "The name of the weapon"
+      },
       "DETAIL": {
         "TITLE": "{name_en_capital}",
         "DESCRIPTION": "{fire_mode_emoji} **{fire_mode}**｜{wall_emoji} **{wall}**｜{credits_emoji} {credits}",
@@ -131,142 +356,25 @@
       "DROPDOWN_CHOICE_TITLE": "Select the Weapon",
       "NOT_FOUND": "No weapons found that match your keyword entries."
     },
-    "point": {
-      "NAME": "point",
-      "DESCRIPTION": "View your remaining Valorant and Radiant Points (VP/RP)",
-      "POINT": "Points"
-    },
-    "rank": {
-      "NAME": "rank",
-      "DESCRIPTION": "View your competitive tier and MMR",
-      "TITLE": "Competitive Tier",
-      "CURRENT_RANK": "Current Rank",
-      "CURRENT_RR": "Rank Rating",
-      "RESPONSE": "{rankrating} RR",
-      "TIER_MATCHMAKING": {
-        "TITLE": "Allowed Range of Ranks",
-        "RESPONSE": "`{rank1} to {rank2}`"
-      },
-      "WINS": {
-        "TITLE": "Wins",
-        "RESPONSE": "{wins} (Number of Games: {games})\nWin%: {win_rate}"
-      },
-      "LEADERBOARD": {
-        "TITLE": "Leaderboard",
-        "RESPONSE": "# {leaderboard}"
-      }
-    },
-    "mission": {
-      "NAME": "mission",
-      "DESCRIPTION": "View your daily/weekly mission progress",
-      "TITLE": "Mission",
-      "DAILY": "Daily",
-      "WEEKLY": "Weekly",
-      "NEWPLAYER": "New Player",
-      "NO_MISSION": "No missions available",
-      "DAILY_RESET": "Resets {duration}",
-      "REFILLS": "Refills {duration}"
-    },
-    "career":{
-      "NAME": "career",
-      "DESCRIPTION": "View your match history",
+    "crosshair": {
+      "NAME": "crosshair",
+      "DESCRIPTION": "Generate the image from crosshair profile",
       "DESCRIBE": {
-        "username": "Input username! (temporary login)",
-        "password": "Input password! (temporary login)"
+        "code": "Crosshair Profile Code (Optional)",
+        "player": "Pro Player's Name (Optional)"
       },
-      "STATS": {
-        "TITLE": "{name}",
-        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
-        "HEADER": "",
-        "FOOTER": "",
-        "NO_MATCH": "No match found"
-      },
-      "TITLE": "{map} {duration}:  {point}",
-      "RESPONSE": "Match History of **{username}**",
-      "HEADER": "{queue} ({duration})",
-      "FOOTER": "🆔{match_id}",
-      "RESULT": {
-        "TITLE": "Stats",
-        "RESPONSE": "{agent_emoji}{agent} ({role_emoji}{role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}\nACS: {acs}/Econ: {eco_rating}/ADR: {adr}",
-        "DEATHMATCH": "{agent_emoji}{agent} **{result}** #{deathmatch}\n{kills}K/{deaths}D/{assists}A\nKD: {kd}/KDA: {kda}/ACS: {acs}",
-        "WIN": "Win",
-        "LOSE": "Lose",
-        "DRAW": "Draw"
-      },
-      "QUEUE":{
-        "unknown": "Unknown",
-        "unrated": "Unrated",
-        "competitive": "Competitive",
-        "deathmatch": "Deathmatch",
-        "ggteam": "Escalation",
-        "onefa": "Replication",
-        "custom": "Custom",
-        "newmap": "New Map",
-        "snowball": "Snowball Fight",
-        "spikerush": "Spike Rush"
-      },
-      "RANK":{
-        "TITLE": "Rank Rating",
-        "RESPONSE": "**{result}** {earned_rr} RR\n`{match_id: str, match_data: Dict, response: Dict, endpoint, puuid: str, queue: str, bot: ValorantBot)} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
-      },
-      "FAILED": "Argument \"matches\" should be between 1 and {limit}"
-    },
-    "match":{
-      "NAME": "match",
-      "TITLE": "{map} {time}:  {point} ({result})",
-      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
-      "HEADER": "{queue} ({duration})",
-      "FOOTER": "🆔{match_id}",
-      "TEAM_A": "Team A",
-      "TEAM_B": "Team B",
-      "PLAYERS":{
-        "TITLE": "Players",
-        "RESPONSE": "{team} ({result}): {point}",
-        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
-        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
-        "DEATHMATCH": "Results"
-      },
-      "STATS": {
-        "TITLE": "{name}",
-        "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
-      },
-      "ECONOMY": {
-        "TITLE": "Economy",
-        "TITLE_TEAM_DIFF": "**Team A - Team B**",
-        "TITLE_TEAM_A": "**Team A**",
-        "TITLE_TEAM_B": "**Team B**",
-        "RESPONSE": "{result_emoji}`R{align_number}: Loadout {align_loadout}｜Bank {align_remain}｜Total {align_total}`",
-        "RESPONSE_TEAM": "`R{align_number} {result}｜Loadout {align_loadout}｜{align_start} - {align_spent} = {align_remain}`"
-      },
-      "QUEUE":{
-        "unknown": "Unknown",
-        "unrated": "Unrated",
-        "competitive": "Competitive",
-        "deathmatch": "Deathmatch",
-        "ggteam": "Escalation",
-        "onefa": "Replication",
-        "custom": "Custom",
-        "newmap": "New Map",
-        "snowball": "Snowball Fight",
-        "spikerush": "Spike Rush"
-      },
-      "RESULT": {
-        "TITLE": "Stats",
-        "RESPONSE": "{agent} ({role})\n{kills}K/{deaths}D/{assists}A\nKD: {kd}  KDA: {kda}",
-        "WIN": "WIN ",
-        "LOSE": "LOSE",
-        "DRAW": "DRAW"
-      }
-    },
-    "nightmarket": {
-      "NAME": "nightmarket",
-      "DESCRIPTION": "Show skin offers on the nightmarket",
-      "RESPONSE": "NightMarket for **{username}** | Expires {duration}",
-      "NIGMARKET_HAS_END": "**NightMarket** has been ended"
+      "TITLE": "Crosshair",
+      "RESPONSE": "**{player}**\n{code}",
+      "NO_CODE": "No crosshair profile.",
+      "ERROR": "Failed to fetch the crosshair image."
     },
     "party": {
       "NAME": "party",
       "DESCRIPTION": "Get information about the party you belong to",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
       "TITLE": "{name}'s Party",
       "RESPONSE": "Members: **{members}**\nQueue: **{queue}**\nAccessibility:** {access}**",
       "ACCESS": {
@@ -313,6 +421,11 @@
     "custom": {
       "NAME": "custom",
       "DESCRIPTION": "Decide on the map and team members for the custom match.",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)",
+        "random": "Choose randomly"
+      },
       "TITLE": {
         "MAP": "Map",
         "TEAM": "Member"
@@ -324,17 +437,13 @@
       "NO_MEMBER": "None",
       "FAILED": "Failed to fetch the party info."
     },
-    "battlepass": {
-      "NAME": "battlepass",
-      "DESCRIPTION": "View your battlepass current tier",
-      "RESPONSE": "**Next Reward:** {next}\n**Type:** {type}\n**XP:** {xp}\n**ACT END:** {end}",
-      "TIER": "TIER",
-      "PLAYER_CARD": "Player Card",
-      "SPRAY": "Spray",
-      "BUDDY": "Buddie",
-      "POINT": "Point",
-      "PLAYER_TITLE": "Title",
-      "SKIN": "Skin"
+    "debug": {
+      "NAME": "debug",
+      "DESCRIPTION": "The command debug for the bot",
+      "DESCRIBE": {
+        "bug": "The bug you want to fix"
+      },
+      "SUCCESS": "Successfully debugged: **{bug}**"
     },
     "notify_add": {
       "NAME": "add",
@@ -364,6 +473,14 @@
       "SUCCESS": "Successfully changed your notification mode to **{mode}**",
       "TURN_OFF": "Turn off notification mode"
     },
+    "notify_channel": {
+      "NAME": "channel",
+      "DESCRIPTION": "Change notification channel.",
+      "DESCRIBE": {
+        "channel": "Select the channel you want to change."
+      },
+      "SUCCESS": "Notify channel changed to: **{channel}**"
+    },
     "notify_test": {
       "NAME": "test",
       "DESCRIPTION": "Testing notification",
@@ -378,76 +495,7 @@
       "RESPONSE_SPECIFIED": "{emoji} **{name}** is in your daily store!\nRemaining {duration}",
       "RESPONSE_ALL": "Daily store for **{username}** | Remaining {duration}",
       "SKIN": "{emoji} **{name}**\n{vp_emoji} {price}\n{video}",
-      "VIDEO": "Watch Video"
-    },
-    "notify_channel": {
-      "NAME": "channel",
-      "DESCRIPTION": "Change notification channel.",
-      "DESCRIBE": {
-        "channel": "Select the channel you want to change."
-      },
-      "SUCCESS": "Notify channel changed to: **{channel}**"
-    },
-    "bundle": {
-      "NAME": "bundle",
-      "DESCRIPTION": "Inspect a specific bundle",
-      "DESCRIBE": {
-        "bundle": "The name of the bundle you want to inspect!"
-      },
-      "TITLE": "Collection",
-      "DROPDOWN_CHOICE_TITLE": "Select a bundle:",
-      "NOT_FOUND_BUNDLE": "Bundle not found"
-    },
-    "feature": {
-      "NAME": "feature",
-      "DESCRIPTION": "View featured bundles in store",
-      "TITLE": "Featured Bundle: {bundle} Collection",
-      "DURATION": "Expires {duration}",
-      "DROPDOWN_CHOICE_TITLE": "Select a bundle:"
-    },
-    "collection": {
-      "NAME": "collection",
-      "DESCRIPTION": "Shows your collection in your accounts",
-      "TITLE": "**{name}**'s Collection",
-      "LEVELBORDERS": "LEVEL {level} BORDER",
-      "ITEMS": {
-        "PLAYER_CARD": "Banners",
-        "PLAYER_TITLE": "Titles",
-        "LEVELBORDER": "Level Borders",
-        "SPRAY_BEFORE": "Preround Spray",
-        "SPRAY_INGAME": "Midround Spray",
-        "SPRAY_AFTER": "Postround Spray"
-      }
-    },
-    "debug": {
-      "NAME": "debug",
-      "DESCRIPTION": "The command debug for the bot",
-      "DESCRIBE": {
-        "bug": "The bug you want to fix.",
-        "choice": {
-          "skin_price_not_loading": "Skin price not loading",
-          "emoji_price_not_loading": "Emoji not loading",
-          "cache_price_not_loading": "Cache not loading"
-        }
-      },
-      "SUCCESS": "Successfully debugged: **{bug}**"
-    },
-    "crosshair": {
-      "NAME": "crosshair",
-      "DESCRIPTION": "Generate the image from crosshair profile.",
-      "TITLE": "Crosshair",
-      "RESPONSE": "**{player}**\n{code}",
-      "NO_CODE": "No crosshair profile.",
-      "ERROR": "Failed to fetch the crosshair image."
-    },
-    "cookies": {
-      "NAME": "cookies",
-      "DESCRIPTION": "Log into your riot account with a browser cookie",
-      "DESCRIBE": {
-        "cookie": "Your cookie"
-      },
-      "SUCCESS": "Successfully logged in",
-      "FAILED": "Invalid cookie"
+      "VIDEO": "Watch Video: "
     }
   },
   "errors": {
