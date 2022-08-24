@@ -32,7 +32,7 @@ def __LocalRead(filename: str) -> Dict:
 
 
 def ResponseLanguage(command_name: str, local_code: str) -> Dict[str, Any]:
-    local_code = __verify_localcode(local_code)
+    local_code = verify_localcode(local_code)
     local = {}
     if command_name==None or len(command_name)==0:
         with contextlib.suppress(KeyError):
@@ -47,7 +47,7 @@ def ResponseLanguage(command_name: str, local_code: str) -> Dict[str, Any]:
 
 
 def LocalErrorResponse(value: str, local_code: str) -> Dict[str, Any]:
-    local_code = __verify_localcode(local_code)
+    local_code = verify_localcode(local_code)
     local = {}
     with contextlib.suppress(KeyError):
         local_dict = __LocalRead(local_code)
@@ -55,7 +55,7 @@ def LocalErrorResponse(value: str, local_code: str) -> Dict[str, Any]:
     return local
     
 
-def __verify_localcode(local_code: str) -> str:
+def verify_localcode(local_code: str) -> str:
     if local_code in ['en-US', 'en-GB']:
         return 'en-US'
     return local_code

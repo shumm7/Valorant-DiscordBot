@@ -24,6 +24,7 @@ from utils.valorant.useful import JSON
 from utils.locale_v2 import ValorantTranslator
 
 VLR_locale = ValorantTranslator()
+clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
 
 if TYPE_CHECKING:
     from bot import ValorantBot
@@ -36,7 +37,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
         self.bot: ValorantBot = bot
         self.endpoint: API_ENDPOINT = None
         self.db: DATABASE = None
-        #self.response = ResponseLanguage(None, JSON.read("config", dir="config").get("default-language", str(VLR_locale)))
         self.reload_cache.start()
     
     def cog_unload(self) -> None:
@@ -54,7 +54,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 cache['bot_version'] = bot_version
                 cache['valorant_version'] = valorant_version
                 self.db.insert_cache(cache)
-                print('Updated cache')
+                print(f"[{datetime.datetime.now()}] *** Updated cache ***")
     
     @tasks.loop(minutes=30)
     async def reload_cache(self) -> None:
@@ -87,8 +87,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         endpoint.activate(data)
         return endpoint
     
-    @app_commands.command(description='あなたのRiotアカウントにログインします')
-    @app_commands.describe(username='ユーザーネーム', password='パスワード')
+    @app_commands.command(description=clocal.get("login", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("login", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("login", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def login(self, interaction: Interaction, username: str, password: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -105,7 +105,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
             login = await self.db.login(user_id, authenticate, interaction.locale)
             
             if login['auth']:
-                embed = Embed(f"{response.get('SUCCESS')} **{login['player']}!**")
+                embed = Embed(response.get('SUCCESS', '').format(name=login['player']))
                 return await interaction.followup.send(embed=embed, ephemeral=True)
             
             raise ValorantBotError(f"{response.get('FAILED')}")
@@ -117,7 +117,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
             modal = View.TwoFA_UI(interaction, self.db, cookies, message, label, response)
             await interaction.response.send_modal(modal)
     
-    @app_commands.command(description='あなたのアカウントからログアウトします')
+    @app_commands.command(description=clocal.get("logout", {}).get("DESCRIPTION", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def logout(self, interaction: Interaction) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -133,8 +133,31 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 return await interaction.followup.send(embed=embed, ephemeral=True)
             raise ValorantBotError(response.get('FAILED'))
     
-    @app_commands.command(description="あなたのアカウントのストアを表示します")
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    # credit https://github.com/giorgi-o
+    # https://github.com/giorgi-o/SkinPeek/wiki/How-to-get-your-Riot-cookies
+    @app_commands.command(description=clocal.get("cookie", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(cookie=clocal.get("cookie", {}).get("DESCRIBE", {}).get("cookie", ""))
+    async def cookies(self, interaction: Interaction, cookie: str) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer(ephemeral=True)
+        
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        login = await self.db.cookie_login(interaction.user.id, cookie, interaction.locale)
+        
+        if login['auth']:
+            embed = Embed(f"{response.get('SUCCESS')} **{login['player']}!**")
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        view = ui.View()
+        view.add_item(ui.Button(label="Tutorial", emoji="🔗", url="https://youtu.be/cFMNHEHEp2A"))
+        await interaction.followup.send(f"{response.get('FAILURE')}", view=view, ephemeral=True)
+
+    @app_commands.command(description=clocal.get("store", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("store", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("store", {}).get("DESCRIBE", {}).get("password", ""))
     # @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def store(self, interaction: Interaction, username: str = None, password: str = None) -> None:
@@ -160,8 +183,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embeds = GetEmbed.store(endpoint.player, data, response, self.bot)
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
-    @app_commands.command(description='あなたのアカウントのVP/RPを表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.command(description=clocal.get("point", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("point", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("point", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def point(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -182,9 +205,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
 
-
-    @app_commands.command(description='あなたのアカウントのランク/RRを表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.command(description=clocal.get("rank", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("rank", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("rank", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def rank(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -205,9 +227,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
     
-
-    @app_commands.command(description='あなたのアカウントのコレクションを表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.command(description=clocal.get("collection", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("collection", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("collection", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def collection(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -227,9 +248,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view = View.BaseCollection(interaction, data, endpoint, response)
         await view.start()
     
-
-    @app_commands.command(description='過去の対戦結果を表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', matches='読み込むマッチ数 (1～8)', queue='読み込むマッチキュー')
+    @app_commands.command(description=clocal.get("career", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("career", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("career", {}).get("DESCRIBE", {}).get("password", ""), matches=clocal.get("collection", {}).get("DESCRIBE", {}).get("matches", ""), queue=clocal.get("collection", {}).get("DESCRIBE", {}).get("queue", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def career(self, interaction: Interaction, matches: int = 1, queue: Literal['All', 'Competitive', 'Unrated', 'Deathmatch', 'Escalation', 'Replication', 'Spike Rush', 'Custom', 'Snowball Fight', 'New Map']="Competitive", username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -280,8 +300,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
 
-    @app_commands.command(description='対戦結果の詳細を表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', match_id='マッチのID (任意)')
+    @app_commands.command(description=clocal.get("match", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("match", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("match", {}).get("DESCRIBE", {}).get("password", ""), match_id=clocal.get("match", {}).get("DESCRIBE", {}).get("match_id", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def match(self, interaction: Interaction, match_id: str = "", username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -315,8 +335,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
             else:
                 await interaction.followup.send(embeds=embeds, files=graph, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
-    @app_commands.command(description='あなたのアカウントのデイリー/ウィークリーミッションの進捗を表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.command(description=clocal.get("mission", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("mission", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("mission", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def mission(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -337,8 +357,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
     
-    @app_commands.command(description='あなたのアカウントのナイトマーケットを表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.command(description=clocal.get("nightmarket", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("nightmarket", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("nightmarket", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def nightmarket(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -364,8 +384,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
-    @app_commands.command(description='あなたのアカウントのバトルパスのティアを表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.command(description=clocal.get("battlepass", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("battlepass", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("battlepass", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def battlepass(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -391,8 +411,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
     
     # inspired by https://github.com/giorgi-o
-    @app_commands.command(description="スキンセットの詳細を表示します")
-    @app_commands.describe(bundle="スキンセットの名前")
+    @app_commands.command(description=clocal.get("bundle", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(bundle=clocal.get("bundle", {}).get("DESCRIBE", {}).get("bundle", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def bundle(self, interaction: Interaction, bundle: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -405,7 +425,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         cache = self.db.read_cache()
         
         # default language language
-        default_language = 'en-US'
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
         
         # find bundle
         find_bundle_en_US = [cache['bundles'][i] for i in cache['bundles'] if bundle.lower() in cache['bundles'][i]['names'][default_language].lower()]
@@ -417,7 +437,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await view.start()
     
     # inspired by https://github.com/giorgi-o
-    @app_commands.command(description="注目のスキンセットを表示します")
+    @app_commands.command(description=clocal.get("feature", {}).get("DESCRIPTION", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def feature(self, interaction: Interaction) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -436,8 +456,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view = View.BaseBundle(interaction, bundle_entries, response)
         await view.start_furture()
     
-    @app_commands.command(description="エージェントの詳細を表示します")
-    @app_commands.describe(agent="エージェントの名前")
+    @app_commands.command(description=clocal.get("agent", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(agent=clocal.get("agent", {}).get("DESCRIBE", {}).get("agent", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def agent(self, interaction: Interaction, agent: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -450,7 +470,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         cache = self.db.read_cache()
         
         # default language language
-        default_language = 'en-US'
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
         
         
         # find agents
@@ -480,8 +500,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view = View.BaseAgent(interaction, find_agent, response)
         await view.start()
 
-    @app_commands.command(description="武器の詳細を表示します")
-    @app_commands.describe(weapon="武器の名前")
+    @app_commands.command(description=clocal.get("weapon", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(weapon=clocal.get("weapon", {}).get("DESCRIBE", {}).get("weapon", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def weapon(self, interaction: Interaction, weapon: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -494,7 +514,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         cache = self.db.read_cache()
         
         # default language language
-        default_language = 'en-US'
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
         
         
         # find weapon
@@ -524,10 +544,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view = View.BaseWeapon(interaction, find_weapon, response)
         await view.start()
 
- 
-
-    @app_commands.command(description="クロスヘアのプロファイルから画像を生成します")
-    @app_commands.describe(code="クロスヘアプロファイル (任意)", player="選手名 (任意)")
+    @app_commands.command(description=clocal.get("crosshair", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(code=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("code", ""), player=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("player", ""))
     async def crosshair(self, interaction: Interaction, code: str = "", player: str = "") -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
@@ -565,33 +583,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # embed
         embed = Embed(title=response.get("TITLE"), description=response.get("RESPONSE").format(player=player, code=code)).set_image(url=f"attachment://crosshair.png")
         await interaction.followup.send(embed=embed, file=file)
-
-    # credit https://github.com/giorgi-o
-    # https://github.com/giorgi-o/SkinPeek/wiki/How-to-get-your-Riot-cookies
-    @app_commands.command(description="Cookieを用いてログインを行います")
-    @app_commands.describe(cookie="Cookie")
-    async def cookies(self, interaction: Interaction, cookie: str) -> None:
-        """ Cookieを使用してあなたのアカウントにログインします """
-        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
-
-        await interaction.response.defer(ephemeral=True)
-        
-        # language
-        response = ResponseLanguage(interaction.command.name, interaction.locale)
-        
-        login = await self.db.cookie_login(interaction.user.id, cookie, interaction.locale)
-        
-        if login['auth']:
-            embed = Embed(f"{response.get('SUCCESS')} **{login['player']}!**")
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
-        
-        view = ui.View()
-        view.add_item(ui.Button(label="Tutorial", emoji="🔗", url="https://youtu.be/cFMNHEHEp2A"))
-        await interaction.followup.send(f"{response.get('FAILURE')}", view=view, ephemeral=True)
     
-    @app_commands.command(description='あなたの所属するパーティの情報を表示します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)')
+    @app_commands.command(description=clocal.get("party", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("party", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("party", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def party(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -625,8 +619,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
             embeds.insert(0, main_embed)
             await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
-    @app_commands.command(description='カスタムマッチのマップとチームをランダムで決定します')
-    @app_commands.describe(username='ユーザーネーム (任意)', password='パスワード (任意)', random='チームメンバーをランダムに割り振る')
+    @app_commands.command(description=clocal.get("custom", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("custom", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("custom", {}).get("DESCRIBE", {}).get("password", ""), random=clocal.get("custom", {}).get("DESCRIBE", {}).get("random", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def custom(self, interaction: Interaction, random: bool = False, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
@@ -668,28 +662,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embeds = GetEmbed.custom(endpoint.puuid, party_details, endpoint, response)
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
-            
-
-    # ---------- ROAD MAP ---------- #
     
-    # @app_commands.command()
-    # async def contract(self, interaction: Interaction) -> None:
-    #     # change agent contract
-    
-    # @app_commands.command()
-    # async def party(self, interaction: Interaction) -> None:
-    #     # curren party
-    #     # pick agent
-    #     # current map
-    
-    # @app_commands.command()
-    # async def career(self, interaction: Interaction) -> None:
-    #     # match history
-    
-    # ---------- DEBUGs ---------- #
-    
-    @app_commands.command(description='このBotのデバッグをします')
-    @app_commands.describe(bug="直したいバグ")
+    @app_commands.command(description=clocal.get("debug", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(bug=clocal.get("debug", {}).get("DESCRIBE", {}).get("bug", ""))
     @app_commands.guild_only()
     @owner_only()
     async def debug(self, interaction: Interaction, bug: Literal['Skin price not loading', 'Emoji not loading', 'Cache not loading', 'Too much old emojis']) -> None:

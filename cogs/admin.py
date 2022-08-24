@@ -9,7 +9,9 @@ from discord import app_commands, Interaction, ui
 from discord.ext import commands
 from utils.valorant.local import ResponseLanguage
 from bot import bot_option
+from utils.valorant.useful import JSON
 
+clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
 
 if TYPE_CHECKING:
     from bot import ValorantBot
@@ -52,7 +54,7 @@ class Admin(commands.Cog):
             await self.bot.tree.sync()
             await ctx.reply(f"Un-Synced global !")
     
-    @app_commands.command(description='Botの基本情報を表示します')
+    @app_commands.command(description=clocal.get("about", {}).get("DESCRIPTION", ""))
     async def about(self, interaction: Interaction) -> None:
         """ Shows basic information about the bot. """
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")

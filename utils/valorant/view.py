@@ -111,7 +111,7 @@ class NotifyViewList(ui.View):
         self.interaction: Interaction = interaction
         self.response = response
         self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
-        self.default_language = 'en-US'
+        self.default_language = JSON.read("config", dir="config").get("default-language", "en-US")
         super().__init__(timeout=600)
     
     async def on_timeout(self) -> None:
@@ -426,7 +426,9 @@ class BaseBundle(ui.View):
         """ Starts the featured bundle view """
         
         BUNDLES = []
-        FBundle = self.entries['FeaturedBundle']['Bundles']
+        FBundle = self.entries.get('FeaturedBundle', {}).get('Bundles')
+        if FBundle == None:
+            raise ValorantBotError(self.response.get("NOT_FOUND"))
         
         for fbd in FBundle:
             get_bundle = GetItems.get_bundle(fbd["DataAssetID"])
