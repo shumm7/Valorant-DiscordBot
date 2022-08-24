@@ -135,8 +135,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
     
     # credit https://github.com/giorgi-o
     # https://github.com/giorgi-o/SkinPeek/wiki/How-to-get-your-Riot-cookies
-    @app_commands.command(description=clocal.get("cookie", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(cookie=clocal.get("cookie", {}).get("DESCRIBE", {}).get("cookie", ""))
+    @app_commands.command(description=clocal.get("cookies", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(cookie=clocal.get("cookies", {}).get("DESCRIBE", {}).get("cookie", ""))
     async def cookies(self, interaction: Interaction, cookie: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
@@ -249,7 +249,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await view.start()
     
     @app_commands.command(description=clocal.get("career", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(username=clocal.get("career", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("career", {}).get("DESCRIBE", {}).get("password", ""), matches=clocal.get("collection", {}).get("DESCRIBE", {}).get("matches", ""), queue=clocal.get("collection", {}).get("DESCRIBE", {}).get("queue", ""))
+    @app_commands.describe(matches=clocal.get("career", {}).get("DESCRIBE", {}).get("matches", ""), queue=clocal.get("career", {}).get("DESCRIBE", {}).get("queue", ""), username=clocal.get("career", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("career", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def career(self, interaction: Interaction, matches: int = 1, queue: Literal['All', 'Competitive', 'Unrated', 'Deathmatch', 'Escalation', 'Replication', 'Spike Rush', 'Custom', 'Snowball Fight', 'New Map']="Competitive", username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
