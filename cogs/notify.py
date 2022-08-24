@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import traceback
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, timezone
+import dateutil.parser
 from difflib import get_close_matches
 from typing import Literal, Tuple, Any, TYPE_CHECKING
 
@@ -38,11 +39,13 @@ class Notify(commands.Cog):
     
     def cog_unload(self) -> None:
         self.notifys.cancel()
+        self.reload_article.cancel()
     
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         self.db = DATABASE()
         self.endpoint = API_ENDPOINT()
+        self.reload_article.start()
     
     async def get_endpoint_and_data(self, user_id: int) -> Tuple[API_ENDPOINT, Any]:
         data = await self.db.is_data(user_id, 'en-US')
@@ -117,11 +120,76 @@ class Notify(commands.Cog):
                 traceback.print_exception(type(e), e, e.__traceback__)
                 continue
     
+    async def send_article(self, notify_list: list, language: str) -> None:
+        user_data = JSON.read('users')
+        cache = JSON.read("article")
+
+        for user_id in notify_list:
+            #try:
+            # language
+            default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+            guild_locale = user_data[user_id].get("lang", default_language)
+            response = ResponseLanguage('notify_article', guild_locale)
+
+            # author
+            author = self.bot.get_user(int(user_id)) or await self.bot.fetch_user(int(user_id))
+            channel_send = author if user_data[user_id]['DM_Message'] else self.bot.get_channel(int(user_data[user_id]['notify_channel']))
+
+            # embed
+            article = cache[language][0]
+
+            embed = discord.Embed(
+                title = article.get("title"),
+                url = article.get("external_link") or article.get("url"),
+                timestamp = dateutil.parser.parse(article["date"])
+            )
+            embed.set_image(url = article.get("banner_url"))
+            embed.set_author(name = response.get("CATEGORY", {}).get(article.get("category", "")))
+
+            await channel_send.send(embed=embed)
+        """
+        except (KeyError, FileNotFoundError):
+            print(f'{user_id} is not in notify list')
+        except Forbidden:
+            print("Bot don't have perm send notification message.")
+            continue
+        except HTTPException:
+            print("Bot Can't send notification message.")
+            continue
+        except Exception as e:
+            print(e)
+            traceback.print_exception(type(e), e, e.__traceback__)
+            continue
+        """
+
+
     @tasks.loop(time=time(hour=0, minute=0, second=10))  # utc 00:00:15
     async def notifys(self) -> None:
         __verify_time = datetime.utcnow()
         if __verify_time.hour == 0:
             await self.send_notify()
+    
+    @tasks.loop(hours=1)
+    async def reload_article(self) -> None:
+        cache = JSON.read("article")
+        languages_list = ["en-us", "en-gb", "de-de", "es-es", "es-mx", "fr-fr", "it-it", "ja-jp", "ko-kr", "pt-br", "ru-ru", "tr-tr", "vi-vn"]
+
+        for article_lang in languages_list:
+            data = API_ENDPOINT().fetch_article(country_code = article_lang)
+            if data!=None and type(data[0])==type({}):
+                if data[0].get("url") != cache.get(article_lang, [{}])[0].get("url"): # Is Update
+                    cache[article_lang] = data
+                    JSON.save("article", cache)
+                    
+                    userdata = JSON.read("users")
+                    notify_list = []
+
+                    for user_id,values in userdata.items():
+                        if values.get("lang", "").lower() == article_lang and values.get("article", False) and (not data[0].get("category") in values.get("ignore_article_category", [])):
+                            notify_list.append(user_id)
+                    
+                    await self.send_article(notify_list, article_lang)
+
     
     @notifys.before_loop
     async def before_daily_send(self) -> None:
@@ -335,7 +403,62 @@ class Notify(commands.Cog):
             raise ValorantBotError(f"{response_test.get('FAILED_SEND_NOTIFY')} - {e}")
         else:
             await interaction.followup.send(embed=Embed(response_test.get('NOTIFY_IS_WORKING'), color=0x77dd77), ephemeral=True)
+
+    @notify.command(name='article', description=clocal.get("notify_article", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(notify=clocal.get("notify_article", {}).get("DESCRIBE", {}).get("notify", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def notify_article(self, interaction: Interaction, notify: bool) -> None:
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer(ephemeral=True)
+        
+        # language
+        response = ResponseLanguage('notify_article', interaction.locale)
+        
+        await self.db.is_data(interaction.user.id, interaction.locale)  # check if user is in db
+        
+        self.db.change_article_notify_mode(interaction.user.id, notify)  # change notify mode
+        
+        if notify:
+            embed = discord.Embed(description=response.get('ENABLED'), color=0x77dd77)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        else:
+            embed = discord.Embed(description=response.get('DISABLED'), color=0x77dd77)
+            await interaction.followup.send(embed=embed, ephemeral=True)
     
+    @notify.command(name='category', description=clocal.get("notify_category", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(category=clocal.get("notify_category", {}).get("DESCRIBE", {}).get("category", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def notify_category(self, interaction: Interaction, category: Literal["Game Updates", "Development", "Esports", "Announcments"]) -> None:
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer(ephemeral=True)
+        
+        # language
+        response = ResponseLanguage('notify_category', interaction.locale)
+        
+        await self.db.is_data(interaction.user.id, interaction.locale)  # check if user is in db
+        
+        category_list = {
+            "Game Updates": "game_updates",
+            "Development": "dev",
+            "Esports": "esports",
+            "Announcments": "announcments"
+        }
+        list = self.db.change_ignore_article_category(interaction.user.id, category_list[category])  # change notify mode
+        
+        category_text = ""
+        for cat in list:
+            if len(category_text)!=0:
+                category_text += "｜"
+            category_text += response.get("CATEGORY", {}).get(cat, "None")
+        if len(list)==0:
+            category_text = response.get("NO_CATEGORY")
+
+        embed = discord.Embed(description=response.get('SUCCESS').format(category=category_text), color=0x77dd77)
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+
     # @notify.command(name='manage', description='Manage notification list.')
     # @owner_only()
     # async def notify_manage(self, interaction: Interaction) -> None:

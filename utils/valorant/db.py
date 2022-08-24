@@ -178,6 +178,30 @@ class DATABASE:
         
         self.insert_user(db)
     
+    def change_article_notify_mode(self, user_id: int, mode: bool) -> None:
+        """ Change article notify mode """
+        
+        db = self.read_db()
+        
+        db[str(user_id)]['article'] = mode
+        
+        self.insert_user(db)
+    
+    def change_ignore_article_category(self, user_id: int, category: str) -> None:
+        """ Change article notify mode """
+        
+        db = self.read_db()
+        
+        c = db[str(user_id)].get('ignore_article_category', [])
+        if category in c:
+            c.remove(category)
+        else:
+            c.append(category)
+        db[str(user_id)]['ignore_article_category'] = c
+        
+        self.insert_user(db)
+        return c
+    
     def change_notify_channel(self, user_id: int, channel: str, channel_id: int = None) -> None:
         """ Change notify mode """
         

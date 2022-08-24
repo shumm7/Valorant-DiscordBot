@@ -331,6 +331,36 @@ class API_ENDPOINT:
         return None
 
 
+    def fetch_article(self, country_code: str = "en-us") -> Mapping[str, Any]:
+        country_code = country_code.lower()
+        available_locale = ["en-us", "en-gb", "de-de", "es-es", "es-mx", "fr-fr", "it-it", "ja-jp", "ko-kr", "pt-br", "ru-ru", "tr-tr", "vi-vn"]
+        if not country_code in available_locale:
+            return None
+
+        endpoint = f'https://api.henrikdev.xyz/valorant/v1/website/{country_code}'
+
+        r = requests.get(f'{endpoint}')#, headers=self.headers)
+        #print(f"[{datetime.datetime.now()}] Fetching {endpoint}.")
+
+        try:
+            data = json.loads(r.text)
+        except:  # as no data is set, an exception will be raised later in the method
+            pass
+
+        if "status" not in data:
+            return data
+
+        if data["status"] == 400:
+            response = LocalErrorResponse('AUTH', self.locale_code)
+            print(f"[{datetime.datetime.now()}] Fetching failed (400): {endpoint_url}{endpoint}.")
+            raise ResponseError(response.get('COOKIES_EXPIRED'))
+        elif data["status"] == 404:
+            print(f"[{datetime.datetime.now()}] Fetching failed (404): {endpoint_url}{endpoint}.")
+            raise ResponseError(response)
+        
+        return data.get("data")
+
+
     def fetch_mission(self) -> Mapping[str, Any]:
         """
         Get player daily/weekly missions
