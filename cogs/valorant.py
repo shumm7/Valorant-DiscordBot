@@ -526,16 +526,38 @@ class ValorantCog(commands.Cog, name='Valorant'):
             if weapon.lower() == "all":
                 data = item_weapon
                 data["uuid"] = item_key
+                data["type"] = "weapon"
                 find_weapon_en_US.append(data)
             else:
                 if weapon.lower() in cache['weapons'][item_key]['names'][default_language].lower():
                     data = item_weapon
                     data["uuid"] = item_key
+                    data["type"] = "weapon"
                     find_weapon_en_US.append(data)
                 
                 if weapon.lower() in cache['weapons'][item_key]['names'][str(VLR_locale)].lower():
                     data = item_weapon
                     data["uuid"] = item_key
+                    data["type"] = "weapon"
+                    find_weapon_locale.append(data)
+        
+        for item_key, item_gear in cache['gears'].items():
+            if weapon.lower() == "all":
+                data = item_gear
+                data["uuid"] = item_key
+                data["type"] = "gear"
+                find_weapon_en_US.append(data)
+            else:
+                if weapon.lower() in cache['gears'][item_key]['names'][default_language].lower():
+                    data = item_gear
+                    data["uuid"] = item_key
+                    data["type"] = "gear"
+                    find_weapon_en_US.append(data)
+                
+                if weapon.lower() in cache['gears'][item_key]['names'][str(VLR_locale)].lower():
+                    data = item_gear
+                    data["uuid"] = item_key
+                    data["type"] = "gear"
                     find_weapon_locale.append(data)
             
         find_weapon = find_weapon_en_US if len(find_weapon_en_US) > 0 else find_weapon_locale

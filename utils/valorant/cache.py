@@ -9,6 +9,8 @@ from typing import Dict, Optional
 # Standard
 import requests
 
+from utils.valorant import endpoint
+
 # Local
 from .useful import JSON
 
@@ -168,6 +170,31 @@ def fetch_weapon() -> None:
         data['weapons'] = json
         JSON.save('cache', data)
 
+def fetch_gear() -> None:
+    """ Fetch the skin tier from valorant-api.com """
+    data = JSON.read('cache')
+    
+    url = 'https://valorant-api.com/v1/gear?language=all'
+    print(f'[{datetime.datetime.now()}] Fetching gears: {url}')
+    
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        json = {}
+        for gear in resp.json()['data']:
+            json[gear['uuid']] = {
+                'uuid': gear['uuid'],
+                'names': gear['displayName'],
+                'description': gear['description'],
+                'icon': gear['displayIcon'],
+                'cost': gear.get("shopData", {}).get("cost", 0),
+                'category': {
+                    'name': gear.get("shopData", {}).get("category"),
+                    'text': gear.get("shopData", {}).get("categoryText")
+                },
+                'shop_icon': gear.get("shopData", {}).get("newImage")
+            }
+        data['gears'] = json
+        JSON.save('cache', data)
 
 def fetch_skin() -> None:
     """ Fetch the skin from valorant-api.com """
@@ -689,6 +716,7 @@ def get_cache(bot_version: str) -> None:
     
     fetch_agents()
     fetch_weapon()
+    fetch_gear()
     fetch_skin()
     fetch_tier()
     pre_fetch_price()

@@ -515,7 +515,7 @@ class BaseAgent(ui.View):
         for agent in self.entries:
             if agent["uuid"] == selected_agent:
                 color, subcolor = agent['color'][0], agent['color'][1]
-
+                
                 embed = discord.Embed(
                     title=self.agent_format(response.get("TITLE", ""), agent),
                     description=self.agent_format(response.get("RESPONSE", ""), agent),
@@ -523,7 +523,7 @@ class BaseAgent(ui.View):
                 )
                 embed.set_author(name=self.agent_format(response.get("HEADER", ""), agent))
                 embed.set_thumbnail(url=self.agent_format(response.get("THUMBNAIL", ""), agent))
-                embed.set_image(url=self.agent_format("IMAGE", agent))
+                embed.set_image(url=self.agent_format(response.get("IMAGE", ""), agent))
 
                 embeds.append(embed)
                 
@@ -562,7 +562,7 @@ class BaseAgent(ui.View):
         """ Starts the agent view """
         
         if len(self.entries) == 1:
-            self.build_embeds(self.entries[0]["uuid"])
+            self.build_embeds(self.entries[0]["uuid"], self.response)
             embeds = self.embeds
             return await self.interaction.followup.send(embeds=embeds, view=self)
         elif len(self.entries) != 0:
@@ -595,7 +595,6 @@ class BaseWeapon(ui.View):
     def weapon_format(self, format: str, weapon: Dict) -> str:
         default_language = 'en-US'
 
-        
         alt_fire_mode = weapon.get("stats", {}).get("alt_fire_mode")
         alt = None
         if alt_fire_mode!=None:
@@ -664,6 +663,31 @@ class BaseWeapon(ui.View):
             credits = weapon.get("cost", 0)
         )
 
+    def gear_format(self, format: str, gear: Dict) -> str:
+        default_language = 'en-US'
+
+        return format.format(
+            # name
+            name = gear['names'][self.language],
+            name_en = gear["names"][default_language],
+            name_en_capital = gear["names"][default_language].upper(),
+
+            # description
+            description = gear["description"][self.language],
+
+            # image
+            icon = gear['icon'],
+            shop_icon = gear.get("shop_icon", ""),
+            fire_mode_emoji = GetEmoji.get("FireMode", self.bot),
+            wall_emoji = GetEmoji.get("WallPenetration", self.bot),
+            credits_emoji = GetEmoji.get("Credits", self.bot),
+
+            # shop
+            category = gear.get("category", {}).get("text", {}).get(self.language, ""),
+            category_en = gear.get("category", {}).get("text", {}).get(default_language, ""),
+            credits = gear.get("cost", 0)
+        )
+
     def build_embeds(self, selected_weapon: str) -> None:
         """ Builds the weapon embeds """
         
@@ -671,94 +695,109 @@ class BaseWeapon(ui.View):
         lang = self.response
 
         for weapon in self.entries:
-            if weapon["uuid"] == selected_weapon:
-                if weapon["uuid"]=="2f59173c-4bed-b6c3-2191-dea9b58be9c7": #Melee
-                    # Main
-                    embed = discord.Embed(title=self.weapon_format(lang.get("DETAIL", {}).get("TITLE", ""), weapon))
+            if weapon["type"]=="weapon":
+                if weapon["uuid"] == selected_weapon:
+                    if weapon["uuid"]=="2f59173c-4bed-b6c3-2191-dea9b58be9c7": #Melee
+                        # Main
+                        embed = discord.Embed(title=self.weapon_format(lang.get("DETAIL", {}).get("TITLE", ""), weapon))
 
-                    embed.set_author(name=self.weapon_format(lang.get("DETAIL", {}).get("HEADER", ""), weapon))
-                    embed.set_footer(text=self.weapon_format(lang.get("DETAIL", {}).get("FOOTER", ""), weapon))
-                    embed.set_thumbnail(url=self.weapon_format(lang.get("DETAIL", {}).get("THUMBNAIL", ""), weapon))
-                    embed.set_image(url=self.weapon_format(lang.get("DETAIL", {}).get("IMAGE", ""), weapon))
-                    embeds.append(embed)
+                        embed.set_author(name=self.weapon_format(lang.get("DETAIL", {}).get("HEADER", ""), weapon))
+                        embed.set_footer(text=self.weapon_format(lang.get("DETAIL", {}).get("FOOTER", ""), weapon))
+                        embed.set_thumbnail(url=self.weapon_format(lang.get("DETAIL", {}).get("THUMBNAIL", ""), weapon))
+                        embed.set_image(url=self.weapon_format(lang.get("DETAIL", {}).get("IMAGE", ""), weapon))
+                        embeds.append(embed)
 
-                    # Damage
-                    embed = discord.Embed(
-                        title=self.weapon_format(lang.get("DAMAGE", {}).get("TITLE", ""), weapon),
-                        description=self.weapon_format(lang.get("DAMAGE", {}).get("MELEE", ""), weapon)
-                    )
-                    embeds.append(embed)
+                        # Damage
+                        embed = discord.Embed(
+                            title=self.weapon_format(lang.get("DAMAGE", {}).get("TITLE", ""), weapon),
+                            description=self.weapon_format(lang.get("DAMAGE", {}).get("MELEE", ""), weapon)
+                        )
+                        embeds.append(embed)
 
-                else:
-                    # Main
-                    embed = discord.Embed(
-                        title=self.weapon_format(lang.get("DETAIL", {}).get("TITLE", ""), weapon),
-                        description=self.weapon_format(lang.get("DETAIL", {}).get("DESCRIPTION", ""), weapon)
-                    )
-                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME1", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE1", ""), weapon))
-                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME2", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE2", ""), weapon))
-                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME3", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE3", ""), weapon))
-                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME4", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE4", ""), weapon))
-                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME5", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE5", ""), weapon))
-                    embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME6", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE6", ""), weapon))
+                    else:
+                        # Main
+                        embed = discord.Embed(
+                            title=self.weapon_format(lang.get("DETAIL", {}).get("TITLE", ""), weapon),
+                            description=self.weapon_format(lang.get("DETAIL", {}).get("DESCRIPTION", ""), weapon)
+                        )
+                        embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME1", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE1", ""), weapon))
+                        embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME2", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE2", ""), weapon))
+                        embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME3", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE3", ""), weapon))
+                        embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME4", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE4", ""), weapon))
+                        embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME5", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE5", ""), weapon))
+                        embed.add_field(name=self.weapon_format(lang.get("DETAIL", {}).get("NAME6", ""), weapon), value=self.weapon_format(lang.get("DETAIL", {}).get("VALUE6", ""), weapon))
 
-                    embed.set_author(name=self.weapon_format(lang.get("DETAIL", {}).get("HEADER", ""), weapon))
-                    embed.set_footer(text=self.weapon_format(lang.get("DETAIL", {}).get("FOOTER", ""), weapon))
-                    embed.set_thumbnail(url=self.weapon_format(lang.get("DETAIL", {}).get("THUMBNAIL", ""), weapon))
-                    embed.set_image(url=self.weapon_format(lang.get("DETAIL", {}).get("IMAGE", ""), weapon))
+                        embed.set_author(name=self.weapon_format(lang.get("DETAIL", {}).get("HEADER", ""), weapon))
+                        embed.set_footer(text=self.weapon_format(lang.get("DETAIL", {}).get("FOOTER", ""), weapon))
+                        embed.set_thumbnail(url=self.weapon_format(lang.get("DETAIL", {}).get("THUMBNAIL", ""), weapon))
+                        embed.set_image(url=self.weapon_format(lang.get("DETAIL", {}).get("IMAGE", ""), weapon))
 
-                    embeds.append(embed)
+                        embeds.append(embed)
 
-                    # Damage
-                    embed = discord.Embed(
-                        title=self.weapon_format(lang.get("DAMAGE", {}).get("TITLE", ""), weapon),
-                        description=self.weapon_format(lang.get("DAMAGE", {}).get("DESCRIPTION", ""), weapon)
-                    )
-                    count = 0
-                    for damage in weapon.get("stats", {}).get("damage", []):
-                        def damage_format(format: str)->str:
-                            shotgun = ""
-                            if weapon.get("stats", {}).get("shotgun_pellet", 1)>1 and count==len(damage):
-                                shotgun = self.weapon_format(lang.get("DAMAGE", {}).get("SHOTGUN", ""), weapon)
+                        # Damage
+                        embed = discord.Embed(
+                            title=self.weapon_format(lang.get("DAMAGE", {}).get("TITLE", ""), weapon),
+                            description=self.weapon_format(lang.get("DAMAGE", {}).get("DESCRIPTION", ""), weapon)
+                        )
+                        count = 0
+                        for damage in weapon.get("stats", {}).get("damage", []):
+                            def damage_format(format: str)->str:
+                                shotgun = ""
+                                if weapon.get("stats", {}).get("shotgun_pellet", 1)>1 and count==len(damage):
+                                    shotgun = self.weapon_format(lang.get("DAMAGE", {}).get("SHOTGUN", ""), weapon)
 
-                            return format.format(
-                                range_start=damage.get("range", [0, 0])[0],
-                                range_end=damage.get("range", [0, 0])[1],
+                                return format.format(
+                                    range_start=damage.get("range", [0, 0])[0],
+                                    range_end=damage.get("range", [0, 0])[1],
 
-                                head=damage.get("damage", [0, 0, 0])[0],
-                                body=damage.get("damage", [0, 0, 0])[1],
-                                leg=damage.get("damage", [0, 0, 0])[2],
-                                shotgun = shotgun
+                                    head=damage.get("damage", [0, 0, 0])[0],
+                                    body=damage.get("damage", [0, 0, 0])[1],
+                                    leg=damage.get("damage", [0, 0, 0])[2],
+                                    shotgun = shotgun
+                                )
+
+                            embed.add_field(name=damage_format(lang.get("DAMAGE", {}).get("RANGE", "")), value=damage_format(lang.get("DAMAGE", {}).get("RESPONSE", "")), inline=False)
+                            count += 1
+
+                        embeds.append(embed)
+
+                        # Alt
+                        alt_fire_mode = weapon.get("stats", {}).get("alt_fire_mode")
+                        if alt_fire_mode!=None:
+                            embed = discord.Embed(
+                                title=self.weapon_format(lang.get("ALT_FIRE", {}).get("TITLE", ""), weapon),
+                                description=self.weapon_format(lang.get("ALT_FIRE", {}).get("DESCRIPTION", ""), weapon)
                             )
 
-                        embed.add_field(name=damage_format(lang.get("DAMAGE", {}).get("RANGE", "")), value=damage_format(lang.get("DAMAGE", {}).get("RESPONSE", "")), inline=False)
-                        count += 1
+                            if weapon.get("stats", {}).get("ads_burst", 1)==1:
+                                embed.add_field(name=self.weapon_format(lang.get("ALT_FIRE", {}).get("ALT_TITLE", ""), weapon), value=self.weapon_format(lang.get("ALT_FIRE", {}).get(f"ALT_DESCRIPTION_{alt_fire_mode}", ""), weapon), inline=False)
+                            else:
+                                embed.add_field(name=self.weapon_format(lang.get("ALT_FIRE", {}).get("ALT_TITLE", ""), weapon), value=self.weapon_format(lang.get("ALT_FIRE", {}).get(f"ALT_DESCRIPTION_{alt_fire_mode}_BURST", ""), weapon), inline=False)
+                            embeds.append(embed)
+                        
+                        # Feature
+                        feature = weapon.get("stats", {}).get("feature")
+                        if feature!=None:
+                            embed = discord.Embed(
+                                title=self.weapon_format(lang.get("FEATURE", {}).get("TITLE", ""), weapon),
+                                description=self.weapon_format(lang.get("FEATURE", {}).get("DESCRIPTION", ""), weapon)
+                            )
+                            embed.add_field(name=self.weapon_format(lang.get("FEATURE", {}).get("FEATURE_TITLE", ""), weapon), value=self.weapon_format(lang.get("FEATURE", {}).get(f"FEATURE_DESCRIPTION_{feature}", ""), weapon), inline=False)
+                            embeds.append(embed)
 
-                    embeds.append(embed)
+            elif weapon["type"] == "gear":
+                embed = discord.Embed(
+                    title=self.gear_format(lang.get("GEAR", {}).get("TITLE", ""), weapon),
+                    description=self.gear_format(lang.get("GEAR", {}).get("DESCRIPTION", ""), weapon)
+                )
 
-                    # Alt
-                    alt_fire_mode = weapon.get("stats", {}).get("alt_fire_mode")
-                    if alt_fire_mode!=None:
-                        embed = discord.Embed(
-                            title=self.weapon_format(lang.get("ALT_FIRE", {}).get("TITLE", ""), weapon),
-                            description=self.weapon_format(lang.get("ALT_FIRE", {}).get("DESCRIPTION", ""), weapon)
-                        )
+                embed.set_author(name=self.gear_format(lang.get("GEAR", {}).get("HEADER", ""), weapon))
+                embed.set_footer(text=self.gear_format(lang.get("GEAR", {}).get("FOOTER", ""), weapon))
+                embed.set_thumbnail(url=self.gear_format(lang.get("GEAR", {}).get("THUMBNAIL", ""), weapon))
+                embed.set_image(url=self.gear_format(lang.get("GEAR", {}).get("IMAGE", ""), weapon))
 
-                        if weapon.get("stats", {}).get("ads_burst", 1)==1:
-                            embed.add_field(name=self.weapon_format(lang.get("ALT_FIRE", {}).get("ALT_TITLE", ""), weapon), value=self.weapon_format(lang.get("ALT_FIRE", {}).get(f"ALT_DESCRIPTION_{alt_fire_mode}", ""), weapon), inline=False)
-                        else:
-                            embed.add_field(name=self.weapon_format(lang.get("ALT_FIRE", {}).get("ALT_TITLE", ""), weapon), value=self.weapon_format(lang.get("ALT_FIRE", {}).get(f"ALT_DESCRIPTION_{alt_fire_mode}_BURST", ""), weapon), inline=False)
-                        embeds.append(embed)
-                    
-                    # Feature
-                    feature = weapon.get("stats", {}).get("feature")
-                    if feature!=None:
-                        embed = discord.Embed(
-                            title=self.weapon_format(lang.get("FEATURE", {}).get("TITLE", ""), weapon),
-                            description=self.weapon_format(lang.get("FEATURE", {}).get("DESCRIPTION", ""), weapon)
-                        )
-                        embed.add_field(name=self.weapon_format(lang.get("FEATURE", {}).get("FEATURE_TITLE", ""), weapon), value=self.weapon_format(lang.get("FEATURE", {}).get(f"FEATURE_DESCRIPTION_{feature}", ""), weapon), inline=False)
-                        embeds.append(embed)
+                embeds.append(embed)
+
 
 
         self.embeds = embeds
