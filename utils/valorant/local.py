@@ -58,4 +58,6 @@ def LocalErrorResponse(value: str, local_code: str) -> Dict[str, Any]:
 def verify_localcode(local_code: str) -> str:
     if local_code in ['en-US', 'en-GB']:
         return 'en-US'
+    elif local_code in ['ja-JP']:
+        return 'ja'
     return local_code

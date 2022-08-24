@@ -287,9 +287,9 @@
     },
     "weapon": {
       "NAME": "weapon",
-      "DESCRIPTION": "Show the details of a specified weapon",
+      "DESCRIPTION": "Show the details of a specified weapon or armor",
       "DESCRIBE": {
-        "weapon": "The name of the weapon"
+        "weapon": "The name of the weapon or armor"
       },
       "DETAIL": {
         "TITLE": "{name_en_capital}",
@@ -310,6 +310,14 @@
         "FOOTER": "", 
         "THUMBNAIL": "{shop_icon}",
         "IMAGE": "{icon}"
+      },
+      "GEAR": {
+        "TITLE": "{name_en_capital}",
+        "DESCRIPTION": "{credits_emoji} {credits}\n\n{description}",
+        "HEADER": "{category}",
+        "FOOTER": "", 
+        "THUMBNAIL": "{shop_icon}",
+        "IMAGE": ""
       },
       "DAMAGE": {
         "TITLE": "Damage",
@@ -490,6 +498,36 @@
       "BOT_MISSING_PERM": "**I don't have permission to send notifications in this channel!** \nplease check permission the bot can `View channel`, `Send messages`, `Embed links` and `Use external emoji`. in this channel, then try `/notify test`.",
       "FAILED_SEND_NOTIFY": "Failed to send notification, please try again",
       "PLEASE_ALLOW_DM_MESSAGE": "Please allow DM message in your privacy settings"
+    },
+    "notify_article": {
+      "NAME": "article",
+      "DESCRIPTION": "Set a notification when new articles were posted",
+      "DESCRIBE": {
+        "notify": "Notify Mode"
+      },
+      "ENABLED": "You have **ENABLED** an article notification.",
+      "DISABLED": "You have **DISABLED** an article notification.",
+      "CATEGORY": {
+        "game_updates": "GAME UPDATES",
+        "dev": "DEV",
+        "esports": "ESPORTS",
+        "announcments": "ANNOUNCEMENTS"
+      }
+    },
+    "notify_category": {
+      "NAME": "category",
+      "DESCRIPTION": "Set the category of articles to ignore",
+      "DESCRIBE": {
+        "category": "Category"
+      },
+      "SUCCESS": "Articles in the following categories will not be notified.\n**{category}**",
+      "CATEGORY": {
+        "game_updates": "GAME UPDATES",
+        "dev": "DEV",
+        "esports": "ESPORTS",
+        "announcments": "ANNOUNCEMENTS"
+      },
+      "NO_CATEGORY": "None"
     },
     "notify_send": {
       "RESPONSE_SPECIFIED": "{emoji} **{name}** is in your daily store!\nRemaining {duration}",

@@ -287,9 +287,9 @@
     },
     "weapon": {
       "NAME": "weapon",
-      "DESCRIPTION": "武器の詳細を表示します",
+      "DESCRIPTION": "武器やアーマーの詳細を表示します",
       "DESCRIBE": {
-        "weapon": "武器の名前"
+        "weapon": "武器やアーマーの名前"
       },
       "DETAIL": {
         "TITLE": "{name} // {name_en_capital}",
@@ -310,6 +310,14 @@
         "FOOTER": "", 
         "THUMBNAIL": "{shop_icon}",
         "IMAGE": "{icon}"
+      },
+      "GEAR": {
+        "TITLE": "{name} // {name_en_capital}",
+        "DESCRIPTION": "{credits_emoji} {credits}\n\n{description}",
+        "HEADER": "{category}",
+        "FOOTER": "", 
+        "THUMBNAIL": "{shop_icon}",
+        "IMAGE": ""
       },
       "DAMAGE": {
         "TITLE": "ダメージ",
@@ -490,6 +498,36 @@
       "BOT_MISSING_PERM": "**Botにこのチャンネルに通知を送信する権限がありません。**\nBotの「チャンネルを見る」、「メッセージを送信」、「埋め込みリンク」、「外部の絵文字を使用する」をONにしてから、もう一度 `/notify test` をお試しください。",
       "FAILED_SEND_NOTIFY": "通知の送信に失敗しました。再度お試しください。",
       "PLEASE_ALLOW_DM_MESSAGE": "プライバシー設定から、DMの送信を許可してください。"
+    },
+    "notify_article": {
+      "NAME": "article",
+      "DESCRIPTION": "ウェブサイトの更新の通知を行います",
+      "DESCRIBE": {
+        "notify": "通知モード"
+      },
+      "ENABLED": "ウェブサイトの通知モードを**オン**に変更しました。",
+      "DISABLED": "ウェブサイトの通知モードを**オフ**に変更しました。",
+      "CATEGORY": {
+        "game_updates": "パッチノート",
+        "dev": "デベロップメント",
+        "esports": "ESPORTS",
+        "announcments": "お知らせ"
+      }
+    },
+    "notify_category": {
+      "NAME": "category",
+      "DESCRIPTION": "各記事のカテゴリごとに通知する投稿を指定します。",
+      "DESCRIBE": {
+        "category": "カテゴリ"
+      },
+      "SUCCESS": "以下のカテゴリの記事は通知されません。\n**{category}**",
+      "CATEGORY": {
+        "game_updates": "パッチノート",
+        "dev": "デベロップメント",
+        "esports": "ESPORTS",
+        "announcments": "お知らせ"
+      },
+      "NO_CATEGORY": "なし"
     },
     "notify_send": {
       "RESPONSE_SPECIFIED": "{emoji} **{name}**がデイリーストアに登場しました！\n残り {duration}",
