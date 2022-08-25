@@ -445,6 +445,17 @@
       "NO_MEMBER": "なし",
       "FAILED": "パーティ情報の取得に失敗しました。"
     },
+    "article": {
+      "NAME": "article",
+      "DESCRIPTION": "ウェブサイトの記事を表示します",
+      "CATEGORY": {
+        "game_updates": "パッチノート",
+        "dev": "デベロップメント",
+        "esports": "ESPORTS",
+        "announcments": "お知らせ"
+      },
+      "NOT_FOUND": "記事が見つかりませんでした。"
+    },
     "debug": {
       "NAME": "debug",
       "DESCRIPTION": "Botのデバッグを行います",
