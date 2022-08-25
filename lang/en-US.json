@@ -445,6 +445,17 @@
       "NO_MEMBER": "None",
       "FAILED": "Failed to fetch the party info."
     },
+    "article": {
+      "NAME": "article",
+      "DESCRIPTION": "Shows website articles",
+      "CATEGORY": {
+        "game_updates": "GAME UPDATES",
+        "dev": "DEV",
+        "esports": "ESPORTS",
+        "announcments": "ANNOUNCEMENTS"
+      },
+      "NOT_FOUND": "Not found."
+    },
     "debug": {
       "NAME": "debug",
       "DESCRIPTION": "The command debug for the bot",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime
+import dateutil.parser
 import math, os
 from difflib import SequenceMatcher
 from typing import Literal, TYPE_CHECKING  # noqa: F401
@@ -685,6 +686,37 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
+    @app_commands.command(description=clocal.get("article", {}).get("DESCRIPTION", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def article(self, interaction: Interaction) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer()
+        
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+
+        # endpoint
+        endpoint = API_ENDPOINT()
+
+        languages_list = ["en-us", "en-gb", "de-de", "es-es", "es-mx", "fr-fr", "it-it", "ja-jp", "ko-kr", "pt-br", "ru-ru", "tr-tr", "vi-vn"]
+        locale = str(VLR_locale).lower() if str(VLR_locale).lower() in languages_list else "en-us"
+        data = endpoint.fetch_article(locale)
+
+        if len(data) >= 0:
+            article = data[0]
+            embed = Embed(
+                title = article.get("title"),
+                url = article.get("external_link") or article.get("url"),
+                timestamp = dateutil.parser.parse(article["date"])
+            )
+            embed.set_image(url = article.get("banner_url"))
+            embed.set_author(name = response.get("CATEGORY", {}).get(article.get("category", "")))
+            await interaction.followup.send(embed=embed)
+        else:
+            raise ValorantBotError(response.get("NOT_FOUND"))
+        
+
     @app_commands.command(description=clocal.get("debug", {}).get("DESCRIPTION", ""))
     @app_commands.describe(bug=clocal.get("debug", {}).get("DESCRIBE", {}).get("bug", ""))
     @app_commands.guild_only()

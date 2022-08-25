@@ -146,7 +146,7 @@ class Notify(commands.Cog):
             embed.set_image(url = article.get("banner_url"))
             embed.set_author(name = response.get("CATEGORY", {}).get(article.get("category", "")))
 
-            await channel_send.send(embed=embed)
+            await channel_send.send(embed=embed, content=f'||{author.mention}||')
         """
         except (KeyError, FileNotFoundError):
             print(f'{user_id} is not in notify list')
@@ -360,7 +360,7 @@ class Notify(commands.Cog):
         duration = offer["SkinsPanelLayout"]["SingleItemOffersRemainingDurationInSeconds"]
         user_skin_list = [skin for skin in notify_data if skin['id'] == str(interaction.user.id)]
         
-        if len(user_skin_list) == 0:
+        if len(user_skin_list) == 0 and data['notify_mode'] == 'Specified':
             empty_list = response_test.get('EMPTY_LIST')
             raise ValorantBotError(empty_list)
         
