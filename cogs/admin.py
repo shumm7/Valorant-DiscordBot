@@ -1,4 +1,5 @@
 from __future__ import annotations
+from re import M
 
 from typing import Literal, TYPE_CHECKING
 
@@ -7,6 +8,7 @@ import discord
 import datetime
 from discord import app_commands, Interaction, ui
 from discord.ext import commands
+from utils.errors import ValorantBotError
 from utils.valorant.local import ResponseLanguage
 from bot import bot_option
 from utils.valorant.useful import JSON
@@ -89,13 +91,17 @@ class Admin(commands.Cog):
     async def help(self, interaction: Interaction, command: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
+        command = command.replace("_", " ")
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         embed = discord.Embed(color=0xffffff)
 
-        if command == None:
+        if command == None: # WIP
             embed.title = response.get("TITLE")
+            embed.description = response.get("RESPONSE")
         else:
-            command_response = ResponseLanguage(command, interaction.locale)
+            command_response = ResponseLanguage(command.replace(" ", "_"), interaction.locale)
+            if command_response.get("NAME")==None:
+                raise ValorantBotError(response.get("NOT_FOUND"))
             
             description = command_response.get("DESCRIPTION")
 
@@ -117,8 +123,10 @@ class Admin(commands.Cog):
             # Embed
             embed.title=command
             embed.description = f"{description}\n{command_line}"
-            embed.add_field(name=response.get("ARGUMENTS"), value=arguments)
-            
+            if len(arguments)>0:
+                embed.add_field(name=response.get("ARGUMENTS"), value=arguments)
+        
+
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
