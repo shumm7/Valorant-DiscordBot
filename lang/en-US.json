@@ -22,7 +22,12 @@
     "help":{
       "NAME": "help",
       "DESCRIPTION": "Show the detail of commands",
-      "ARGUMENTS": "Arguments"
+      "DESCRIBE": {
+        "command": "Command"
+      },
+      "ARGUMENTS": "Arguments",
+      "NOT_FOUND": "No command specified.",
+      "TITLE": "Commands"
     },
     "login": {
       "NAME": "login",

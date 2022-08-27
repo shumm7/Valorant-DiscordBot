@@ -33,7 +33,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.2.2',
+    "version": 'fork-1.2.3',
     "presence": "/login | VALORANT"
 }
 

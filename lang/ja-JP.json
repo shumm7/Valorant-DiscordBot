@@ -22,7 +22,12 @@
     "help":{
       "NAME": "help",
       "DESCRIPTION": "コマンドの説明を表示します",
-      "ARGUMENTS": "引数"
+      "DESCRIBE": {
+        "command": "コマンド"
+      },
+      "ARGUMENTS": "引数",
+      "NOT_FOUND": "コマンドが見つかりませんでした。",
+      "TITLE": "コマンド一覧"
     },
     "login": {
       "NAME": "login",
