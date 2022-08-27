@@ -704,6 +704,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         locale = str(VLR_locale).lower() if str(VLR_locale).lower() in languages_list else "en-us"
         data = endpoint.fetch_article(locale)
 
+        if data==None:
+            raise ValorantBotError(response.get("NOT_FOUND"))
+
         # articles
         if article <= 1: article = 1
         elif article >= 10: article = 10
