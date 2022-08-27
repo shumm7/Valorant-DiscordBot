@@ -687,8 +687,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
     @app_commands.command(description=clocal.get("article", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(category=clocal.get("article", {}).get("DESCRIBE", {}).get("category", ""), article=clocal.get("article", {}).get("DESCRIBE", {}).get("article", ""))
     # @dynamic_cooldown(cooldown_5s)
-    async def article(self, interaction: Interaction) -> None:
+    async def article(self, interaction: Interaction, category: Literal["Game Updates", "Development", "Esports", "Announcments"]=None, article: int=1) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         await interaction.response.defer()
@@ -703,16 +704,39 @@ class ValorantCog(commands.Cog, name='Valorant'):
         locale = str(VLR_locale).lower() if str(VLR_locale).lower() in languages_list else "en-us"
         data = endpoint.fetch_article(locale)
 
-        if len(data) >= 0:
-            article = data[0]
-            embed = Embed(
-                title = article.get("title"),
-                url = article.get("external_link") or article.get("url"),
-                timestamp = dateutil.parser.parse(article["date"])
-            )
-            embed.set_image(url = article.get("banner_url"))
-            embed.set_author(name = response.get("CATEGORY", {}).get(article.get("category", "")))
-            await interaction.followup.send(embed=embed)
+        # articles
+        if article <= 1: article = 1
+        elif article >= 10: article = 10
+
+        category_list = {
+            "Game Updates": "game_updates",
+            "Development": "dev",
+            "Esports": "esports",
+            "Announcments": "announcments"
+        }
+
+        article_data = []
+        if category==None:
+            if len(data)<article:
+                article = len(data)
+            article_data = data[:article]
+        else:
+            category = category_list[category]
+
+            i = 0
+            while len(article_data)<article:
+                if len(data)==i:
+                    break
+
+                if data[i].get("category")==category:
+                    article_data.append(data[i])
+                i += 1
+
+        if len(article_data) >= 0:
+            embeds = []
+            for d in article_data:
+                embeds.append(GetEmbed.article_embed(d, response))
+            await interaction.followup.send(embeds=embeds)
         else:
             raise ValorantBotError(response.get("NOT_FOUND"))
         

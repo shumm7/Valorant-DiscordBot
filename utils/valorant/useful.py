@@ -372,8 +372,10 @@ class GetFormat:
     def get_trackergg_link(match_id: str) -> str:
         return f"https://tracker.gg/valorant/match/{match_id}"
 
-    def offer_format(data: Dict) -> Dict:
+    def offer_format(data: Dict, locale: str = None) -> Dict:
         """Get skins list"""
+        if locale==None:
+            locale = str(VLR_locale)
 
         offer_list = data["SkinsPanelLayout"]["SingleItemOffers"]
         duration = data["SkinsPanelLayout"]["SingleItemOffersRemainingDurationInSeconds"]
@@ -383,7 +385,7 @@ class GetFormat:
 
         for uuid in offer_list:
             skin = GetItems.get_skin(uuid)
-            name, icon = skin['names'][str(VLR_locale)], skin['icon']
+            name, icon = skin['names'][locale], skin['icon']
             video = skin.get('video')
             levels = skin.get('levels', {})
 

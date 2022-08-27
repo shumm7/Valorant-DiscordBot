@@ -1,4 +1,9 @@
 {
     "default-language": "en-US",
-    "command-description-language": "ja"
+    "command-description-language": "ja-JP",
+    "owner-id": 247342034522734592,
+    "emoji-server-id": 1007498215978979328,
+    "article": {
+        "description": 180
+    }
 }
