@@ -10,6 +10,7 @@ from discord.ext import commands
 from utils.valorant.local import ResponseLanguage
 from bot import bot_option
 from utils.valorant.useful import JSON
+import utils.config as Config
 
 clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
 
@@ -62,7 +63,8 @@ class Admin(commands.Cog):
         
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
-        owner_url = f"https://discord.com/users/{os.getenv('OWNER_ID')}"
+        config = Config.LoadConfig().get("owner-id")
+        owner_url = f"https://discord.com/users/{config}"
         titles = [response.get("FIELD1")["TITLE"], response.get("FIELD2")["TITLE"], response.get("FIELD3")["TITLE"]]
         
         embed = discord.Embed(color=0xffffff)
@@ -82,6 +84,42 @@ class Admin(commands.Cog):
         view.add_item(ui.Button(label="SUPPORT", url="https://discord.gg/FJSXPqQZgz"))
         
         await interaction.response.send_message(embed=embed, view=view)
+    
+    @app_commands.command(description=clocal.get("help", {}).get("DESCRIPTION", ""))
+    async def help(self, interaction: Interaction, command: str) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        embed = discord.Embed(color=0xffffff)
+
+        if command == None:
+            embed.title = response.get("TITLE")
+        else:
+            command_response = ResponseLanguage(command, interaction.locale)
+            
+            description = command_response.get("DESCRIPTION")
+
+            describe = command_response.get("DESCRIBE")
+            command_line, arguments = "", ""
+            if describe!=None:
+                for argument, lines in describe.items():
+
+                    if len(command_line)>0:
+                        command_line += " "
+                    command_line += f"<{argument}>"
+
+                    if len(arguments)>0:
+                        arguments += "\n"
+                    arguments += f"`{argument}`: {lines}"
+            
+            command_line = f"`/{command} {command_line}`"
+
+            # Embed
+            embed.title=command
+            embed.description = f"{description}\n{command_line}"
+            embed.add_field(name=response.get("ARGUMENTS"), value=arguments)
+            
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: ValorantBot) -> None:

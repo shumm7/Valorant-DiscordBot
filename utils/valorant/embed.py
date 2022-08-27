@@ -6,7 +6,10 @@ import io
 import json
 import math, random
 import contextlib
+import requests
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, timezone
+from urllib import request
 import dateutil.parser
 from tracemalloc import start
 from typing import Any, Dict, List, TYPE_CHECKING, Union
@@ -21,6 +24,7 @@ import matplotlib.pyplot as plt
 
 from .endpoint import API_ENDPOINT
 
+import utils.config as Config
 from .useful import (calculate_level_xp, format_relative, GetEmoji, GetFormat, GetItems, iso_to_time, format_timedelta, JSON)
 from ..locale_v2 import ValorantTranslator
 
@@ -72,6 +76,33 @@ class GetEmbed:
         embed.set_thumbnail(url=icon)
         return embed
     
+    def article_embed(article: Dict, response: Dict) -> discord.Embed:
+        body = ""
+        lines = Config.LoadConfig().get("article", {}).get("description", 150)
+
+        try:
+            html = requests.get(article.get("url")).content
+            soup = BeautifulSoup(html, 'html.parser')
+
+            elems = soup.find_all(["p", "li"])
+            for elem in elems:
+                body += elem.get_text().replace("\n", "") + " "
+                if len(body)>lines:
+                    body = body[:lines] + " ..."
+                    break
+        except:
+            pass
+
+        embed = discord.Embed(
+            title = article.get("title"),
+            description=body,
+            url = article.get("external_link") or article.get("url"),
+            timestamp = dateutil.parser.parse(article["date"])
+        )
+        embed.set_image(url = article.get("banner_url"))
+        embed.set_author(name = response.get("CATEGORY", {}).get(article.get("category", "")))
+        return embed
+
     @classmethod
     def store(cls, player: str, offer: Dict, response: Dict, bot: ValorantBot) -> List[discord.Embed]:
         """Embed Store"""
@@ -1660,11 +1691,11 @@ class GetEmbed:
         ...
     
     @classmethod
-    def notify_all_send(cls, player: str, offer: Dict, response: Dict, bot: ValorantBot) -> discord.Embed:
+    def notify_all_send(cls, player: str, offer: Dict, response: Dict, locale: str, bot: ValorantBot) -> discord.Embed:
         
         description_format = response.get('RESPONSE_ALL')
         
-        data = GetFormat.offer_format(offer)
+        data = GetFormat.offer_format(offer, locale)
         
         duration = data.pop('duration')
         

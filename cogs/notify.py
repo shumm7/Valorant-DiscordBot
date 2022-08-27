@@ -76,10 +76,9 @@ class Notify(commands.Cog):
                 # get guild language
                 default_language = JSON.read("config", dir="config").get("default-language", "en-US")
                 guild_locale = user_data.get(user_id, {}).get("lang", default_language)
-                get_guild_locale = [guild.preferred_locale for guild in self.bot.guilds if channel_send in guild.channels]
-                if len(get_guild_locale) > 0:
-                    guild_locale = guild_locale[0]
-                
+                #get_guild_locale = [guild.preferred_locale for guild in self.bot.guilds if channel_send in guild.channels]
+                #if len(get_guild_locale) > 0:
+                #    guild_locale = guild_locale[0]
                 response = ResponseLanguage('notify_send', guild_locale)
                 
                 user_skin_list = [skin for skin in notify_data if skin['id'] == str(user_id)]
@@ -104,7 +103,7 @@ class Notify(commands.Cog):
                             view.message = await channel_send.send(content=f'||{author.mention}||', embed=embed, view=view)
                 
                 elif data['notify_mode'] == 'All':
-                    embeds = GetEmbed.notify_all_send(endpoint.player, offer, response, self.bot)
+                    embeds = GetEmbed.notify_all_send(endpoint.player, offer, response, guild_locale, self.bot)
                     await channel_send.send(content=f'||{author.mention}||', embeds=embeds)
             
             except (KeyError, FileNotFoundError):
@@ -123,44 +122,35 @@ class Notify(commands.Cog):
     async def send_article(self, notify_list: list, language: str) -> None:
         user_data = JSON.read('users')
         cache = JSON.read("article")
-
         for user_id in notify_list:
-            #try:
-            # language
-            default_language = JSON.read("config", dir="config").get("default-language", "en-US")
-            guild_locale = user_data[user_id].get("lang", default_language)
-            response = ResponseLanguage('notify_article', guild_locale)
+            try:
+                # language
+                default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+                guild_locale = user_data[user_id].get("lang", default_language)
+                response = ResponseLanguage('notify_article', guild_locale)
 
-            # author
-            author = self.bot.get_user(int(user_id)) or await self.bot.fetch_user(int(user_id))
-            channel_send = author if user_data[user_id]['DM_Message'] else self.bot.get_channel(int(user_data[user_id]['notify_channel']))
+                # author
+                author = self.bot.get_user(int(user_id)) or await self.bot.fetch_user(int(user_id))
+                channel_send = author if user_data[user_id]['DM_Message'] else self.bot.get_channel(int(user_data[user_id]['notify_channel']))
 
-            # embed
-            article = cache[language][0]
+                # embed
+                article = cache[language][0]
+                embed = GetEmbed.article_embed(article, response)
 
-            embed = discord.Embed(
-                title = article.get("title"),
-                url = article.get("external_link") or article.get("url"),
-                timestamp = dateutil.parser.parse(article["date"])
-            )
-            embed.set_image(url = article.get("banner_url"))
-            embed.set_author(name = response.get("CATEGORY", {}).get(article.get("category", "")))
+                await channel_send.send(embed=embed, content=f'||{author.mention}||')
 
-            await channel_send.send(embed=embed, content=f'||{author.mention}||')
-        """
-        except (KeyError, FileNotFoundError):
-            print(f'{user_id} is not in notify list')
-        except Forbidden:
-            print("Bot don't have perm send notification message.")
-            continue
-        except HTTPException:
-            print("Bot Can't send notification message.")
-            continue
-        except Exception as e:
-            print(e)
-            traceback.print_exception(type(e), e, e.__traceback__)
-            continue
-        """
+            except (KeyError, FileNotFoundError):
+                print(f'{user_id} is not in notify list')
+            except Forbidden:
+                print("Bot don't have perm send notification message.")
+                continue
+            except HTTPException:
+                print("Bot Can't send notification message.")
+                continue
+            except Exception as e:
+                print(e)
+                traceback.print_exception(type(e), e, e.__traceback__)
+                continue
 
 
     @tasks.loop(time=time(hour=0, minute=0, second=10))  # utc 00:00:15
@@ -169,7 +159,7 @@ class Notify(commands.Cog):
         if __verify_time.hour == 0:
             await self.send_notify()
     
-    @tasks.loop(hours=1)
+    @tasks.loop(minutes=20)
     async def reload_article(self) -> None:
         cache = JSON.read("article")
         languages_list = ["en-us", "en-gb", "de-de", "es-es", "es-mx", "fr-fr", "it-it", "ja-jp", "ko-kr", "pt-br", "ru-ru", "tr-tr", "vi-vn"]
@@ -203,7 +193,7 @@ class Notify(commands.Cog):
     @app_commands.guild_only()
     # @dynamic_cooldown(cooldown_5s)
     async def notify_add(self, interaction: Interaction, skin: str) -> None:
-        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.") 
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
         
         await interaction.response.defer()
         
@@ -274,6 +264,7 @@ class Notify(commands.Cog):
     @notify.command(name='list', description=clocal.get("notify_list", {}).get("DESCRIPTION", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_list(self, interaction: Interaction) -> None:
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
         
         await interaction.response.defer(ephemeral=True)
         
@@ -287,7 +278,7 @@ class Notify(commands.Cog):
     @app_commands.describe(mode=clocal.get("notify_mode", {}).get("DESCRIBE", {}).get("mode", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_mode(self, interaction: Interaction, mode: Literal['Specified Skin', 'All Skin', 'Off']) -> None:
-        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")        
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.")       
 
 
         await interaction.response.defer(ephemeral=True)
@@ -319,7 +310,7 @@ class Notify(commands.Cog):
     @app_commands.describe(channel=clocal.get("notify_channel", {}).get("DESCRIBE", {}).get("channel", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_channel(self, interaction: Interaction, channel: Literal['DM Message', 'Channel']) -> None:
-        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
 
         await interaction.response.defer(ephemeral=True)
         
@@ -340,7 +331,7 @@ class Notify(commands.Cog):
     @notify.command(name='test', description=clocal.get("notify_test", {}).get("DESCRIPTION", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_test(self, interaction: Interaction) -> None:
-        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
         
         await interaction.response.defer(ephemeral=True)
         
@@ -408,7 +399,7 @@ class Notify(commands.Cog):
     @app_commands.describe(notify=clocal.get("notify_article", {}).get("DESCRIBE", {}).get("notify", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_article(self, interaction: Interaction, notify: bool) -> None:
-        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
 
         await interaction.response.defer(ephemeral=True)
         
@@ -430,7 +421,7 @@ class Notify(commands.Cog):
     @app_commands.describe(category=clocal.get("notify_category", {}).get("DESCRIBE", {}).get("category", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def notify_category(self, interaction: Interaction, category: Literal["Game Updates", "Development", "Esports", "Announcments"]) -> None:
-        print(f"[{datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
 
         await interaction.response.defer(ephemeral=True)
         

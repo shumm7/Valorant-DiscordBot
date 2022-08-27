@@ -9,6 +9,7 @@ import discord
 import requests
 import glob
 
+import utils.config as Config
 from typing import Any, Dict, List
 from .local import LocalErrorResponse
 from ..errors import ValorantBotError
@@ -123,7 +124,7 @@ def json_read(filename: str, force: bool = True) -> Dict:
 async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, force: bool = False, reset: bool = False) -> str:
     response = LocalErrorResponse('SETUP_EMOJI', local_code)
     cache = json_read('cache')
-    main_server_id = os.getenv("SERVER_ID")
+    main_server_id = Config.LoadConfig().get("emoji-server-id")
     
     reg_emojis = []
 

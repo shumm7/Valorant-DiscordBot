@@ -12,8 +12,10 @@ from discord.ext import commands
 from discord.ext.commands import ExtensionFailed, ExtensionNotFound, NoEntryPointError
 from dotenv import load_dotenv
 
+from utils.valorant.useful import JSON
 from utils import locale_v2
 from utils.valorant.cache import get_cache
+import utils.config as Config
 
 load_dotenv()
 
@@ -31,7 +33,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.2.1',
+    "version": 'fork-1.2.2',
     "presence": "/login | VALORANT"
 }
 
@@ -71,7 +73,7 @@ class ValorantBot(commands.Bot):
             self.session = aiohttp.ClientSession()
         
         try:
-            self.owner_id = int(os.getenv('OWNER_ID'))
+            self.owner_id = Config.LoadConfig().get("owner-id")
         except ValueError:
             self.bot_app_info = await self.application_info()
             self.owner_id = self.bot_app_info.owner.id
@@ -98,6 +100,17 @@ class ValorantBot(commands.Bot):
             open('data/cache.json')
         except FileNotFoundError:
             get_cache(bot_option["version"])
+        
+        try:
+            open('config/config.json')
+        except FileNotFoundError:
+            config = {
+                "default-language": "en-US",
+                "command-description-language": "en-US",
+                "owner-id": -1,
+                "emoji-server-id": -1
+            }
+            Config.SaveConfig(config)
     
     async def close(self) -> None:
         await self.session.close()
