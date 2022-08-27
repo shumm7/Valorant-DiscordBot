@@ -14,6 +14,7 @@ Locale = {
     'en-US': 'en-US',  # american_english
     'en-GB': 'en-US',  # british_english
     'ja': 'ja-JP',  # japanese
+    'ja-JP': 'ja-JP'
 }
 
 
@@ -23,6 +24,7 @@ def InteractionLanguage(local_code: str) -> Dict[str, Any]:
 
 def __LocalRead(filename: str) -> Dict:
     data = {}
+    filename = Locale.get(str(filename), "en-US")
     try:
         with open(f"lang/{filename}.json", "r", encoding='utf-8') as json_file:
             data = json.load(json_file)
@@ -58,6 +60,4 @@ def LocalErrorResponse(value: str, local_code: str) -> Dict[str, Any]:
 def verify_localcode(local_code: str) -> str:
     if local_code in ['en-US', 'en-GB']:
         return 'en-US'
-    elif local_code in ['ja-JP']:
-        return 'ja'
     return local_code

@@ -19,6 +19,11 @@
         "RESPONSE": ""
       } 
     },
+    "help":{
+      "NAME": "help",
+      "DESCRIPTION": "コマンドの説明を表示します",
+      "ARGUMENTS": "引数"
+    },
     "login": {
       "NAME": "login",
       "DESCRIPTION": "あなたのRiotアカウントにログインします",
@@ -448,6 +453,10 @@
     "article": {
       "NAME": "article",
       "DESCRIPTION": "ウェブサイトの記事を表示します",
+      "DESCRIBE": {
+        "category": "カテゴリ",
+        "article": "記事数"
+      },
       "CATEGORY": {
         "game_updates": "パッチノート",
         "dev": "デベロップメント",

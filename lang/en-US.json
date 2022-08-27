@@ -19,6 +19,11 @@
         "RESPONSE": ""
       } 
     },
+    "help":{
+      "NAME": "help",
+      "DESCRIPTION": "Show the detail of commands",
+      "ARGUMENTS": "Arguments"
+    },
     "login": {
       "NAME": "login",
       "DESCRIPTION": "Log in with your Riot acoount",
@@ -448,6 +453,10 @@
     "article": {
       "NAME": "article",
       "DESCRIPTION": "Shows website articles",
+      "DESCRIBE": {
+        "category": "Category",
+        "article": "Number of Articles"
+      },
       "CATEGORY": {
         "game_updates": "GAME UPDATES",
         "dev": "DEV",
