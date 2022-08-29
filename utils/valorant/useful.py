@@ -749,7 +749,6 @@ class GetFormat:
         tiers = 0
 
         btp = cls.__get_contracts_by_season_id(data, contracts, event)
-        print(btp)
         if btp['success']:
             for r in btp["reward"]:
                 tiers += len(r["levels"])
