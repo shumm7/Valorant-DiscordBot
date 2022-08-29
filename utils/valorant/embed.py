@@ -1331,28 +1331,110 @@ class GetEmbed:
     
     # ---------- BATTLEPASS EMBED ---------- #
     
-    def battlepass(player: str, data: Dict, season: Dict, response: Dict) -> discord.Embed:
+    def battlepass(bot: ValorantBot, player: str, data: Dict, season: Dict, response: Dict) -> discord.Embed:
         """Embed Battle-pass"""
+
+        # language
+        MSG_RESPONSE = response.get("BATTLEPASS", {}).get('RESPONSE')
+        MSG_COMPLETE = response.get("BATTLEPASS", {}).get('COMPLETE')
+        MSG_TITLE = response.get("BATTLEPASS", {}).get('TITLE')
+        MSG_HEADER = response.get("BATTLEPASS", {}).get('HEADER')
+        MSG_FOOTER = response.get("BATTLEPASS", {}).get('FOOTER')
+        
+        embeds = []
+
+        BTPs = GetFormat.battlepass_format(data, season, response)
+        
+        for btp in BTPs:
+            item = btp['data']
+            reward = item['reward']
+            xp = item['xp']
+            act = item['act']
+            tier = item['tier']
+            tiers = item['tiers']
+            icon = item['icon']
+            cost = item['cost']
+            season_end = item['end']
+            item_type = item['type']
+            original_type = item['original_type']
+            
+            def battlepass_format(format: str):
+                return format.format(
+                    player = player,
+                    name = act,
+                    reward = reward,
+                    type = item_type,
+                    vp_emoji = GetEmoji.get("ValorantPointIcon", bot),
+                    cost = cost,
+                    xp = f'{xp:,}',
+                    max_xp = f'{calculate_level_xp(tier + 1):,}',
+                    end=format_relative(season_end),
+                    tier=tier,
+                    max_tier=tiers
+                )
+            
+            embed = Embed(battlepass_format(MSG_RESPONSE), title=battlepass_format(MSG_TITLE), color=0x0F1923)
+            embed.set_footer(text=battlepass_format(MSG_FOOTER))
+            embed.set_author(name=battlepass_format(MSG_HEADER))
+            
+            if icon:
+                embed.set_thumbnail(url=icon)
+            
+            if tier >= 50:
+                embed.color = 0xf1b82d
+            
+            if tier == tiers:
+                embed.description = battlepass_format(MSG_COMPLETE)
+            embeds.append(embed)
+        
+        return embeds
+    
+    def battlepass_event(bot: ValorantBot, player: str, data: Dict, event: str, response: Dict) -> discord.Embed:
+        """Embed Event-pass"""
         
         # language
-        MSG_RESPONSE = response.get('RESPONSE')
-        MSG_TIER = response.get('TIER')
+        MSG_RESPONSE = response.get("EVENTPASS", {}).get('RESPONSE')
+        MSG_COMPLETE = response.get("EVENTPASS", {}).get('COMPLETE')
+        MSG_TITLE = response.get("EVENTPASS", {}).get('TITLE')
+        MSG_HEADER = response.get("EVENTPASS", {}).get('HEADER')
+        MSG_FOOTER = response.get("EVENTPASS", {}).get('FOOTER')
+
+        event_data = JSON.read("cache")["events"].get(event)
+        if event_data == None:
+            return None
         
-        BTP = GetFormat.battlepass_format(data, season, response)
+        BTP = GetFormat.battlepass_event_format(data, event, response)
         
         item = BTP['data']
         reward = item['reward']
         xp = item['xp']
         act = item['act']
         tier = item['tier']
+        tiers = item['tiers']
         icon = item['icon']
+        cost = item['cost']
         season_end = item['end']
         item_type = item['type']
         original_type = item['original_type']
         
-        description = MSG_RESPONSE.format(next=f'`{reward}`', type=f'`{item_type}`', xp=f'`{xp:,}/{calculate_level_xp(tier + 1):,}`', end=format_relative(season_end))
-        
-        embed = Embed(description, title=f"BATTLEPASS")
+        def battlepass_format(format: str):
+            return format.format(
+                player = player,
+                name = event_data["title"][str(VLR_locale)],
+                reward = reward,
+                type = item_type,
+                cost = cost,
+                vp_emoji = GetEmoji.get("ValorantPointIcon", bot),
+                xp = f'{xp:,}',
+                max_xp = f'{calculate_level_xp(tier + 1):,}',
+                end=format_relative(dateutil.parser.parse(season_end)),
+                tier=tier,
+                max_tier=tiers
+            )
+
+        embed = Embed(battlepass_format(MSG_RESPONSE), title=battlepass_format(MSG_TITLE), color=0x0F1923)
+        embed.set_footer(text=battlepass_format(MSG_FOOTER))
+        embed.set_author(name=battlepass_format(MSG_HEADER))
         
         if icon:
             if original_type in ['PlayerCard', 'EquippableSkinLevel']:
@@ -1360,16 +1442,12 @@ class GetEmbed:
             else:
                 embed.set_thumbnail(url=icon)
         
-        if tier >= 50:
-            embed.color = 0xf1b82d
-        
-        if tier == 55:
-            embed.description = str(reward)
-        
-        embed.set_footer(text=f"{MSG_TIER} {tier} | {act}\n{player}")
+        if tier == tiers:
+            embed.description = battlepass_format(MSG_COMPLETE)
         
         return embed
     
+
     # ---------- PARTY EMBED ---------- #
     
     def party(player: str, puuid: str, data: Dict, endpoint: API_ENDPOINT, response: Dict) -> discord.Embed:
