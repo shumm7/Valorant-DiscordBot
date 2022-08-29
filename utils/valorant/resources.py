@@ -179,7 +179,7 @@ async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, f
 
         if not emoji:
             try:
-                if str(guild.id)==main_server_id:
+                if int(str(guild.id)) in main_server_id:
                     emoji = await guild.create_custom_emoji(name=name, image=__url_to_image(url), reason="auto creation")
                     
                     emoji_list[e["name"]] = f"<:{name}:{emoji.id}>"

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import contextlib
 from datetime import datetime, timezone, timedelta
+import zoneinfo
+import dateutil.parser
 import json
 import os
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
@@ -264,6 +266,18 @@ class GetItems:
         with contextlib.suppress(Exception):
             bundle = data["bundles"][uuid]
         return bundle    
+    
+    def get_current_event(date: datetime = datetime.now(timezone.utc)) -> List:
+        events = JSON.read("cache").get("events", {})
+
+        ret = []
+        for event in events.values():
+            start, end = dateutil.parser.parse(event["start"]), dateutil.parser.parse(event["end"])
+
+            if start <= date <= end:
+                ret.append(event["uuid"])
+
+        return ret
 
 
 # ---------- GET EMOJI ---------- #
@@ -539,7 +553,7 @@ class GetFormat:
 
         return {"success": False, "error": f"Failed to get : {type}"}
 
-    def __get_contract_tier_reward(tier: int, reward: List[Dict]) -> Dict[str, Any]:
+    def __get_contract_tier_reward(tier: int, reward: List[Dict], max: int = 55) -> Dict[str, Any]:
         """Get tier reward"""
 
         data = {}
@@ -548,10 +562,34 @@ class GetFormat:
         for lvl in reward:
             for rw in lvl["levels"]:
                 count += 1
-                data[count] = rw['reward']
+                data[count] = rw
 
         next_reward = tier + 1
-        if tier == 55: next_reward = 55
+        if tier == max: next_reward = max
+        current_reward = data[next_reward]
+
+        return current_reward
+    
+    def __get_contract_tier_free_reward(tier: int, reward: List[Dict], max: int = 55) -> Dict[str, Any]:
+        """Get tier reward"""
+
+        data = {}
+        count = 0
+
+        free_rewards = []
+        for lvl in reward:
+            i = 0
+            for rw in lvl["levels"]:
+                count += 1
+                i += 1
+
+                if i==len(lvl["levels"]):
+                    data[count] = lvl.get("freeRewards", [])
+                else:
+                    data[count] = []
+
+        next_reward = tier + 1
+        if tier == max: next_reward = max
         current_reward = data[next_reward]
 
         return current_reward
@@ -652,7 +690,7 @@ class GetFormat:
 
 
     @classmethod
-    def battlepass_format(cls, data: Dict, season: str, response: Dict) -> Dict[str, Any]:
+    def battlepass_format(cls, data: Dict, season: str, response: Dict) -> List[Dict[str, Any]]:
         """ Get battle pass format """
 
         data = data['Contracts']
@@ -661,18 +699,76 @@ class GetFormat:
 
         season_id = season['id']
         season_end = season['end']
+        tiers = 0
 
+        ret = []
         btp = cls.__get_contracts_by_season_id(data, contracts, season_id)
         if btp['success']:
+            for r in btp["reward"]:
+                tiers += len(r["levels"])
+
             tier, act, xp, reward = btp['tier'], btp['act'], btp['xp'], btp['reward']
 
-            item_reward = cls.__get_contract_tier_reward(tier, reward)
-            item = cls.__get_item_battlepass(item_reward['type'], item_reward['uuid'], response)
+            items = []
+            item_reward = cls.__get_contract_tier_reward(tier, reward, tiers)
+            free_rewards = cls.__get_contract_tier_free_reward(tier, reward, tiers)
+
+            item = cls.__get_item_battlepass(item_reward["reward"]['type'], item_reward["reward"]['uuid'], response)
+            item["original_type"]=item_reward["reward"]['type']
+            items.append(item)
+
+            for free_reward in free_rewards:
+                item = cls.__get_item_battlepass(free_reward['type'], free_reward['uuid'], response)
+                item["original_type"]=free_reward['type']
+                items.append(item)
+
+            for item in items:
+                item_name = item['data']['name']
+                item_type = item['data']['type']
+                item_icon = item['data']['icon']
+                if item_reward.get("isPurchasableWithVP", False):
+                    cost = item_reward.get("vpCost", 0)
+                else:
+                    cost = "-"
+                
+                dict_data = dict(data=dict(tier=tier, tiers=tiers, act=act, xp=xp, reward=item_name, type=item_type, icon=item_icon, end=season_end, original_type=item["original_type"], cost = cost))
+                ret.append(dict_data)
+
+            return ret
+
+        raise ValorantBotError(f"Failed to get battlepass info")
+    
+    @classmethod
+    def battlepass_event_format(cls, data: Dict, event: str, response: Dict) -> Dict[str, Any]:
+        """ Get battle pass format """
+
+        data = data['Contracts']
+        contracts = JSON.read('cache')
+        # data_contracts['contracts'].pop('version')
+
+        tiers = 0
+
+        btp = cls.__get_contracts_by_season_id(data, contracts, event)
+        print(btp)
+        if btp['success']:
+            for r in btp["reward"]:
+                tiers += len(r["levels"])
+
+            tier, act, xp, reward = btp['tier'], btp['act'], btp['xp'], btp['reward']
+
+            item_reward = cls.__get_contract_tier_reward(tier, reward, tiers)
+            item = cls.__get_item_battlepass(item_reward["reward"]['type'], item_reward["reward"]['uuid'], response)
 
             item_name = item['data']['name']
             item_type = item['data']['type']
             item_icon = item['data']['icon']
+            if item_reward.get("isPurchasableWithVP", False):
+                cost = item_reward.get("vpCost", 0)
+            else:
+                cost = "-"
 
-            return dict(data=dict(tier=tier, act=act, xp=xp, reward=item_name, type=item_type, icon=item_icon, end=season_end, original_type=item_reward['type']))
+            event_end = contracts["events"][event]["end"]
+
+            return dict(data=dict(tier=tier, tiers=tiers, act=act, xp=xp, reward=item_name, type=item_type, icon=item_icon, end=event_end, original_type=item_reward["reward"]['type'], cost = cost))
 
         raise ValorantBotError(f"Failed to get battlepass info")

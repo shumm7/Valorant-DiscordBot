@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import dateutil.parser
 import json
 import os
 import math
@@ -676,6 +677,27 @@ def fetch_ceremony() -> None:
         data['ceremonies'] = json
         JSON.save('cache', data)
 
+def fetch_event() -> None:
+    """ Fetch the events from valorant-api.com """
+    data = JSON.read('cache')
+    
+    url = 'https://valorant-api.com/v1/events?language=all'
+    print(f'[{datetime.datetime.now()}] Fetching events: {url}')
+    
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        json = {}
+        for info in resp.json()['data']:
+            json[info['uuid']] = {
+                'uuid': info['uuid'],
+                'names': info['displayName'],
+                'title': info['shortDisplayName'],
+                'start': str(dateutil.parser.parse(info['startTime'])),
+                'end': str(dateutil.parser.parse(info['endTime'])),
+            }
+        data['events'] = json
+        JSON.save('cache', data)
+
 
 # def fetch_skinchromas() -> None:
 #     """ Fetch skin chromas from valorant-api.com """
@@ -732,6 +754,7 @@ def get_cache(bot_version: str) -> None:
     fetch_maps()
     fetch_rank()
     fetch_ceremony()
+    fetch_event()
     fetch_gamemode()
     # fetch_skinchromas() # next update
     

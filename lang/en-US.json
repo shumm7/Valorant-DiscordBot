@@ -247,8 +247,21 @@
         "username": "Username (temporary login)",
         "password": "Password (temporary login)"
       },
-      "RESPONSE": "**Next Reward:** {next}\n**Type:** {type}\n**XP:** {xp}\n**ACT END:** {end}",
-      "TIER": "TIER",
+      "RESPONSE": "**{player}**'s Battlepass'",
+      "BATTLEPASS": {
+        "TITLE": "{name} {end}",
+        "RESPONSE": "**`{reward}`**\n**Level**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
+        "COMPLETE": "**`{reward}`**\n**Level**: {tier}/{max_tier}",
+        "HEADER": "BATTLEPASS",
+        "FOOTER": ""
+      },
+      "EVENTPASS": {
+        "TITLE": "{name} {end}",
+        "RESPONSE": "**`{reward}`**\n**Level**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
+        "COMPLETE": "**`{reward}`**\n**Level**: {tier}/{max_tier}",
+        "HEADER": "EVENTPASS",
+        "FOOTER": ""
+      },
       "PLAYER_CARD": "Player Card",
       "SPRAY": "Spray",
       "BUDDY": "Buddie",
@@ -474,9 +487,9 @@
       "NAME": "debug",
       "DESCRIPTION": "The command debug for the bot",
       "DESCRIBE": {
-        "bug": "The bug you want to fix"
+        "action": "The action you want to do"
       },
-      "SUCCESS": "Successfully debugged: **{bug}**"
+      "SUCCESS": "Successfully debugged: **{action}**"
     },
     "notify_add": {
       "NAME": "add",
