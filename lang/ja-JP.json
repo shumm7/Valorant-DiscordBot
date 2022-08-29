@@ -247,8 +247,21 @@
         "username": "ユーザー名 (一時ログイン)",
         "password": "パスワード (一時ログイン)"
       },
-      "RESPONSE": "**次報酬:** {next}\n**種類:** {type}\n**XP:** {xp}\n**ACT終了時間:** {end}",
-      "TIER": "レベル",
+      "RESPONSE": "**{player}**のバトルパス",
+      "BATTLEPASS": {
+        "TITLE": "{name} {end}",
+        "RESPONSE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
+        "COMPLETE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}",
+        "HEADER": "バトルパス",
+        "FOOTER": ""
+      },
+      "EVENTPASS": {
+        "TITLE": "{name} {end}",
+        "RESPONSE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
+        "COMPLETE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}",
+        "HEADER": "イベントパス",
+        "FOOTER": ""
+      },
       "PLAYER_CARD": "プレイヤーカード",
       "SPRAY": "スプレー",
       "BUDDY": "バディー",
@@ -474,9 +487,9 @@
       "NAME": "debug",
       "DESCRIPTION": "Botのデバッグを行います",
       "DESCRIBE": {
-          "bug": "修正したいバグ"
+          "action": "行いたいアクション"
       },
-      "SUCCESS": "**{bug}**のデバッグが完了しました。"
+      "SUCCESS": "**{action}**を完了しました。"
     },
     "notify_add": {
       "NAME": "add",

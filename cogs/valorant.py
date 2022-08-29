@@ -21,7 +21,7 @@ from utils.valorant.embed import Embed, GetEmbed
 from utils.valorant.endpoint import API_ENDPOINT
 from utils.valorant.local import ResponseLanguage
 from utils.valorant.resources import setup_emoji
-from utils.valorant.useful import JSON
+from utils.valorant.useful import JSON, GetItems
 from utils.locale_v2 import ValorantTranslator
 
 VLR_locale = ValorantTranslator()
@@ -401,15 +401,26 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         # endpoint
         endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        embeds = []
+        embeds.append(Embed(description=response.get("RESPONSE").format(player=endpoint.player)))
         
-        # data
+        #data
         data = endpoint.fetch_contracts()
         content = endpoint.fetch_content()
         season = useful.get_season_by_content(content)
+        events = GetItems.get_current_event()
+
+        # battlepass
+        embed = GetEmbed.battlepass(self.bot, endpoint.player, data, season, response)
+        embeds.extend(embed)
+
+        # events
+        for event in events:
+            embed = GetEmbed.battlepass_event(self.bot, endpoint.player, data, event, response)
+            embeds.append(embed)
+
         
-        embed = GetEmbed.battlepass(endpoint.player, data, season, response)
-        
-        await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+        await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
     
     # inspired by https://github.com/giorgi-o
     @app_commands.command(description=clocal.get("bundle", {}).get("DESCRIPTION", ""))
@@ -735,7 +746,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
                     article_data.append(data[i])
                 i += 1
 
-        if len(article_data) >= 0:
+        if len(article_data) > 0:
             embeds = []
             for d in article_data:
                 embeds.append(GetEmbed.article_embed(d, response))
@@ -745,17 +756,17 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
 
     @app_commands.command(description=clocal.get("debug", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(bug=clocal.get("debug", {}).get("DESCRIBE", {}).get("bug", ""))
+    @app_commands.describe(action=clocal.get("debug", {}).get("DESCRIBE", {}).get("action", ""))
     @app_commands.guild_only()
     @owner_only()
-    async def debug(self, interaction: Interaction, bug: Literal['Skin price not loading', 'Emoji not loading', 'Cache not loading', 'Too much old emojis']) -> None:
+    async def debug(self, interaction: Interaction, action: Literal['Reload Skin Price', 'Reload Emoji', 'Reload Cache', 'Reset Emoji', 'Reset Cache']) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         await interaction.response.defer(ephemeral=True)
         
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
-        if bug == 'Skin price not loading':
+        if action == 'Reload Skin Price':
             # endpoint
             endpoint = await self.get_endpoint(interaction.user.id, interaction.locale)
             
@@ -764,22 +775,29 @@ class ValorantCog(commands.Cog, name='Valorant'):
             self.db.insert_skin_price(skin_price, force=True)
 
             success = response.get('SUCCESS')
-            await interaction.followup.send(embed=Embed(success.format(bug=bug)))
+            await interaction.followup.send(embed=Embed(success.format(action=action)))
         
-        elif bug == 'Emoji not loading':
+        elif action == 'Reload Emoji':
             ret = await setup_emoji(self.bot, interaction.guild, interaction.locale, force=True)
             success = response.get('SUCCESS')
-            await interaction.followup.send(embed=Embed(success.format(bug=bug) + "\n\n" + ret))
+            await interaction.followup.send(embed=Embed(success.format(action=action) + "\n\n" + ret))
         
-        elif bug == 'Too much old emojis':
-            ret = await setup_emoji(self.bot, interaction.guild, interaction.locale, force=True, reset=True)
-            success = response.get('SUCCESS')
-            await interaction.followup.send(embed=Embed(success.format(bug=bug) + "\n\n" + ret))
-        
-        elif bug == 'Cache not loading':
+        elif action == 'Reload Cache':
             self.funtion_reload_cache(force=True)
             success = response.get('SUCCESS')
-            await interaction.followup.send(embed=Embed(success.format(bug=bug)))
+            await interaction.followup.send(embed=Embed(success.format(action=action)))
+        
+        elif action == 'Reset Emoji':
+            ret = await setup_emoji(self.bot, interaction.guild, interaction.locale, force=True, reset=True)
+            success = response.get('SUCCESS')
+            await interaction.followup.send(embed=Embed(success.format(action=action) + "\n\n" + ret))
+        
+        elif action == 'Reset Cache':
+            from utils.valorant.cache import get_cache
+            get_cache(self.bot.bot_version)
+            success = response.get('SUCCESS')
+            await interaction.followup.send(embed=Embed(success.format(action=action)))
+        
         
 
 async def setup(bot: ValorantBot) -> None:
