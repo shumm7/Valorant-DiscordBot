@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 from datetime import datetime, timezone, timedelta
-import zoneinfo
 import dateutil.parser
 import json
 import os
