@@ -1047,11 +1047,18 @@ class BaseSkin(ui.View):
         embeds.append(embed)
 
         # skin embed
+        # data
         levels = list(skin["levels"].values())
         for i in range(len(levels)):
             levels[i]["icon"] = levels[0]["icon"]
+            if i!=0:
+                levels[i]["price"] = 10
+        
         chromas = list(skin["chromas"].values())
+        for i in range(len(chromas)):
+            chromas[i]["price"] = 15
 
+        # embed
         for level in (levels + chromas[1:]):
             description = response.get("TEXT")
             video = response.get("VIDEO")
@@ -1061,7 +1068,9 @@ class BaseSkin(ui.View):
                 description=description.format(
                     name = level["names"][self.language],
                     video = f"[{video}]({video_url})" if video_url else "",
-                    own = own if GetItems.is_skin_variant_owns(self.entitlements, level["uuid"]) or GetItems.is_skin_owns(self.entitlements, level["uuid"]) else dont_own
+                    own = own if GetItems.is_skin_variant_owns(self.entitlements, level["uuid"]) or GetItems.is_skin_owns(self.entitlements, level["uuid"]) else dont_own,
+                    rp_emoji = GetEmoji.get("RadianitePointIcon", self.bot),
+                    rp = level["price"] if level.get("price")!=None else "-"
                 ),
                 color=0x0F1923
             ).set_thumbnail(url=level.get("icon", ""))
