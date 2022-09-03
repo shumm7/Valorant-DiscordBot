@@ -280,7 +280,7 @@ class API_ENDPOINT:
         data = self.fetch(f'/store/v1/order/{order_id}', url='pd')
         return data
 
-    def store_fetch_entitlements(self, item_type: Mapping) -> Mapping[str, Any]:
+    def store_fetch_entitlements(self, item_type: Mapping = None) -> Mapping[str, Any]:
         """
         Store_GetEntitlements
         List what the player owns (agents, skins, buddies, ect.)
@@ -297,8 +297,12 @@ class API_ENDPOINT:
         '3ad1b2b2-acdb-4524-852f-954a76ddae0a': 'Skins chroma',\n
         'de7caa6b-adf7-4588-bbd1-143831e786c6': 'Player titles',\n
         """
-        data = self.fetch(endpoint=f"/store/v1/entitlements/{self.puuid}/{item_type}", url="pd")
-        return data
+        if item_type==None:
+            data = self.fetch(endpoint=f"/store/v1/entitlements/{self.puuid}", url="pd")
+            return data
+        else:
+            data = self.fetch(endpoint=f"/store/v1/entitlements/{self.puuid}/{item_type}", url="pd")
+            return data
 
     # useful endpoints
 
@@ -376,17 +380,20 @@ class API_ENDPOINT:
         data = self.fetch_account_xp()['Progress']['Level']
         return data
 
-    def get_player_tier_rank(self, puuid: str = None) -> str:
+    def get_player_tier_rank(self, puuid: str = None) -> int:
         """
         get player current tier rank
         """
-        data = self.fetch_player_mmr(puuid)
-        season_id = data['LatestCompetitiveUpdate']['SeasonID']
-        if len(season_id) == 0:
-            season_id = self.__get_live_season()
-        current_season = data["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
-        current_Tier = current_season[season_id]['CompetitiveTier']
-        return current_Tier
+        try:
+            data = self.fetch_player_mmr(puuid)
+            season_id = data['LatestCompetitiveUpdate']['SeasonID']
+            if len(season_id) == 0:
+                season_id = self.__get_live_season()
+            current_season = data["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
+            current_Tier = current_season[season_id]['CompetitiveTier']
+            return current_Tier
+        except:
+            return 0
     
     def get_discord_userid_from_puuid(self, puuid: str) -> str:
         users = JSON.read("users")

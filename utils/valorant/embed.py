@@ -332,12 +332,13 @@ class GetEmbed:
         raw_players = match_detail.get("players", [])
         players = {}
         for p in raw_players:
+            rank_tier = p["competitiveTier"] if p["competitiveTier"]!=0 else endpoint.get_player_tier_rank(puuid=p["subject"])
             player = {
                 "puuid": p["subject"],
                 "name": "{name}#{tagline}".format(name=p["gameName"], tagline=p["tagLine"]),
                 "level": p["accountLevel"],
-                "rank": GetFormat.get_competitive_tier_name(p["competitiveTier"]),
-                "rank_id": p["competitiveTier"],
+                "rank": GetFormat.get_competitive_tier_name(rank_tier),
+                "rank_id": rank_tier,
 
                 "kills": p["stats"]["kills"],
                 "deaths": p["stats"]["deaths"],

@@ -387,6 +387,22 @@
       "DROPDOWN_CHOICE_TITLE": "Select the Weapon",
       "NOT_FOUND": "No weapons found that match your keyword entries."
     },
+    "skin": {
+      "NAME": "skin",
+      "DESCRIPTION": "Show the details of a specified skin",
+      "DESCRIBE": {
+        "skin": "The name of the skin",
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "RESPONSE": "{emoji} **{name}**\n{vp_emoji} {price}",
+      "VIDEO": "Watch Video",
+      "TEXT": "{own} **{name}**\n{video}\n",
+      "OWN": "",
+      "DONT_OWN": "🔒",
+      "DROPDOWN_CHOICE_TITLE": "Select the skin",
+      "NOT_FOUND": "No skins found that match your keyword entries."
+    },
     "crosshair": {
       "NAME": "crosshair",
       "DESCRIPTION": "Generate the image from crosshair profile",
