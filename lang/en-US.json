@@ -397,7 +397,7 @@
       },
       "RESPONSE": "{emoji} **{name}**\n{vp_emoji} {price}",
       "VIDEO": "Watch Video",
-      "TEXT": "{own} **{name}**\n{video}\n",
+      "TEXT": "{own} **{name}**\n{rp_emoji} {rp}\n{video}",
       "OWN": "",
       "DONT_OWN": "🔒",
       "DROPDOWN_CHOICE_TITLE": "Select the skin",
