@@ -387,6 +387,22 @@
       "DROPDOWN_CHOICE_TITLE": "武器を選択",
       "NOT_FOUND": "入力されたキーワードと一致する武器が見つかりませんでした。"
     },
+    "skin": {
+      "NAME": "skin",
+      "DESCRIPTION": "スキンの詳細を表示します",
+      "DESCRIBE": {
+        "skin": "スキンの名前",
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "RESPONSE": "{emoji} **{name}**\n{vp_emoji} {price}",
+      "VIDEO": "動画を見る",
+      "TEXT": "{own} **{name}**\n{video}\n",
+      "OWN": "",
+      "DONT_OWN": "🔒",
+      "DROPDOWN_CHOICE_TITLE": "スキンを選択",
+      "NOT_FOUND": "入力されたキーワードと一致するスキンが見つかりませんでした。"
+    },
     "crosshair": {
       "NAME": "crosshair",
       "DESCRIPTION": "クロスヘアのプロファイルから画像を生成します",

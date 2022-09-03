@@ -577,6 +577,50 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # weapon view
         view = View.BaseWeapon(interaction, find_weapon, response)
         await view.start()
+    
+    @app_commands.command(description=clocal.get("skin", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(skin=clocal.get("skin", {}).get("DESCRIBE", {}).get("skin", ""), username=clocal.get("skin", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("skin", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def skin(self, interaction: Interaction, skin: str, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
+
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # cache
+        cache = self.db.read_cache()
+        
+        # default language language
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+
+        # fetch skin price and owns
+        skin_price = endpoint.store_fetch_offers()
+        self.db.insert_skin_price(skin_price)
+        entitlements = endpoint.store_fetch_entitlements()
+        
+        # find skin
+        find_skin_en_US = []
+        find_skin_locale = []
+
+        for item in cache['skins'].values():
+            if skin.lower() in cache['skins'][item["uuid"]]['names'][default_language].lower():
+                find_skin_en_US.append(item)
+            
+            if skin.lower() in cache['skins'][item["uuid"]]['names'][str(VLR_locale)].lower():
+                find_skin_locale.append(item)
+            
+        find_skin = find_skin_en_US if len(find_skin_en_US) > 0 else find_skin_locale
+
+        # skin view
+        view = View.BaseSkin(interaction, find_skin[:25], response, entitlements, is_private_message)
+        await view.start()
 
     @app_commands.command(description=clocal.get("crosshair", {}).get("DESCRIPTION", ""))
     @app_commands.describe(code=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("code", ""), player=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("player", ""))

@@ -277,6 +277,22 @@ class GetItems:
                 ret.append(event["uuid"])
 
         return ret
+    
+    def is_skin_owns(entitlements: Dict, uuid: str) -> bool:
+        for entitlement in entitlements[0]["EntitlementsByTypes"]:
+            if entitlement["ItemTypeID"] == "e7c63390-eda7-46e0-bb7a-a6abdacd2433":
+                for item in entitlement["Entitlements"]:
+                    if item["ItemID"]==uuid:
+                        return True
+        return False
+    
+    def is_skin_variant_owns(entitlements: Dict, uuid: str) -> bool:
+        for entitlement in entitlements[0]["EntitlementsByTypes"]:
+            if entitlement["ItemTypeID"] == "3ad1b2b2-acdb-4524-852f-954a76ddae0a":
+                for item in entitlement["Entitlements"]:
+                    if item["ItemID"]==uuid:
+                        return True
+        return False
 
 
 # ---------- GET EMOJI ---------- #

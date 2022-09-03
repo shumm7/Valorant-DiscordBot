@@ -7,6 +7,8 @@ from typing import Awaitable, Dict, List, TYPE_CHECKING, Union
 # Standard
 import discord
 from discord import ButtonStyle, Interaction, TextStyle, ui
+from discord.utils import MISSING
+from utils.valorant.embed import Embed
 
 from utils.valorant.endpoint import API_ENDPOINT
 from .resources import get_item_type
@@ -30,12 +32,12 @@ class share_button(ui.View):
     
     async def on_timeout(self) -> None:
         """ Called when the view times out """
-        await self.interaction.edit_original_message(view=None)
+        await self.interaction.edit_original_response(view=None)
     
     @ui.button(label='Share to friends', style=ButtonStyle.primary)
     async def button_callback(self, interaction: Interaction, button: ui.Button):
         await interaction.channel.send(embeds=self.embeds)
-        await self.interaction.edit_original_message(content='\u200b', embed=None, view=None)
+        await self.interaction.edit_original_response(content='\u200b', embed=None, view=None)
 
 
 class NotifyView(discord.ui.View):
@@ -1006,6 +1008,103 @@ class BaseCollection(ui.View):
         self.update_button()
         embeds = self.embeds[0]
         return await self.interaction.followup.send(embeds=embeds, view=self)
+
+
+class BaseSkin(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict, entitlements: Dict, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        self.entitlements = entitlements,
+        self.is_private_message = is_private_message
+        super().__init__()
+        self.clear_items()
+    
+
+    def build_embeds(self, selected: str, response: Dict) -> None:
+        """ Builds the agent embeds """
+        
+        embeds = []
+        uuid = selected
+        skin = JSON.read("cache")["skins"][uuid]
+
+        own, dont_own = response.get("OWN"), response.get("DONT_OWN")
+
+        # main embed
+        embed = Embed(description=self.response.get("RESPONSE").format(
+                emoji = GetEmoji.tier_by_bot(uuid, self.bot),
+                name = skin["names"][self.language],
+                vp_emoji = GetEmoji.get("ValorantPointIcon", self.bot),
+                price = GetItems.get_skin_price(uuid),
+                own = own if GetItems.is_skin_owns(self.entitlements, uuid) else dont_own
+            )
+        )
+        embeds.append(embed)
+
+        # skin embed
+        levels = list(skin["levels"].values())
+        for i in range(len(levels)):
+            levels[i]["icon"] = levels[0]["icon"]
+        chromas = list(skin["chromas"].values())
+
+        for level in (levels + chromas[1:]):
+            description = response.get("TEXT")
+            video = response.get("VIDEO")
+            video_url = level.get("video")
+
+            embed = Embed(
+                description=description.format(
+                    name = level["names"][self.language],
+                    video = f"[{video}]({video_url})" if video_url else "",
+                    own = own if GetItems.is_skin_variant_owns(self.entitlements, level["uuid"]) or GetItems.is_skin_owns(self.entitlements, level["uuid"]) else dont_own
+                ),
+                color=0x0F1923
+            ).set_thumbnail(url=level.get("icon", ""))
+            embeds.append(embed)
+
+        self.embeds = embeds
+
+    
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, skin in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_skin.add_option(label=skin['names'][self.language], value=skin["uuid"])
+    
+    @ui.select(placeholder='Select a skin:')
+    async def select_skin(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0], self.response)
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=share_button(self.interaction, self.embeds) if self.is_private_message else MISSING)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the agent view """
+
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"], self.response)
+            embeds = self.embeds
+            return await self.interaction.followup.send(embeds=embeds, view=share_button(self.interaction, embeds) if self.is_private_message else MISSING)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_skin)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_skin.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self, ephemeral=self.is_private_message)
+        
+        not_found = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found)
+
     
 
 class SelectionFeaturedBundleView(ui.View):
