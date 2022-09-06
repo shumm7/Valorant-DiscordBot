@@ -522,46 +522,46 @@ class GetFormat:
 
     # ---------- UTILS FOR BATTLEPASS EMBED ---------- #
 
-    def __get_item_battlepass(type: str, uuid: str, response: Dict) -> Dict[str, Any]:
+    def __get_item_battlepass(type: str, uuid: str, response: Dict, locale: str = str(VLR_locale)) -> Dict[str, Any]:
         """Get item battle pass by type and uuid"""
 
         if type == 'Currency':
             data = JSON.read('cache')
-            name = data['currencies'][uuid]['names'][str(VLR_locale)]
+            name = data['currencies'][uuid]['names'][locale]
             icon = data['currencies'][uuid]['icon']
             item_type = response.get('POINT', 'Point')
             return {"success": True, "data": {'type': item_type, 'name': '10 ' + name, 'icon': icon}}
 
         elif type == 'PlayerCard':
             data = JSON.read('cache')
-            name = data['playercards'][uuid]['names'][str(VLR_locale)]
+            name = data['playercards'][uuid]['names'][locale]
             icon = data['playercards'][uuid]['icon']['wide']
             item_type = response.get('PLAYER_CARD', 'Player Card')
             return {"success": True, "data": {'type': item_type, 'name': name, 'icon': icon}}
 
         elif type == 'Title':
             data = JSON.read('cache')
-            name = data['titles'][uuid]['names'][str(VLR_locale)]
+            name = data['titles'][uuid]['names'][locale]
             item_type = response.get('PLAYER_TITLE', 'Title')
             return {"success": True, "data": {'type': item_type, 'name': name, 'icon': False}}
 
         elif type == 'Spray':
             data = JSON.read('cache')
-            name = data['sprays'][uuid]['names'][str(VLR_locale)]
+            name = data['sprays'][uuid]['names'][locale]
             icon = data['sprays'][uuid]['icon']
             item_type = response.get('SPRAY', 'Spray')
             return {"success": True, "data": {'type': item_type, 'name': name, 'icon': icon}}
 
         elif type == 'EquippableSkinLevel':
             data = JSON.read('cache')
-            name = data['skins'][uuid]['names'][str(VLR_locale)]
+            name = data['skins'][uuid]['names'][locale]
             icon = data['skins'][uuid]['icon']
             item_type = response.get('SKIN', 'Skin')
             return {"success": True, "data": {'type': item_type, 'name': name, 'icon': icon}}
 
         elif type == 'EquippableCharmLevel':
             data = JSON.read('cache')
-            name = data['buddies'][uuid]['names'][str(VLR_locale)]
+            name = data['buddies'][uuid]['names'][locale]
             icon = data['buddies'][uuid]['icon']
             item_type = response.get('BUDDY', 'Buddie')
             return {"success": True, "data": {'type': item_type, 'name': name, 'icon': icon}}
@@ -702,6 +702,52 @@ class GetFormat:
                 return "b41f4d69-4f9d-ffa9-2be8-e2878cf7f03b"
         else: # error
             return None
+
+    @classmethod
+    def contract_format(cls, data: Dict, contract_uuid: str, response: Dict, locale: str) -> Dict[str, Any]:
+        data = data['Contracts']
+        cache = JSON.read("cache")
+
+        tiers = 0
+        ret = []
+
+        for contract in data:
+            if contract.get("ContractDefinitionID")==contract_uuid:
+                tier = contract.get("ProgressionLevelReached", 0)
+                xp = contract.get("ProgressionTowardsNextLevel", 0)
+                reward = cache["contracts"][contract_uuid]["reward"]["chapters"]
+
+                i = 0
+                max_xp = 0
+                for r in cache["contracts"][contract_uuid]["reward"]["chapters"]:
+                    tiers += len(r["levels"])
+
+                    for level in r["levels"]:
+                        if i==tier:
+                            max_xp = level["xp"]
+                        i += 1
+                
+                items = []
+                item_reward = cls.__get_contract_tier_reward(tier, reward, tiers)
+                item = cls.__get_item_battlepass(item_reward["reward"]['type'], item_reward["reward"]['uuid'], response, locale)
+                item["original_type"]=item_reward["reward"]['type']
+                items.append(item)
+
+                for item in items:
+                    item_name = item['data']['name']
+                    item_type = item['data']['type']
+                    item_icon = item['data']['icon']
+                    if item_reward.get("isPurchasableWithVP", False):
+                        cost = item_reward.get("vpCost", 0)
+                    else:
+                        cost = "-"
+                    
+                    dict_data = dict(data=dict(tier=tier, tiers=tiers, xp=xp, max_xp=max_xp, reward=item_name, type=item_type, icon=item_icon, original_type=item["original_type"], cost = cost))
+                    ret.append(dict_data)
+
+                return ret
+            
+        raise ValorantBotError(f"Failed to get contracts info")
 
 
     @classmethod

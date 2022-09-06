@@ -8,12 +8,13 @@ from typing import Awaitable, Dict, List, TYPE_CHECKING, Union
 import discord
 from discord import ButtonStyle, Interaction, TextStyle, ui
 from discord.utils import MISSING
+from utils.valorant import endpoint
 from utils.valorant.embed import Embed
 
 from utils.valorant.endpoint import API_ENDPOINT
 from .resources import get_item_type
 # Local
-from .useful import format_relative, GetEmoji, GetItems, JSON
+from .useful import GetFormat, format_relative, GetEmoji, GetItems, JSON
 from ..errors import ValorantBotError
 from ..locale_v2 import ValorantTranslator
 
@@ -1009,7 +1010,6 @@ class BaseCollection(ui.View):
         embeds = self.embeds[0]
         return await self.interaction.followup.send(embeds=embeds, view=self)
 
-
 class BaseSkin(ui.View):
     def __init__(self, interaction: Interaction, entries: Dict, response: Dict, entitlements: Dict, is_private_message: bool) -> None:
         self.interaction: Interaction = interaction
@@ -1114,7 +1114,145 @@ class BaseSkin(ui.View):
         not_found = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found)
 
+class BaseContract(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, contracts: Dict, response: Dict, player: str, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.player = player
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.data = contracts
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.contract = None # contract uuid
+        self.endpoint = endpoint
+        self.page_format = {}
+        self.is_private_message = is_private_message
+        super().__init__()
+        self.clear_items()
+
+    def build_embeds(self, selected_agent: str, response: Dict) -> None:
+        """ Builds the agent embeds """
+        
+        cache = JSON.read("cache")
+        embeds = []
+
+        for contract in cache["contracts"].values():
+            if contract.get("reward", {}).get("relationType")=="Agent" and contract.get("reward", {}).get("relationUuid")==selected_agent:
+                uuid = contract["uuid"]
+
+                CTRs = GetFormat.contract_format(self.data, uuid, self.response, self.language)
+                
+                for ctr in CTRs:
+                    self.contract = uuid
+
+                    item=ctr["data"]
+                    reward = item['reward']
+                    xp = item['xp']
+                    max_xp = item['max_xp']
+                    tier = item['tier']
+                    tiers = item['tiers']
+                    icon = item['icon']
+                    cost = item['cost']
+                    item_type = item['type']
+                    original_type = item['original_type']
+                    active = response.get("ACTIVE") if self.data.get("ActiveSpecialContract", "") == self.contract else ""
+
+                    def contract_format(format: str):
+                        return format.format(
+                            player = self.player,
+                            name = cache["contracts"][uuid]["names"][self.language],
+                            reward = reward,
+                            type = item_type,
+                            vp_emoji = GetEmoji.get("ValorantPointIcon", self.bot),
+                            cost = cost,
+                            xp = f'{xp:,}',
+                            max_xp = f'{max_xp:,}',
+                            tier=tier,
+                            max_tier=tiers,
+                            active = active
+                        )
+
+                    embed = Embed(
+                        title = contract_format(self.response.get("TITLE")),
+                        description = contract_format(self.response.get("RESPONSE")),
+                        color = cache["agents"][selected_agent]["color"][0]
+                    )
+                    embed.set_author(name=contract_format(self.response.get("HEADER")))
+                    embed.set_footer(text=contract_format(self.response.get("FOOTER")))
+                    embed.set_thumbnail(url=cache["agents"][selected_agent]["icon"])
+                    embed.set_image(url=icon if icon else "")
+
+                    if tier == tiers:
+                        embed.description = contract_format(self.response.get("COMPLETE"))
+
+                    embeds.append(embed)
+
+                    self.embeds = embeds
+                    return 
+
     
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, agent in enumerate(sorted(self.entries, key=lambda c: c['name']['en-US']), start=1):
+            self.select_agent.add_option(label=agent['name'][self.language], value=agent["uuid"])
+    
+    @ui.select(placeholder='Select an agent:')
+    async def select_agent(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0], self.response)
+        embeds = self.embeds
+        self.add_item(self.activate_button)
+        self.update_button()
+        await interaction.response.edit_message(embeds=embeds, view=self)
+    
+    @ui.button(label='Activate')
+    async def activate_button(self, interaction: Interaction, button: ui.Button):
+        if self.data.get("ActiveSpecialContract", "") != self.contract:
+            self.data = self.endpoint.post_contracts_activate(self.contract)
+            self.update_button()
+            await interaction.response.edit_message(embeds = self.embeds, view=self)
+    
+    def update_button(self) -> None:
+        """ Updates the button """
+        if self.data.get("ActiveSpecialContract", "") == self.contract:
+            self.activate_button.disabled = True
+        else:
+            for c in self.data["Contracts"]:
+                if c["ContractDefinitionID"]==self.contract:
+                    if c["ProgressionLevelReached"]==10:
+                        self.activate_button.disabled = True
+                        return 
+                    else:
+                        self.activate_button.disabled = False
+                        return 
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the agent view """
+        
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"], self.response)
+            embeds = self.embeds
+            self.add_item(self.activate_button)
+            self.update_button()
+            return await self.interaction.followup.send(embeds=embeds, view=self, ephemeral=self.is_private_message)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_agent)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_agent.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self, ephemeral=self.is_private_message)
+        
+        not_found_agent = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found_agent)
+ 
 
 class SelectionFeaturedBundleView(ui.View):
     def __init__(self, bundles: Dict, other_view: Union[ui.View, BaseBundle] = None):

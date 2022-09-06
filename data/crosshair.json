@@ -1,0 +1,249 @@
+{
+    "default": {
+        "name": null,
+        "category": "default",
+        "icon": null,
+        "crosshairs": {
+            "Smiley": "0;P;t;2;o;1;0t;10;0o;0;0a;1;0f;0;1t;3;1l;3;1o;0;1a;0;1m;0;1f;0",
+            "Nerd": "0;s;1;P;c;8;t;2;o;1;d;1;b;1;a;0.462;f;0;0t;10;0l;14;0v;0;0g;1;0o;5;0a;0.308;0f;0;1t;1;1l;6;1v;0;1g;1;1o;18;1a;0;1m;0;1f;0;S;d;0"
+        }
+    },
+    "Sentinels": {
+        "name": "Sentinels",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/1/13/Sentinels_2020_allmode.png",
+        "crosshairs": {
+            "TenZ": "0;s;1;P;c;5;h;0;m;1;0l;4;0o;2;0a;1;0f;0;1b;0;S;c;4;o;1",
+            "shroud": "0;P;h;0;0l;5;0o;0;0a;1;0f;0;1b;0",
+            "ShahZaM": "0;P;c;1;o;1;f;0;0l;5;0a;0.5;0f;0;1b;0",
+            "SicK": "0;P;c;1;o;1;f;0;0l;3;0o;5;0a;1;0f;0;1t;0;1a;0.379",
+            "dapr": "0;P;c;1;o;1;f;0;0l;3;0o;5;0a;1;0f;0;1b;0"
+        }
+    },
+    "Fnatic": {
+        "name": "Fnatic",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/f/f9/Fnatic_2020_allmode.png",
+        "crosshairs": {
+            "Boaster": "0;s;1;P;c;5;o;1;d;1;f;0;s;0;0l;0;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1f;0;S;c;1;o;1",
+            "Derke": "0;s;1;P;o;1;d;1;f;0;s;0;0t;0;0l;1;0o;0;0a;1;0f;0;1t;0;1l;1;1o;0;1a;1;1m;0;1f;0;S;o;1",
+            "Mistic": "0;s;1;P;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "Alfajer": "0;s;1;P;c;5;o;1;d;1;z;3;0b;0;1b;0;S;s;0.628;o;1",
+            "Enzo": "0;s;1;P;c;5;h;0;f;0;0t;1;0o;1;0a;1;0f;0;1b;0;S;s;0.8",
+            "Magnum": "0;s;1;P;c;1;o;1;d;1;z;3;0t;0;0l;0;0o;0;0a;0;1t;0;1l;0;1a;0;S;c;1;s;0.762;o;1",
+            "otom": "0;s;1;P;c;5;h;0;f;0;0t;1;0o;1;0a;1;0f;0;1b;0;S;s;0.8",
+            "Fearoth": "0;s;1;P;c;5;h;0;f;0;0t;1;0o;1;0a;1;0f;0;1b;0;S;s;0.8"
+        }
+    },
+    "KRÜ Esports": {
+        "name": "KRÜ Esports",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/b/bf/KRU_Esports_allmode.png",
+        "crosshairs": {
+            "NagZ": "0;s;1;P;c;1;o;1;d;1;0l;0;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;S;c;1;o;1",
+            "Klaus": "0;P;c;1;o;1;0t;1;0l;3;0o;1;0a;1;0f;0;1t;0;1l;0;1a;0",
+            "Mazino": "0;P;c;1;h;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "delz1k": "0;P;c;1;o;0;f;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "keznit": "0;P;c;4;h;0;0b;0;1l;4;1o;2;1a;1;1m;0;1f;0"
+        }
+    },
+    "OpTic Gaming": {
+        "name": "OpTic Gaming",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/7/79/OpTic_Gaming_lightmode.png",
+        "crosshairs": {
+            "FNS": "0;P;c;1;o;1;0l;3;0o;5;0a;1;0f;0;1b;0",
+            "Victor": "0;P;h;0;f;0;0l;4;0a;1;0f;0;1b;0",
+            "crashies": "0;s;1;P;c;1;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "yay": "0;P;h;0;f;0;0l;4;0o;0;0a;1;0f;0;1b;0",
+            "Marved": "0;P;c;1;h;0;f;0;0l;3;0o;2;0a;1;0f;0;1b;0"
+        }
+    },
+    "DRX": {
+        "name": "DRX",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/7/7c/DRX_full_allmode.png",
+        "crosshairs": {
+            "stax": "0;P;c;4;h;0;f;0;s;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "Rb": "0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0;S;o;1",
+            "Zest": "0;s;1;P;c;1;o;1;f;0;0l;4;0a;1;0f;0;1b;0",
+            "BuZz": "0;P;c;5;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "MaKo": "0;s;1;P;c;1;o;1;f;0;0l;4;0a;1;0f;0;1b;0"
+        }
+    },
+    "XERXIA": {
+        "name": "XERXIA",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/0/08/Xerxia_Esports_allmode.png",
+        "crosshairs": {
+            "foxz": "0;P;c;1;h;0;f;0;0l;5;0o;2;0a;1;0f;0;1b;0",
+            "sushiboys": "0;P;c;5;h;0;f;0;0l;5;0o;2;0a;1;0f;0;1b;0",
+            "sScary": "0;s;1;P;c;5;o;1;d;1;z;3;f;0;s;0;0b;0;1b;0",
+            "Crws": "0;c;1;s;1;P;c;1;h;0;0l;3;0o;2;0a;1;0f;0;1b;0;S;c;1;s;0.884;o;0.798",
+            "Surf": "0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0;S;o;1"
+        }
+    },
+    "ZETA DIVISION": {
+        "name": "ZETA DIVISION",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/4/4f/ZETA_DIVISION_lightmode.png",
+        "crosshairs": {
+            "Laz": "0;p;0;c;1;s;1;P;o;1;f;0;m;1;0t;1;0l;3;0a;1;0f;0;1b;0;A;c;7;o;0;d;1;z;3;f;0;s;0;m;1;0t;3;0l;2;0o;0;0a;0.5;0f;0;1b;0;S;d;0",
+            "crow": "0;s;1;P;o;1;f;0;0t;1;0l;1;0o;1;0a;1;0f;0;1b;0;S;c;0;s;0.5;o;1",
+            "Dep": "0;s;1;P;o;0.1;f;0;s;0;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0",
+            "SugarZ3ro": "0;P;c;1;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "TENNN": "0;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0"
+        }
+    },
+    "Northeption": {
+        "name": "Northeption",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/c/cb/Team_Northeption_2021_allmode_full.png",
+        "crosshairs": {
+            "Meteor": "0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0;S;s;1.2;o;1",
+            "JoxJo": "0;P;h;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "xnfri": "0;s;1;P;c;5;o;0.4;d;1;f;0;0l;2;0o;0;0a;1;0f;0;1b;0;S;c;5;s;0.5;o;0.9",
+            "derialy": "0;s;1;P;c;5;h;0;d;1;z;1;f;0;s;0;0b;0;1t;1;1o;1;1a;1;1m;0;1e;0.23",
+            "BlackWiz": "0;p;0;s;1;P;c;1;o;1;d;1;z;1;0t;1;0l;2;0o;1;0a;1;0e;0.3;1b;0;A;c;7;o;1;d;1;f;0;s;0;0b;0;1b;0;S;s;0.5;o;1"
+        }
+    },
+    "100 Thieves": {
+        "name": "100 Thieves",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/c/c2/100_Thieves_lightmode.png",
+        "crosshairs": {
+            "Asuna": "0;P;o;1;0t;1;0l;2;0a;1;0f;0;1b;0",
+            "Hiko": "0;P;c;1;h;0;d;1;z;1;0t;1;0l;2;0a;1;0f;0;1l;5;1o;4;1a;1;1m;0;1f;0",
+            "cNed": "0;P;c;1;h;0;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0"
+        }
+    },
+    "LOUD": {
+        "name": "LOUD",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/8/8b/LOUD_allmode.png",
+        "crosshairs": {
+            "aspas": "0;P;c;5;o;1;d;1;z;3;f;0;0b;0;1b;0",
+            "Less": "0;P;o;0;0t;1;0l;2;0o;0;0a;1;0f;0;1b;0",
+            "pANcada": "0;P;c;1;h;0;s;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "Saadhak": "0;P;c;1;o;1;f;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "Sacy": "0;P;h;0;0t;1;0l;4;0o;1;0a;1;0f;0;1t;3;1o;2;1a;1;1m;0;1f;0"
+        }
+    },
+    "Team Liquid": {
+        "name": "Team Liquid",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/c/c9/Team_Liquid_2020_lightmode.png",
+        "crosshairs": {
+            "soulcas": "0;s;1;P;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;00;s;1;P;o;1;d;1;z;3;f;0;0b;0;1b;0;S;s;0.762",
+            "ScreaM": "0;s;1;P;c;5;o;1;d;1;z;3;f;0;0t;6;0l;0;0a;1;0f;0;1b;0;S;c;6;s;0.949;o;1",
+            "Jamppi": "0;s;1;P;h;0;0t;1;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1m;0;1f;0;S;o;0.502",
+            "Nivera": "0;s;1;P;o;1;0t;1;0l;2;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;S;c;1;o;0.5",
+            "L1NK": "0;s;1;P;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0"
+        }
+    },
+    "Paper Rex": {
+        "name": "Paper Rex",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/8/8c/Paper_Rex_lightmode.png",
+        "crosshairs": {
+            "mindfreak": "0;P;c;1;o;0.723;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "f0rsakeN": "0;s;1;P;o;1;0t;1;0l;1;0o;4;0a;1;0f;0;1t;1;1l;1;1o;3;1a;0;1m;0;1f;0;S;c;0;o;1",
+            "Benkai": "0;P;c;5;o;1;d;1;f;0;0t;0;0l;0;0o;0;0a;0;0f;0;1b;0",
+            "d4v41": "0;s;1;P;h;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "Jinggg": "0;s;1;P;c;1;o;1;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0;S;c;5"
+        }
+    },
+    "The Guard": {
+        "name": "The Guard",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/1/13/The_Guard_allmode.png",
+        "crosshairs": {
+            "neT": "0;P;c;1;h;0;m;1;0l;4;0o;2;0a;1;0f;0;1t;6;1l;0;1o;3;1a;0;1m;0;1f;0",
+            "valyn": "0;s;1;P;h;0;f;0;0l;5;0o;0;0a;1;0f;0;1b;0",
+            "JonahP": "0;P;c;5;o;1;0t;1;0l;3;0o;1;0a;1;0f;0;1b;0",
+            "Sayaplayer": "0;s;1;P;c;1;0t;1;0l;3;0o;1;0a;1;0f;0;1b;0;S;c;1;s;0.75;o;1",
+            "trent": "0;P;c;5;h;0;0l;4;0o;2;0a;1;0f;0;1a;0;1m;0;1f;0"
+        }
+    },
+    "EDward Gaming": {
+        "name": "EDward Gaming",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/9/98/EDward_Gaming_2017_lightmode.png",
+        "crosshairs": {
+            "zmjjkk": "0;p;0;s;1;P;c;7;o;1;f;0;s;0;0t;1;0l;3;0o;2;0a;1;0f;0;1b;0;A;o;1;d;1;0b;0;1t;0;S;c;0;s;0.591;o;1",
+            "nobody": "0;s;1;P;c;5;o;1;f;0;0b;0;1t;1;1o;3;1a;1;1m;0;1f;0;S;d;0",
+            "Life": "0;s;1;P;c;5;h;0;f;0;s;0;0l;4;0o;2;0a;1;0f;0;1b;0;S;s;0.86;o;1",
+            "CHICHOO": "0;P;c;1;o;1;f;0;s;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0",
+            "Haodong": "0;s;1;P;c;5;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0;S;s;0.64;o;1"
+        }
+    },
+    "G2 Esports": {
+        "name": "G2 Esports",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/4/4b/G2_Esports_2020_lightmode.png",
+        "crosshairs": {
+            "nukkye": "0;s;1;P;o;1;d;1;f;0;0b;0;1b;0;S;s;0.85;o;1",
+            "Meddo": "0;P;c;1;h;0;0b;0;1l;3;1o;2;1a;1;1m;0;1f;0",
+            "hoody": "0;s;1;P;o;1;d;1;f;0;0b;0;1b;0;S;s;0.85;o;1",
+            "AvovA": "0;p;0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0;A;o;1;d;1;f;0;s;0;0b;0;1b;0",
+            "m1xwell": "0;s;1;P;c;1;o;1;d;1;0b;0;1b;0;S;s;0.335"
+        }
+    },
+    "Leviatán": {
+        "name": "Leviatán",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/c/c1/Leviat%C3%A1n_full_allmode.png",
+        "crosshairs": {
+            "Tacolilla": "0;s;1;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0;S;c;5;s;0.75",
+            "adverso": "0;P;c;7;h;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "Shyy": "0;P;h;0;0b;0;1l;4;1o;0;1a;1;1m;0;1f;0",
+            "Melser": "0;s;1;P;c;1;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1m;0;1f;0;S;c;6;s;0.897;o;1",
+            "kiNgg": "0;p;0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;1;1m;0;1f;0;A;o;1;d;1;z;3;f;0;s;0;0t;0;0l;0;0o;0;0a;0;1t;0;1l;0;1o;0;1a;0"
+        }
+    },
+    "FURIA Esports": {
+        "name": "FURIA Esports",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/a/aa/FURIA_Esports_allmode.png", 
+        "crosshairs": {
+            "Nozwerr": "0;s;1;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0;S;c;5;s;0.75",
+            "qck": "0;p;0;s;1;P;h;0;0l;5;0o;2;0a;1;0f;0;1b;0;A;o;1;d;1;f;0;s;0;0b;0;1b;0;S;s;1.263;o;1",
+            "mazin": "0;P;h;0;f;0;0l;4;0o;0;0a;1;0f;0;1b;0",
+            "dgzin": "0;s;1;P;c;4;o;1;m;1;0t;1;0l;1;0a;0;0f;0;1t;1;1l;1;1o;4;1a;0;1m;0;1f;0;S;c;0;s;0.591;o;1",
+            "Khalil": "0;P;h;0;f;0;0l;4;0o;0;0a;1;0f;0;1b;0"
+        }
+    },
+    "XSET": {
+        "name": "XSET",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/2/24/XSET_lightmode.png",
+        "crosshairs": {
+            "AYRIN": "0;P;c;5;h;0;0l;4;0o;2;0a;1;0f;0;1b;0",
+            "BcJ": "0;s;1;P;c;5;o;0.116;f;0;m;1;0l;3;0o;1;0a;1;0f;0;1b;0",
+            "Cryo": "0;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0",
+            "dephh": "0;P;h;0;0l;5;0o;2;0a;1;0f;0;1b;0",
+            "zekken": "0;P;c;1;o;1;d;1;0b;0;1b;0"
+        }
+    },
+    "FunPlus Phoenix": {
+        "name": "FunPlus Phoenix",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/2/20/FunPlus_Phoenix_2021_allmode.png",
+        "crosshairs": {
+            "ANGE1": "0;P;h;0;d;1;f;0;0l;3;0o;2;0a;1;0f;0;1b;0",
+            "ardiis": "0;s;1;P;h;0;0l;3;0o;0;0a;1;0f;0;1b;0",
+            "Zyppan": "0;s;1;P;c;5;h;0;0l;4;0o;2;0a;1;0f;0;1t;1;1l;0;1o;0;1m;0;1f;0",
+            "SEIDER": "0;s;1;P;c;1;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0;S;c;5;s;0.823;o;1",
+            "Shao": "0;P;h;0;f;0;m;1;0l;3;0o;0;0a;1;0f;0;1b;0"
+        }
+    },
+    "Sengoku Gaming": {
+        "name": "Sengoku Gaming",
+        "category": "esports",
+        "icon": "https://liquipedia.net/commons/images/4/46/Sengoku_Gaming_allmode_full.png",
+        "crosshairs": {
+            "something": "0;P;o;0.619;d;1;f;0;s;0;0t;1;0l;0;0o;2;0a;1;0f;0;1b;0",
+            "Zerost": "0;P;c;1;o;0.619;d;1;f;0;0t;0;0l;3;0a;0;0f;0;1b;0"
+        }
+    }
+}

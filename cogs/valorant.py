@@ -511,6 +511,55 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # agents view
         view = View.BaseAgent(interaction, find_agent, response)
         await view.start()
+    
+    @app_commands.command(description=clocal.get("contract", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(agent=clocal.get("contract", {}).get("DESCRIBE", {}).get("agent", ""), username=clocal.get("contract", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("contract", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def contract(self, interaction: Interaction, agent: str, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+
+        # cache
+        cache = self.db.read_cache()
+        
+        # find agents
+        find_agent_en_US = []
+        find_agent_locale = []
+        
+        for item_key, item_agent in cache['agents'].items():
+            if agent.lower() == "all":
+                data = item_agent
+                data["uuid"] = item_key
+                find_agent_en_US.append(data)
+            else:
+                if agent.lower() in cache['agents'][item_key]['name'][default_language].lower():
+                    data = item_agent
+                    data["uuid"] = item_key
+                    find_agent_en_US.append(data)
+                
+                if agent.lower() in cache['agents'][item_key]['name'][str(VLR_locale)].lower():
+                    data = item_agent
+                    data["uuid"] = item_key
+                    find_agent_locale.append(data)
+            
+        find_agent = find_agent_en_US if len(find_agent_en_US) > 0 else find_agent_locale
+        
+        #data
+        data = endpoint.fetch_contracts()
+
+        # contract view
+        view = View.BaseContract(interaction, find_agent, data, response, endpoint.player, endpoint, is_private_message)
+        await view.start()
 
     @app_commands.command(description=clocal.get("weapon", {}).get("DESCRIPTION", ""))
     @app_commands.describe(weapon=clocal.get("weapon", {}).get("DESCRIBE", {}).get("weapon", ""))
@@ -635,18 +684,27 @@ class ValorantCog(commands.Cog, name='Valorant'):
         endpoint = await self.get_endpoint(interaction.user.id, interaction.locale)
 
         # crosshair template
-        template = JSON.read("crosshair", dir="config")
+        template = JSON.read("crosshair")
+        icon = ""
 
         if len(player)>0:
             max = 0
             selected = ""
-            for key in template.keys():
-                r = SequenceMatcher(None, key.lower(), player.lower()).ratio()
-                if r>max:
-                    max = r
-                    selected = key
-            player = selected
-            code = template.get(player, "")
+            for data in template.values():
+                for name in data["crosshairs"].keys():
+                    r = SequenceMatcher(None, name.lower(), player.lower()).ratio()
+                    if r>max:
+                        max = r
+                        selected_category = data
+                        selected = name
+            
+            player = ""
+            if selected_category.get("category")=="esports":
+                player = selected_category["name"] + " - " + selected
+            else:
+                player = selected
+            icon = selected_category["icon"]
+            code = selected_category["crosshairs"][selected]
         else:
             player = endpoint.player
 
@@ -660,6 +718,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         # embed
         embed = Embed(title=response.get("TITLE"), description=response.get("RESPONSE").format(player=player, code=code)).set_image(url=f"attachment://crosshair.png")
+        embed.set_thumbnail(url=icon)
         await interaction.followup.send(embed=embed, file=file)
     
     @app_commands.command(description=clocal.get("party", {}).get("DESCRIPTION", ""))
