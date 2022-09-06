@@ -308,6 +308,29 @@
       "DROPDOWN_CHOICE_TITLE": "エージェントを選択",
       "NOT_FOUND": "入力されたキーワードと一致するエージェントが見つかりませんでした。"
     },
+    "contract": {
+      "NAME": "contract",
+      "DESCRIPTION": "エージェントの契約書を表示します",
+      "DESCRIBE": {
+        "agent": "エージェントの名前",
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "TITLE": "{name}",
+      "RESPONSE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}{active}\n\n{vp_emoji} {cost}",
+      "COMPLETE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}{active}\n\n{vp_emoji} {cost}",
+      "HEADER": "",
+      "FOOTER": "{player}",
+      "ACTIVE": "\n**`アクティブ`**",
+      "PLAYER_CARD": "プレイヤーカード",
+      "SPRAY": "スプレー",
+      "BUDDY": "バディー",
+      "POINT": "ポイント",
+      "PLAYER_TITLE": "タイトル",
+      "SKIN": "スキン",
+      "DROPDOWN_CHOICE_TITLE": "エージェントを選択",
+      "NOT_FOUND": "入力されたキーワードと一致するエージェントが見つかりませんでした。"
+    },
     "weapon": {
       "NAME": "weapon",
       "DESCRIPTION": "武器やアーマーの詳細を表示します",

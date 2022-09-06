@@ -308,6 +308,29 @@
       "DROPDOWN_CHOICE_TITLE": "Select the Agent",
       "NOT_FOUND": "No agents found that match your keyword entries."
     },
+    "contract": {
+      "NAME": "contract",
+      "DESCRIPTION": "Show the contracts of a specified agent",
+      "DESCRIBE": {
+        "agent": "The name of the agent",
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "TITLE": "{name}",
+      "RESPONSE": "**`{reward}`**\n**Level**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
+      "COMPLETE": "**`{reward}`**\n**Level**: {tier}/{max_tier}{active}\n\n{vp_emoji} {cost}",
+      "HEADER": "",
+      "FOOTER": "{player}",
+      "ACTIVE": "\n**`ACTIVE`**",
+      "PLAYER_CARD": "Player Card",
+      "SPRAY": "Spray",
+      "BUDDY": "Buddie",
+      "POINT": "Point",
+      "PLAYER_TITLE": "Title",
+      "SKIN": "Skin",
+      "DROPDOWN_CHOICE_TITLE": "Select the Agent",
+      "NOT_FOUND": "No agents found that match your keyword entries."
+    },
     "weapon": {
       "NAME": "weapon",
       "DESCRIPTION": "Show the details of a specified weapon or armor",

@@ -124,6 +124,40 @@ class API_ENDPOINT:
             return data
         else:
             raise ResponseError(self.response.get('REQUEST_FAILED'))
+    
+    def post(self, endpoint: str = '/', url: str = 'pd', errors: Dict = {}, not_found_error: bool = True) -> Dict:
+        """ fetch data from the api """
+
+        self.locale_response()
+
+        endpoint_url = getattr(self, url)
+
+        data = None
+
+        r = requests.post(f'{endpoint_url}{endpoint}', headers=self.headers)
+        print(f"[{datetime.datetime.now()}] Posting {endpoint_url}{endpoint}.")
+
+        try:
+            data = json.loads(r.text)
+        except:  # as no data is set, an exception will be raised later in the method
+            pass
+
+        if "httpStatus" not in data:
+            return data
+
+        if data["httpStatus"] == 400:
+            response = LocalErrorResponse('AUTH', self.locale_code)
+            print(f"[{datetime.datetime.now()}] Fetching failed (400): {endpoint_url}{endpoint}.")
+            raise ResponseError(response.get('COOKIES_EXPIRED'))
+        elif data["httpStatus"] == 404:
+            print(f"[{datetime.datetime.now()}] Fetching failed (404): {endpoint_url}{endpoint}.")
+            if not_found_error:
+                response = LocalErrorResponse('NOT_FOUND', self.locale_code)
+                raise ResponseError(response)
+            else:
+                return {}
+            # await self.refresh_token()
+            # return await self.fetch(endpoint=endpoint, url=url, errors=errors)
 
     # contracts endpoints
 
@@ -133,6 +167,14 @@ class API_ENDPOINT:
         Get a list of contracts and completion status including match history
         """
         data = self.fetch(endpoint=f'/contracts/v1/contracts/{self.puuid}', url='pd')
+        return data
+    
+    def post_contracts_activate(self, contract_id: str) -> Mapping[str, Any]:
+        """
+        Contracts_Activate
+        Activate a particular contract
+        """
+        data = self.post(endpoint=f'/contracts/v1/contracts/{self.puuid}/special/{contract_id}', url='pd')
         return data
 
     # PVP endpoints
