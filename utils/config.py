@@ -26,7 +26,7 @@ class JSON:
             return JSON.save(filename, data)
 
 def LoadConfig() -> Dict:
-    return JSON.read("config", "config")
+    return JSON.read("config", dir="config")
 
 def SaveConfig(cfg: Dict) -> None:
     JSON.save("config", cfg, "config")

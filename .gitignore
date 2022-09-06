@@ -1,7 +1,6 @@
 *.pyc
 .vscode
 venv/
-data/
 temp/
 
 /*.json
@@ -10,3 +9,11 @@ temp/
 /heatmap.png
 /*.png
 .env
+
+
+/data/article.json
+/data/cache.json
+/data/conv.json
+/data/emoji.json
+/data/notifys.json
+/data/users.json
