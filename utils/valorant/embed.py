@@ -1334,7 +1334,7 @@ class GetEmbed:
     
     def battlepass(bot: ValorantBot, player: str, data: Dict, season: Dict, response: Dict) -> discord.Embed:
         """Embed Battle-pass"""
-
+        
         # language
         MSG_RESPONSE = response.get("BATTLEPASS", {}).get('RESPONSE')
         MSG_COMPLETE = response.get("BATTLEPASS", {}).get('COMPLETE')
@@ -1344,7 +1344,7 @@ class GetEmbed:
         
         embeds = []
 
-        BTPs = GetFormat.battlepass_format(data, season, response)
+        BTPs = GetFormat.battlepass_format(data, season, response, str(VLR_locale))
         
         for btp in BTPs:
             item = btp['data']
@@ -1404,7 +1404,7 @@ class GetEmbed:
         if event_data == None:
             return None
         
-        BTP = GetFormat.battlepass_event_format(data, event, response)
+        BTP = GetFormat.battlepass_event_format(data, event, response, str(VLR_locale))
         
         item = BTP['data']
         reward = item['reward']

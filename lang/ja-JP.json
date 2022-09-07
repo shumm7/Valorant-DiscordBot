@@ -316,12 +316,18 @@
         "username": "ユーザー名 (一時ログイン)",
         "password": "パスワード (一時ログイン)"
       },
-      "TITLE": "{name}",
-      "RESPONSE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}{active}\n\n{vp_emoji} {cost}",
-      "COMPLETE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}{active}\n\n{vp_emoji} {cost}",
+      "TITLE": "{player} の契約書",
+      "RESPONSE": "アクティブ: **{active_name}**",
       "HEADER": "",
-      "FOOTER": "{player}",
-      "ACTIVE": "\n**`アクティブ`**",
+      "FOOTER": "",
+      "CONTRACT": {
+        "TITLE": "{active}{name}",
+        "RESPONSE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
+        "COMPLETE": "**`{reward}`**\n**レベル**: {tier}/{max_tier}{active}\n\n{vp_emoji} {cost}",
+        "HEADER": "",
+        "FOOTER": ""
+      },
+      "ACTIVE": "`アクティブ` ",
       "PLAYER_CARD": "プレイヤーカード",
       "SPRAY": "スプレー",
       "BUDDY": "バディー",

@@ -316,12 +316,18 @@
         "username": "Username (temporary login)",
         "password": "Password (temporary login)"
       },
-      "TITLE": "{name}",
-      "RESPONSE": "**`{reward}`**\n**Level**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
-      "COMPLETE": "**`{reward}`**\n**Level**: {tier}/{max_tier}{active}\n\n{vp_emoji} {cost}",
+      "TITLE": "{player}'s Contract",
+      "RESPONSE": "Active: **{active_name}**",
       "HEADER": "",
-      "FOOTER": "{player}",
-      "ACTIVE": "\n**`ACTIVE`**",
+      "FOOTER": "",
+      "CONTRACT": {
+        "TITLE": "{active}{name}",
+        "RESPONSE": "**`{reward}`**\n**Level**: {tier}/{max_tier}｜**XP**: {xp}/{max_xp}\n\n{vp_emoji} {cost}",
+        "COMPLETE": "**`{reward}`**\n**Level**: {tier}/{max_tier}{active}\n\n{vp_emoji} {cost}",
+        "HEADER": "",
+        "FOOTER": ""
+      },
+      "ACTIVE": "`ACTIVE` ",
       "PLAYER_CARD": "Player Card",
       "SPRAY": "Spray",
       "BUDDY": "Buddie",

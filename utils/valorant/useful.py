@@ -751,7 +751,7 @@ class GetFormat:
 
 
     @classmethod
-    def battlepass_format(cls, data: Dict, season: str, response: Dict) -> List[Dict[str, Any]]:
+    def battlepass_format(cls, data: Dict, season: str, response: Dict, locale: str) -> List[Dict[str, Any]]:
         """ Get battle pass format """
 
         data = data['Contracts']
@@ -774,12 +774,12 @@ class GetFormat:
             item_reward = cls.__get_contract_tier_reward(tier, reward, tiers)
             free_rewards = cls.__get_contract_tier_free_reward(tier, reward, tiers)
 
-            item = cls.__get_item_battlepass(item_reward["reward"]['type'], item_reward["reward"]['uuid'], response)
+            item = cls.__get_item_battlepass(item_reward["reward"]['type'], item_reward["reward"]['uuid'], response, locale)
             item["original_type"]=item_reward["reward"]['type']
             items.append(item)
 
             for free_reward in free_rewards:
-                item = cls.__get_item_battlepass(free_reward['type'], free_reward['uuid'], response)
+                item = cls.__get_item_battlepass(free_reward['type'], free_reward['uuid'], response, locale)
                 item["original_type"]=free_reward['type']
                 items.append(item)
 
@@ -800,7 +800,7 @@ class GetFormat:
         raise ValorantBotError(f"Failed to get battlepass info")
     
     @classmethod
-    def battlepass_event_format(cls, data: Dict, event: str, response: Dict) -> Dict[str, Any]:
+    def battlepass_event_format(cls, data: Dict, event: str, response: Dict, locale: str) -> Dict[str, Any]:
         """ Get battle pass format """
 
         data = data['Contracts']
@@ -817,7 +817,7 @@ class GetFormat:
             tier, act, xp, reward = btp['tier'], btp['act'], btp['xp'], btp['reward']
 
             item_reward = cls.__get_contract_tier_reward(tier, reward, tiers)
-            item = cls.__get_item_battlepass(item_reward["reward"]['type'], item_reward["reward"]['uuid'], response)
+            item = cls.__get_item_battlepass(item_reward["reward"]['type'], item_reward["reward"]['uuid'], response, locale)
 
             item_name = item['data']['name']
             item_type = item['data']['type']

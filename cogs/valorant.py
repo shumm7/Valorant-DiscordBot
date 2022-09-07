@@ -515,7 +515,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
     @app_commands.command(description=clocal.get("contract", {}).get("DESCRIPTION", ""))
     @app_commands.describe(agent=clocal.get("contract", {}).get("DESCRIBE", {}).get("agent", ""), username=clocal.get("contract", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("contract", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
-    async def contract(self, interaction: Interaction, agent: str, username: str = None, password: str = None) -> None:
+    async def contract(self, interaction: Interaction, agent: str = None, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         # check if user is logged in
@@ -532,33 +532,40 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # cache
         cache = self.db.read_cache()
         
+        #data
+        fetch_data = endpoint.fetch_contracts()
+        
         # find agents
         find_agent_en_US = []
         find_agent_locale = []
-        
-        for item_key, item_agent in cache['agents'].items():
-            if agent.lower() == "all":
-                data = item_agent
-                data["uuid"] = item_key
-                find_agent_en_US.append(data)
-            else:
-                if agent.lower() in cache['agents'][item_key]['name'][default_language].lower():
+        find_agent = []
+
+        if agent == None:
+            agent_uuid = cache["contracts"][fetch_data["ActiveSpecialContract"]]["reward"]["relationUuid"]
+            data = cache["agents"][agent_uuid]
+            data["uuid"] = agent_uuid
+            find_agent = [data]
+        else:
+            for item_key, item_agent in cache['agents'].items():
+                if agent.lower() == "all":
                     data = item_agent
                     data["uuid"] = item_key
                     find_agent_en_US.append(data)
-                
-                if agent.lower() in cache['agents'][item_key]['name'][str(VLR_locale)].lower():
-                    data = item_agent
-                    data["uuid"] = item_key
-                    find_agent_locale.append(data)
+                else:
+                    if agent.lower() in cache['agents'][item_key]['name'][default_language].lower():
+                        data = item_agent
+                        data["uuid"] = item_key
+                        find_agent_en_US.append(data)
+                    
+                    if agent.lower() in cache['agents'][item_key]['name'][str(VLR_locale)].lower():
+                        data = item_agent
+                        data["uuid"] = item_key
+                        find_agent_locale.append(data)
             
-        find_agent = find_agent_en_US if len(find_agent_en_US) > 0 else find_agent_locale
-        
-        #data
-        data = endpoint.fetch_contracts()
+            find_agent = find_agent_en_US if len(find_agent_en_US) > 0 else find_agent_locale
 
         # contract view
-        view = View.BaseContract(interaction, find_agent, data, response, endpoint.player, endpoint, is_private_message)
+        view = View.BaseContract(interaction, find_agent, fetch_data, response, endpoint.player, endpoint, is_private_message)
         await view.start()
 
     @app_commands.command(description=clocal.get("weapon", {}).get("DESCRIPTION", ""))

@@ -1126,6 +1126,7 @@ class BaseContract(ui.View):
         self.current_page: int = 0
         self.embeds: List[discord.Embed] = []
         self.contract = None # contract uuid
+        self.agent_uuid = ""
         self.endpoint = endpoint
         self.page_format = {}
         self.is_private_message = is_private_message
@@ -1135,6 +1136,7 @@ class BaseContract(ui.View):
     def build_embeds(self, selected_agent: str, response: Dict) -> None:
         """ Builds the agent embeds """
         
+        self.agent_uuid = selected_agent
         cache = JSON.read("cache")
         embeds = []
 
@@ -1158,6 +1160,7 @@ class BaseContract(ui.View):
                     item_type = item['type']
                     original_type = item['original_type']
                     active = response.get("ACTIVE") if self.data.get("ActiveSpecialContract", "") == self.contract else ""
+                    active_uuid = self.data.get("ActiveSpecialContract", "")
 
                     def contract_format(format: str):
                         return format.format(
@@ -1171,21 +1174,30 @@ class BaseContract(ui.View):
                             max_xp = f'{max_xp:,}',
                             tier=tier,
                             max_tier=tiers,
-                            active = active
+                            active = active,
+                            active_name = cache["contracts"].get(active_uuid, {}).get("names", {}).get(self.language)
                         )
 
                     embed = Embed(
                         title = contract_format(self.response.get("TITLE")),
-                        description = contract_format(self.response.get("RESPONSE")),
-                        color = cache["agents"][selected_agent]["color"][0]
+                        description = contract_format(self.response.get("RESPONSE"))
                     )
                     embed.set_author(name=contract_format(self.response.get("HEADER")))
                     embed.set_footer(text=contract_format(self.response.get("FOOTER")))
+                    embeds.append(embed)
+
+                    embed = Embed(
+                        title = contract_format(self.response.get("CONTRACT", {}).get("TITLE")),
+                        description = contract_format(self.response.get("CONTRACT", {}).get("RESPONSE")),
+                        color = cache["agents"][selected_agent]["color"][0]
+                    )
+                    embed.set_author(name=contract_format(self.response.get("CONTRACT", {}).get("HEADER")))
+                    embed.set_footer(text=contract_format(self.response.get("CONTRACT", {}).get("FOOTER")))
                     embed.set_thumbnail(url=cache["agents"][selected_agent]["icon"])
                     embed.set_image(url=icon if icon else "")
 
                     if tier == tiers:
-                        embed.description = contract_format(self.response.get("COMPLETE"))
+                        embed.description = contract_format(self.response.get("CONTRACT", {}).get("COMPLETE"))
 
                     embeds.append(embed)
 
@@ -1212,6 +1224,7 @@ class BaseContract(ui.View):
         if self.data.get("ActiveSpecialContract", "") != self.contract:
             self.data = self.endpoint.post_contracts_activate(self.contract)
             self.update_button()
+            self.build_embeds(self.agent_uuid, self.response)
             await interaction.response.edit_message(embeds = self.embeds, view=self)
     
     def update_button(self) -> None:
