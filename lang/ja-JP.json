@@ -36,14 +36,25 @@
         "username": "ユーザー名",
         "password": "パスワード"
       },
-      "SUCCESS": "**{name}** へログインしました。",
+      "SUCCESS": "**{name}** へログインしました",
       "FAILED": "ログインに失敗しました。再度お試しください。"
     },
     "logout": {
       "NAME": "logout",
       "DESCRIPTION": "あなたのアカウントからログアウトします",
-      "SUCCESS": "ログアウトが完了しました。",
-      "FAILED": "ログアウトに失敗しました。再度お試しください。"
+      "RESPONSE": "あなたは **{player}** へログインしています",
+      "SUCCESS": "**{player}** からログアウトが完了しました。",
+      "FAILED": "ログアウトに失敗しました。再度お試しください。",
+      "DROPDOWN_CHOICE_TITLE": "ユーザーを選択"
+    },
+    "account": {
+      "NAME": "account",
+      "DESCRIPTION": "アカウントを切り替えます",
+      "RESPONSE": "あなたは **{player}** へログインしています",
+      "SUCCESS": "**{player}** へログインしました",
+      "FAILED": "アカウントの切り替えに失敗しました。再度お試しください。",
+      "SINGLE_ACCOUNT": "あなたは1つのアカウントにしかログインしていません",
+      "DROPDOWN_CHOICE_TITLE": "ユーザーを選択"
     },
     "cookies": {
       "NAME": "cookies",
@@ -639,7 +650,8 @@
       "NOT_LOGIN": "あなたはまだ登録されていません。`/login` で登録してください。",
       "LOGIN_ERROR": "ログインに失敗しました。再度お試しください。",
       "LOGOUT_ERROR": "登録がされていないため、ログアウトが行えません。",
-      "LOGOUT_EXCEPT": "ログアウト中にエラーが発生しました。"
+      "LOGOUT_EXCEPT": "ログアウト中にエラーが発生しました。",
+      "SWITCH_EXCEPT": "アカウントの切り替えに失敗しました。"
     },
     "API": {
       "FAILED_ACTIVE": "APIの有効化に失敗しました。",

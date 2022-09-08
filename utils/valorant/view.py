@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib, math
 from datetime import datetime, timedelta
 from typing import Awaitable, Dict, List, TYPE_CHECKING, Union
+from urllib import response
 
 # Standard
 import discord
@@ -252,6 +253,106 @@ class TwoFA_UI(ui.Modal, title='Two-factor authentication'):
         print("TwoFA_UI:", error)
         embed = discord.Embed(description='Oops! Something went wrong.', color=0xfd4554)
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+class Logout(ui.View):
+    def __init__(self, interaction: Interaction, user_id: int, db: DATABASE, response: Dict) -> None:
+        self.interaction: Interaction = interaction
+        self.response = response
+        self.language = str(VLR_locale)
+        self.user = user_id
+        self.db = db
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        super().__init__()
+        self.clear_items()
+    
+    def build_select(self) -> None:
+        """ Builds the select users """
+        db = self.db.read_db()
+        for value in db.get(str(self.user), {}).get("auth", {}).values():
+            self.select_user.add_option(label=value["username"], value=value["puuid"])
+            self.select_user_swtich.add_option(label=value["username"], value=value["puuid"])
+    
+    @ui.select(placeholder='Select a username:')
+    async def select_user(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+
+        db = self.db.read_db()
+        player = db[str(self.user)]["auth"][select.values[0]]["username"]
+        if logout := self.db.logout(self.user, interaction.locale, select.values[0]):
+            if logout:
+                embed = Embed(self.response.get('SUCCESS').format(player=player))
+                return await interaction.response.edit_message(embed=embed, view=self)
+            raise ValorantBotError(self.response.get('FAILED'))
+    
+    @ui.select(placeholder='Select a username:')
+    async def select_user_swtich(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        
+        db = self.db.read_db()
+        self.db.swtich(self.user, self.interaction.locale, select.values[0])
+
+        player = db[str(self.user)]["auth"][select.values[0]]["username"]
+        embed = Embed(self.response.get('SUCCESS').format(player = player))
+        return await interaction.response.edit_message(embed=embed, view=self)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the agent view """
+
+        db = self.db.read_db()
+
+        if len(db[str(self.user)].get("auth", {})) == 1:
+            puuid = db[str(self.user)].get("active", {})
+            player = db[str(self.user)]["auth"][puuid]["username"]
+            if logout := self.db.logout(self.user, self.interaction.locale):
+                if logout:
+                    embed = Embed(self.response.get('SUCCESS').format(player = player))
+                    return await self.interaction.followup.send(embed=embed, view=self)
+                raise ValorantBotError(self.response.get('FAILED'))
+        elif len(db[str(self.user)].get("auth", {})) != 0:
+            puuid = db[str(self.user)].get("active", {})
+            player = db[str(self.user)]["auth"][puuid]["username"]
+
+            self.add_item(self.select_user)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_user.placeholder = placeholder
+            self.build_select()
+            embed = Embed(self.response.get('RESPONSE').format(player = player))
+            return await self.interaction.followup.send('\u200b', embed = embed, view=self)
+        
+        not_found = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found)
+    
+    async def start_swtich(self) -> Awaitable[None]:
+        """ Starts the agent view """
+
+        db = self.db.read_db()
+
+        if len(db[str(self.user)].get("auth", {})) == 1:
+            raise ValorantBotError(self.response.get("SINGLE_ACCOUNT"))
+        elif len(db[str(self.user)].get("auth", {})) != 0:
+            puuid = db[str(self.user)].get("active", {})
+            player = db[str(self.user)]["auth"][puuid]["username"]
+
+            self.add_item(self.select_user_swtich)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_user_swtich.placeholder = placeholder
+            self.build_select()
+
+            embed = Embed(self.response.get('RESPONSE').format(player = player))
+            return await self.interaction.followup.send('\u200b', embed = embed, view=self)
+        
+        not_found = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found)
 
 
 # inspired by https://github.com/giorgi-o

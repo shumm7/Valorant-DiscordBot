@@ -441,7 +441,7 @@ class API_ENDPOINT:
         users = JSON.read("users")
 
         for id,value in users.items():
-            if value.get("puuid")==puuid:
+            if value.get("active")==puuid:
                 return id
         return ""
 

@@ -212,7 +212,7 @@ class GetEmbed:
     
     # ---------- RANK EMBED ---------- #
 
-    def rank(player: str, mmr: Dict, response: Dict, endpoint: Dict, bot: ValorantBot) -> discord.Embed:
+    def rank(player: str, mmr: Dict, response: Dict, endpoint: API_ENDPOINT, bot: ValorantBot) -> discord.Embed:
         """Embed Rank"""
         cache = JSON.read('cache')
 
@@ -233,7 +233,7 @@ class GetEmbed:
             season_id = endpoint.__get_live_season()
 
         current_season = mmr["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
-        tier = current_season[season_id]['CompetitiveTier']
+        tier = current_season.get(season_id, {}).get('CompetitiveTier', 0)
         rank_name = GetFormat.get_competitive_tier_name(tier)
 
         

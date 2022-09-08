@@ -42,8 +42,19 @@
     "logout": {
       "NAME": "logout",
       "DESCRIPTION": "Logout and delete your account from database",
+      "RESPONSE": "You are now logging in to **{player}**",
       "SUCCESS": "Successfully logged out!",
-      "FAILED": "Failed to logout, please try again!"
+      "FAILED": "Failed to logout, please try again!",
+      "DROPDOWN_CHOICE_TITLE": "Select a username"
+    },
+    "account": {
+      "NAME": "account",
+      "DESCRIPTION": "Switch your Riot account",
+      "RESPONSE": "You are now logging in to **{player}**",
+      "SUCCESS": "Successfully logged in **{player}**",
+      "FAILED": "Failed to switch an account, please try again!",
+      "SINGLE_ACCOUNT": "You are only logged into 1 account",
+      "DROPDOWN_CHOICE_TITLE": "Select a username"
     },
     "cookies": {
       "NAME": "cookies",
@@ -639,7 +650,8 @@
       "NOT_LOGIN": "You're not registered!, please `/login` to register!",
       "LOGIN_ERROR": "Fail to login, please try again!",
       "LOGOUT_ERROR": "I can't logout you if you're not registered!",
-      "LOGOUT_EXCEPT": "An error occurred while logging out."
+      "LOGOUT_EXCEPT": "An error occurred while logging out.",
+      "SWITCH_EXCEPT": "Failed to switch an account"
     },
     "API": {
       "FAILED_ACTIVE": "Failed to activate API",

@@ -175,7 +175,7 @@ class Notify(commands.Cog):
                     notify_list = []
 
                     for user_id,values in userdata.items():
-                        if values.get("lang", "").lower() == article_lang and values.get("article", False) and (not data[0].get("category") in values.get("ignore_article_category", [])):
+                        if values.get("lang", "en-US").lower() == article_lang and values.get("article", False) and (not data[0].get("category") in values.get("ignore_article_category", [])):
                             notify_list.append(user_id)
                     
                     await self.send_article(notify_list, article_lang)

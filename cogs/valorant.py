@@ -128,11 +128,23 @@ class ValorantCog(commands.Cog, name='Valorant'):
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
         user_id = interaction.user.id
-        if logout := self.db.logout(user_id, interaction.locale):
-            if logout:
-                embed = Embed(response.get('SUCCESS'))
-                return await interaction.followup.send(embed=embed, ephemeral=True)
-            raise ValorantBotError(response.get('FAILED'))
+        
+        view = View.Logout(interaction, user_id, self.db, response)
+        await view.start()
+    
+    @app_commands.command(description=clocal.get("account", {}).get("DESCRIPTION", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def account(self, interaction: Interaction) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        user_id = interaction.user.id
+        
+        view = View.Logout(interaction, user_id, self.db, response)
+        await view.start_swtich()
     
     # credit https://github.com/giorgi-o
     # https://github.com/giorgi-o/SkinPeek/wiki/How-to-get-your-Riot-cookies

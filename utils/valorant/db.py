@@ -48,7 +48,7 @@ class DATABASE:
         """Check if user is logged in"""
         
         db = self.read_db()
-        data = db.get(str(user_id), None)
+        data = db.get(str(user_id))
         
         login = False
         
@@ -88,25 +88,58 @@ class DATABASE:
                 puuid=puuid,
                 username=player_name,
                 region=region,
-                expiry_token=expiry_token,
-                notify_mode="All",
-                DM_Message=True,
-                lang=str(VLR_locale),
-                article=True,
-                ignore_article_category = []
+                expiry_token=expiry_token
             )
             
-            db[str(user_id)] = data
+            if db.get(str(user_id))==None:
+                db[str(user_id)] = {"auth": {}}
+
+                # notify mode
+                db[str(user_id)]["notify_mode"] = "All"
+                db[str(user_id)]["DM_Message"] = True
+                db[str(user_id)]["article"] = True
+                db[str(user_id)]["ignore_article_category"] = []
+            
+            db[str(user_id)]["active"] = puuid
+            db[str(user_id)]["auth"][puuid] = data
+            db[str(user_id)]["lang"] = str(VLR_locale)
             
             self.insert_user(db)
-        
+
         except Exception as e:
             print(e)
             raise DatabaseError(response.get('LOGIN_ERROR'))
         else:
             return {'auth': True, 'player': player_name}
     
-    def logout(self, user_id: int, locale_code: str) -> Optional[bool]:
+    def logout(self, user_id: int, locale_code: str, puuid: str = None) -> Optional[bool]:
+        """Logout from database"""
+        
+        # language
+        response = LocalErrorResponse('DATABASE', locale_code)
+        
+        try:
+            if puuid == None:
+                db = self.read_db()
+                del db[str(user_id)]
+                self.insert_user(db)
+            else:
+                db = self.read_db()
+                del db[str(user_id)]["auth"][puuid]
+                if len(db[str(user_id)]["auth"])==0:
+                    del db[str(user_id)]
+                else:
+                    db[str(user_id)]["active"] = list(db[str(user_id)]["auth"].keys())[0]
+                self.insert_user(db)
+        except KeyError:
+            raise DatabaseError(response.get('LOGOUT_ERROR'))
+        except Exception as e:
+            print(e)
+            raise DatabaseError(response.get('LOGOUT_EXCEPT'))
+        else:
+            return True
+    
+    def swtich(self, user_id: int, locale_code: str, puuid: str) -> Optional[bool]:
         """Logout from database"""
         
         # language
@@ -114,13 +147,15 @@ class DATABASE:
         
         try:
             db = self.read_db()
-            del db[str(user_id)]
+            if not puuid in db[str(user_id)]["auth"]:
+                raise DatabaseError(response.get('LOGOUT_ERROR'))
+            db[str(user_id)]["active"] = puuid
             self.insert_user(db)
         except KeyError:
             raise DatabaseError(response.get('LOGOUT_ERROR'))
         except Exception as e:
             print(e)
-            raise DatabaseError(response.get('LOGOUT_EXCEPT'))
+            raise DatabaseError(response.get("SWITCH_EXCEPT"))
         else:
             return True
     
@@ -130,23 +165,29 @@ class DATABASE:
         response = LocalErrorResponse('DATABASE', locale_code)
         
         auth = await self.is_login(user_id, response)
-        puuid = auth['puuid']
-        region = auth['region']
-        username = auth['username']
-        access_token = auth['access_token']
-        entitlements_token = auth['emt']
+        active_uuid = auth["active"]
+
+        puuid = auth["auth"][active_uuid]['puuid']
+        region = auth["auth"][active_uuid]['region']
+        username = auth["auth"][active_uuid]['username']
+        access_token = auth["auth"][active_uuid]['access_token']
+        entitlements_token = auth["auth"][active_uuid]['emt']
+        expiry_token = auth["auth"][active_uuid]['expiry_token']
+        cookie = auth["auth"][active_uuid]['cookie']
+
         notify_mode = auth['notify_mode']
-        expiry_token = auth['expiry_token']
-        cookie = auth['cookie']
         notify_channel = auth.get('notify_channel', None)
         dm_message = auth.get('DM_Message', None)
+        article = auth.get('article', False)
+        ignore_article_category = auth.get('ignore_article_category', [])
+        lang = auth.get('lang', "en-US")
         
         if timestamp_utc() > expiry_token:
             access_token, entitlements_token = await self.refresh_token(user_id, auth)
         
         headers = {'Authorization': f'Bearer {access_token}', 'X-Riot-Entitlements-JWT': entitlements_token}
         
-        data = dict(puuid=puuid, region=region, headers=headers, player_name=username, notify_mode=notify_mode, cookie=cookie, notify_channel=notify_channel, dm_message=dm_message)
+        data = dict(puuid=puuid, region=region, headers=headers, player_name=username, notify_mode=notify_mode, cookie=cookie, notify_channel=notify_channel, dm_message=dm_message, article=article, ignore_article_category=ignore_article_category, lang=lang)
         return data
     
     async def refresh_token(self, user_id: int, data: Dict) -> Optional[Dict]:
@@ -159,10 +200,11 @@ class DATABASE:
         expired_cookie = datetime.timestamp(datetime.utcnow() + timedelta(minutes=59))
         
         db = self.read_db()
-        db[str(user_id)]['cookie'] = cookies['cookie']
-        db[str(user_id)]['access_token'] = access_token
-        db[str(user_id)]['emt'] = entitlements_token
-        db[str(user_id)]['expiry_token'] = expired_cookie
+        active = db[str(user_id)]["active"]
+        db[str(user_id)]["auth"][active]['cookie'] = cookies['cookie']
+        db[str(user_id)]["auth"][active]['access_token'] = access_token
+        db[str(user_id)]["auth"][active]['emt'] = entitlements_token
+        db[str(user_id)]["auth"][active]['expiry_token'] = expired_cookie
         
         self.insert_user(db)
         
@@ -267,12 +309,22 @@ class DATABASE:
                 puuid=puuid,
                 username=player_name,
                 region=region,
-                expiry_token=expiry_token,
-                notify_mode=None,
-                DM_Message=True
+                expiry_token=expiry_token
             )
             
-            db[str(user_id)] = data
+            if db.get(str(user_id))==None:
+                db[str(user_id)] = {"auth": {}}
+
+                # notify mode
+                db[str(user_id)]["notify_mode"] = "All"
+                db[str(user_id)]["DM_Message"] = True
+                db[str(user_id)]["article"] = True
+                db[str(user_id)]["ignore_article_category"] = []
+            
+            db[str(user_id)]["active"] = puuid
+            db[str(user_id)]["auth"][puuid] = data
+            db[str(user_id)]["lang"] = str(VLR_locale)
+            
             self.insert_user(db)
         
         except Exception as e:
