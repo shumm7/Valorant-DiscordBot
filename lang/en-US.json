@@ -50,7 +50,7 @@
       "RESPONSE": "You are now logging in to **{player}**",
       "SUCCESS": "Successfully logged out!",
       "FAILED": "Failed to logout, please try again!",
-      "DROPDOWN_CHOICE_TITLE": "Select a username"
+      "DROPDOWN_CHOICE_TITLE": "Select an username"
     },
     "account": {
       "NAME": "account",
@@ -59,7 +59,7 @@
       "SUCCESS": "Successfully logged in **{player}**",
       "FAILED": "Failed to switch an account, please try again!",
       "SINGLE_ACCOUNT": "You are only logged into 1 account",
-      "DROPDOWN_CHOICE_TITLE": "Select a username"
+      "DROPDOWN_CHOICE_TITLE": "Select an username"
     },
     "cookies": {
       "NAME": "cookies",

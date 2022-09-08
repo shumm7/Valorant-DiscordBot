@@ -1,7 +1,26 @@
-{
-    "fork-1.4.1": {
-        "TITLE": "🔔 {name} アップデート",
-        "HEADER": "Changelog // 1.4.1",
+{   
+    "general": {
+        "TITLE": "🔔 {name} の アップデート",
+        "RESPONSE": "{name}は日々アップデートされています。",
+        "FIELD1": {
+            "TITLE": "📌 ログイン機能の強化",
+            "RESPONSE": "ついに複数アカウントのログインに対応！\n`/login`でサブアカウントを登録できます。\n`/account`でアカウントを切り替えることができます。",
+            "INLINE": false
+        },
+        "FIELD2": {
+            "TITLE": "📌 新たなコマンド",
+            "RESPONSE": "`/contract`： エージェントの契約書の確認・変更\n`/collection`：現在装備している武器のスキン\n`/skin`：武器のスキンを検索",
+            "INLINE": false
+        },
+        "FIELD3": {
+            "TITLE": "📌 通知システムの刷新",
+            "RESPONSE": "ストアの通知機能の不具合を修正！\n公式サイトの記事の通知機能も追加しました。",
+            "INLINE": false
+        }
+    },
+    "fork-1.4.2": {
+        "HEADER": "Changelog // 1.4.2",
+        "THUMBNAIL": null,
         "FIELD1": {
             "TITLE": "アップデートメッセージ",
             "RESPONSE": "一部のコマンドを実行した際に、このようなアップデートメッセージを表示します。\nこの通知は`/notify update`で停止することができます（後述）。",

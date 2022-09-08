@@ -95,10 +95,10 @@ class Admin(commands.Cog):
 
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
-        embed = GetEmbed.update_embed(self.bot.bot_version, self.bot)
+        embeds = GetEmbed.update_embed(self.bot.bot_version, self.bot)
         
-        if embed:
-            await interaction.response.send_message(embed=embed)
+        if embeds:
+            await interaction.response.send_message(embeds=embeds)
         else:
             raise ValorantBotError(response.get("ERROR"))
     

@@ -41,31 +41,41 @@ class Embed(discord.Embed):  # Custom Embed
 
 class GetEmbed:
 
-    def update_embed(version: str, bot: ValorantBot) -> discord.Embed:
+    def update_embed(version: str, bot: ValorantBot) -> List[discord.Embed]:
+        embeds = []
+
         update = JSON.read("update", dir="config")
         if version==None:
             version = bot.bot_version
-
-        data = update.get(version)
-        if data==None: return None
-
-        embed = Embed(title=data.get("TITLE", "").format(name=bot.user.name), description=data.get("RESPONSE", "").format(name=bot.user.name))
-        for i in range(10):
-            field = f"FIELD{i+1}"
-            if data.get(field):
-                embed.add_field(
-                    name=data.get(field, {}).get("TITLE", "None"),
-                    value=data.get(field, {}).get("RESPONSE", "None"),
-                    inline=data.get(field, {}).get("INLINE", True)
-                )
-            else:
-                break
         
-        embed.set_image(url=data.get("IMAGE"))
-        embed.set_thumbnail(url=data.get("THUMBNAIL", bot.user.avatar))
-        embed.set_footer(text=data.get("FOOTER", ""))
-        embed.set_author(name=data.get("HEADER", ""))
-        return embed
+        def get_embed(data: Dict) -> discord.Embed:
+            embed = Embed(title=data.get("TITLE", "").format(name=bot.user.name), description=data.get("RESPONSE", "").format(name=bot.user.name))
+            for i in range(10):
+                field = f"FIELD{i+1}"
+                if data.get(field):
+                    embed.add_field(
+                        name=data.get(field, {}).get("TITLE", "None"),
+                        value=data.get(field, {}).get("RESPONSE", "None"),
+                        inline=data.get(field, {}).get("INLINE", True)
+                    )
+                else:
+                    break
+            
+            embed.set_image(url=data.get("IMAGE"))
+            embed.set_thumbnail(url=data.get("THUMBNAIL", bot.user.avatar))
+            embed.set_footer(text=data.get("FOOTER", ""))
+            embed.set_author(name=data.get("HEADER", ""))
+            return embed
+
+        general_data = update.get("general")
+        if general_data:
+            embeds.append(get_embed(general_data))
+
+        ver_data = update.get(version)
+        if ver_data:
+            embeds.append(get_embed(ver_data))
+        
+        return embeds
     
     def __giorgio_embed(skin: Dict, bot: ValorantBot, response: Dict) -> discord.Embed:
         """EMBED DESIGN Giorgio"""
