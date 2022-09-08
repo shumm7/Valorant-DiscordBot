@@ -19,10 +19,11 @@ from utils.valorant import cache as Cache, useful, view as View
 from utils.valorant.db import DATABASE
 from utils.valorant.embed import Embed, GetEmbed
 from utils.valorant.endpoint import API_ENDPOINT
-from utils.valorant.local import ResponseLanguage
+from utils.valorant.local import ResponseLanguage, LocalErrorResponse
 from utils.valorant.resources import setup_emoji
 from utils.valorant.useful import JSON, GetItems
 from utils.locale_v2 import ValorantTranslator
+import utils.config as Config
 
 VLR_locale = ValorantTranslator()
 clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
@@ -46,10 +47,11 @@ class ValorantCog(commands.Cog, name='Valorant'):
     def funtion_reload_cache(self, force=False) -> None:
         """ Reload the cache """
         with contextlib.suppress(Exception):
+            config = Config.LoadConfig()
             cache = self.db.read_cache()
             valorant_version = Cache.get_valorant_version()
             bot_version = self.bot.bot_version
-            if valorant_version != cache['valorant_version'] or bot_version != cache["bot_version"] or force:
+            if valorant_version != cache['valorant_version'] or (bot_version != cache["bot_version"] and config.get("reset-cache-when-updated", False)) or force:
                 Cache.get_cache(bot_version)
                 cache = self.db.read_cache()
                 cache['bot_version'] = bot_version
@@ -88,6 +90,24 @@ class ValorantCog(commands.Cog, name='Valorant'):
         endpoint.activate(data)
         return endpoint
     
+    async def check_update(self, interaction: Interaction) -> None:
+        db = self.db.read_db()
+        user_id = interaction.user.id
+        version = self.bot.bot_version
+        oncemsg = LocalErrorResponse("UPDATE_NOTIFY", interaction.locale)
+
+        try:
+            if db.get(str(user_id), {}).get("update_notify", False) and db.get(str(user_id), {}).get("update") != version:
+                embed = GetEmbed.update_embed(version, self.bot)
+                if embed!=None:
+                    await interaction.followup.send(content=oncemsg, embed=embed, ephemeral=True)
+
+                    db[str(user_id)]["update"] = version
+                    self.db.insert_user(db)
+        except:
+            print(f"[{datetime.datetime.now()}] Failed to send an update notify.")
+
+
     @app_commands.command(description=clocal.get("login", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("login", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("login", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
@@ -195,6 +215,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         data = endpoint.store_fetch_storefront()
         embeds = GetEmbed.store(endpoint.player, data, response, self.bot)
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("point", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("point", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("point", {}).get("DESCRIBE", {}).get("password", ""))
@@ -217,6 +238,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embed = GetEmbed.point(endpoint.player, data, response, self.bot)
         
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+        await self.check_update(interaction)
 
     @app_commands.command(description=clocal.get("rank", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("rank", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("rank", {}).get("DESCRIBE", {}).get("password", ""))
@@ -239,6 +261,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embed = GetEmbed.rank(endpoint.player, data, response, endpoint, self.bot)
         
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("collection", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("collection", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("collection", {}).get("DESCRIBE", {}).get("password", ""))
@@ -260,6 +283,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         data = endpoint.fetch_player_inventory(endpoint.puuid)
         view = View.BaseCollection(interaction, data, endpoint, response)
         await view.start()
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("career", {}).get("DESCRIPTION", ""))
     @app_commands.describe(matches=clocal.get("career", {}).get("DESCRIBE", {}).get("matches", ""), queue=clocal.get("career", {}).get("DESCRIBE", {}).get("queue", ""), username=clocal.get("career", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("career", {}).get("DESCRIBE", {}).get("password", ""))
@@ -312,6 +336,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embeds = GetEmbed.career(endpoint.player, endpoint.puuid, data, response, endpoint, queue, self.bot)
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+        await self.check_update(interaction)
 
     @app_commands.command(description=clocal.get("match", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("match", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("match", {}).get("DESCRIBE", {}).get("password", ""), match_id=clocal.get("match", {}).get("DESCRIBE", {}).get("match_id", ""))
@@ -347,6 +372,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 await interaction.followup.send(embeds=embeds[4:], file=graph[1], view=View.share_button(interaction, embeds[4:]) if is_private_message else MISSING)
             else:
                 await interaction.followup.send(embeds=embeds, files=graph, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+            await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("mission", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("mission", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("mission", {}).get("DESCRIBE", {}).get("password", ""))
@@ -369,6 +395,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embed = GetEmbed.mission(endpoint.player, data, response)
         
         await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("nightmarket", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("nightmarket", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("nightmarket", {}).get("DESCRIBE", {}).get("password", ""))
@@ -396,6 +423,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embeds = GetEmbed.nightmarket(endpoint.player, data, self.bot, response)
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("battlepass", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("battlepass", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("battlepass", {}).get("DESCRIBE", {}).get("password", ""))
@@ -433,6 +461,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+        await self.check_update(interaction)
     
     # inspired by https://github.com/giorgi-o
     @app_commands.command(description=clocal.get("bundle", {}).get("DESCRIPTION", ""))
@@ -459,6 +488,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # bundle view
         view = View.BaseBundle(interaction, find_bundle, response)
         await view.start()
+        await self.check_update(interaction)
     
     # inspired by https://github.com/giorgi-o
     @app_commands.command(description=clocal.get("feature", {}).get("DESCRIPTION", ""))
@@ -479,6 +509,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # bundle view   
         view = View.BaseBundle(interaction, bundle_entries, response)
         await view.start_furture()
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("agent", {}).get("DESCRIPTION", ""))
     @app_commands.describe(agent=clocal.get("agent", {}).get("DESCRIBE", {}).get("agent", ""))
@@ -523,6 +554,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # agents view
         view = View.BaseAgent(interaction, find_agent, response)
         await view.start()
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("contract", {}).get("DESCRIPTION", ""))
     @app_commands.describe(agent=clocal.get("contract", {}).get("DESCRIBE", {}).get("agent", ""), username=clocal.get("contract", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("contract", {}).get("DESCRIBE", {}).get("password", ""))
@@ -579,6 +611,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # contract view
         view = View.BaseContract(interaction, find_agent, fetch_data, response, endpoint.player, endpoint, is_private_message)
         await view.start()
+        await self.check_update(interaction)
 
     @app_commands.command(description=clocal.get("weapon", {}).get("DESCRIPTION", ""))
     @app_commands.describe(weapon=clocal.get("weapon", {}).get("DESCRIBE", {}).get("weapon", ""))
@@ -645,6 +678,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # weapon view
         view = View.BaseWeapon(interaction, find_weapon, response)
         await view.start()
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("skin", {}).get("DESCRIPTION", ""))
     @app_commands.describe(skin=clocal.get("skin", {}).get("DESCRIBE", {}).get("skin", ""), username=clocal.get("skin", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("skin", {}).get("DESCRIBE", {}).get("password", ""))
@@ -689,6 +723,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         # skin view
         view = View.BaseSkin(interaction, find_skin[:25], response, entitlements, is_private_message)
         await view.start()
+        await self.check_update(interaction)
 
     @app_commands.command(description=clocal.get("crosshair", {}).get("DESCRIPTION", ""))
     @app_commands.describe(code=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("code", ""), player=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("player", ""))
@@ -703,7 +738,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         endpoint = await self.get_endpoint(interaction.user.id, interaction.locale)
 
         # crosshair template
-        template = JSON.read("crosshair")
+        template = JSON.read("crosshair", dir="config")
         icon = ""
 
         if len(player)>0:
@@ -739,6 +774,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embed = Embed(title=response.get("TITLE"), description=response.get("RESPONSE").format(player=player, code=code)).set_image(url=f"attachment://crosshair.png")
         embed.set_thumbnail(url=icon)
         await interaction.followup.send(embed=embed, file=file)
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("party", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("party", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("party", {}).get("DESCRIBE", {}).get("password", ""))
@@ -774,6 +810,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         else:
             embeds.insert(0, main_embed)
             await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("custom", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("custom", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("custom", {}).get("DESCRIBE", {}).get("password", ""), random=clocal.get("custom", {}).get("DESCRIBE", {}).get("random", ""))
@@ -818,6 +855,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embeds = GetEmbed.custom(endpoint.puuid, party_details, endpoint, response)
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+        await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("article", {}).get("DESCRIPTION", ""))
     @app_commands.describe(category=clocal.get("article", {}).get("DESCRIBE", {}).get("category", ""), article=clocal.get("article", {}).get("DESCRIBE", {}).get("article", ""))
@@ -873,6 +911,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
             for d in article_data:
                 embeds.append(GetEmbed.article_embed(d, response))
             await interaction.followup.send(embeds=embeds)
+            await self.check_update(interaction)
         else:
             raise ValorantBotError(response.get("NOT_FOUND"))
         

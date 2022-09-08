@@ -19,6 +19,11 @@
         "RESPONSE": ""
       } 
     },
+    "update":{
+      "NAME": "update",
+      "DESCRIPTION": "現在のBotの更新履歴を表示します",
+      "ERROR": "更新履歴の取得に失敗しました。"
+    },
     "help":{
       "NAME": "help",
       "DESCRIPTION": "コマンドの説明を表示します",
@@ -608,6 +613,15 @@
         "announcments": "お知らせ"
       }
     },
+    "notify_update": {
+      "NAME": "update",
+      "DESCRIPTION": "Botの更新履歴を通知します",
+      "DESCRIBE": {
+        "notify": "通知モード"
+      },
+      "ENABLED": "更新履歴の通知モードを**オン**に変更しました。",
+      "DISABLED": "更新履歴の通知モードを**オフ**に変更しました。"
+    },
     "notify_category": {
       "NAME": "category",
       "DESCRIPTION": "各記事のカテゴリごとに通知する投稿を指定します。",
@@ -661,6 +675,7 @@
       "MISSING_PERM": "Botに絵文字管理の権限がありません。",
       "FAILED_MANAGE_EMOJI": "絵文字の作成/削除に失敗しました。再度お試しください。",
       "NOT_MAINSERVER": "メインサーバーではないため、絵文字を追加できませんでした。"
-    }
+    },
+    "UPDATE_NOTIFY": "`※ このメッセージは一度しか表示されません。`"
   }
 }

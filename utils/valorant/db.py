@@ -99,6 +99,7 @@ class DATABASE:
                 db[str(user_id)]["DM_Message"] = True
                 db[str(user_id)]["article"] = True
                 db[str(user_id)]["ignore_article_category"] = []
+                db[str(user_id)]["update_notify"] = True
             
             db[str(user_id)]["active"] = puuid
             db[str(user_id)]["auth"][puuid] = data
@@ -181,13 +182,14 @@ class DATABASE:
         article = auth.get('article', False)
         ignore_article_category = auth.get('ignore_article_category', [])
         lang = auth.get('lang', "en-US")
+        update_notify = auth.get("update_notify", False)
         
         if timestamp_utc() > expiry_token:
             access_token, entitlements_token = await self.refresh_token(user_id, auth)
         
         headers = {'Authorization': f'Bearer {access_token}', 'X-Riot-Entitlements-JWT': entitlements_token}
         
-        data = dict(puuid=puuid, region=region, headers=headers, player_name=username, notify_mode=notify_mode, cookie=cookie, notify_channel=notify_channel, dm_message=dm_message, article=article, ignore_article_category=ignore_article_category, lang=lang)
+        data = dict(puuid=puuid, region=region, headers=headers, player_name=username, notify_mode=notify_mode, cookie=cookie, notify_channel=notify_channel, dm_message=dm_message, article=article, ignore_article_category=ignore_article_category, lang=lang, update_notify=update_notify)
         return data
     
     async def refresh_token(self, user_id: int, data: Dict) -> Optional[Dict]:
@@ -195,7 +197,8 @@ class DATABASE:
         
         auth = self.auth
         
-        cookies, access_token, entitlements_token = await auth.redeem_cookies(data['cookie'])
+        active = data["active"]
+        cookies, access_token, entitlements_token = await auth.redeem_cookies(data["auth"][active]['cookie'])
         
         expired_cookie = datetime.timestamp(datetime.utcnow() + timedelta(minutes=59))
         
@@ -255,6 +258,15 @@ class DATABASE:
         elif channel == 'Channel':
             db[str(user_id)]['DM_Message'] = False
             db[str(user_id)]['notify_channel'] = channel_id
+        
+        self.insert_user(db)
+    
+    def change_update_notify_mode(self, user_id: int, mode: bool) -> None:
+        """ Change update notify mode """
+        
+        db = self.read_db()
+        
+        db[str(user_id)]['update_notify'] = mode
         
         self.insert_user(db)
     
@@ -320,6 +332,7 @@ class DATABASE:
                 db[str(user_id)]["DM_Message"] = True
                 db[str(user_id)]["article"] = True
                 db[str(user_id)]["ignore_article_category"] = []
+                db[str(user_id)]["update_notify"] = True
             
             db[str(user_id)]["active"] = puuid
             db[str(user_id)]["auth"][puuid] = data

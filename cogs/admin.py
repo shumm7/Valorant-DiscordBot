@@ -9,6 +9,7 @@ import datetime
 from discord import app_commands, Interaction, ui
 from discord.ext import commands
 from utils.errors import ValorantBotError
+from utils.valorant.embed import GetEmbed
 from utils.valorant.local import ResponseLanguage
 from bot import bot_option
 from utils.valorant.useful import JSON
@@ -86,6 +87,20 @@ class Admin(commands.Cog):
         view.add_item(ui.Button(label="SUPPORT", url="https://discord.gg/FJSXPqQZgz"))
         
         await interaction.response.send_message(embed=embed, view=view)
+    
+    @app_commands.command(description=clocal.get("update", {}).get("DESCRIPTION", ""))
+    async def update(self, interaction: Interaction) -> None:
+        """ Shows basic information about the bot. """
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        embed = GetEmbed.update_embed(self.bot.bot_version, self.bot)
+        
+        if embed:
+            await interaction.response.send_message(embed=embed)
+        else:
+            raise ValorantBotError(response.get("ERROR"))
     
     @app_commands.command(description=clocal.get("help", {}).get("DESCRIPTION", ""))
     async def help(self, interaction: Interaction, command: str) -> None:

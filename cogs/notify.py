@@ -416,6 +416,28 @@ class Notify(commands.Cog):
         else:
             embed = discord.Embed(description=response.get('DISABLED'), color=0x77dd77)
             await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    @notify.command(name='update', description=clocal.get("notify_update", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(notify=clocal.get("notify_update", {}).get("DESCRIBE", {}).get("notify", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def notify_update(self, interaction: Interaction, notify: bool) -> None:
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
+
+        await interaction.response.defer(ephemeral=True)
+        
+        # language
+        response = ResponseLanguage('notify_update', interaction.locale)
+        
+        await self.db.is_data(interaction.user.id, interaction.locale)  # check if user is in db
+        
+        self.db.change_update_notify_mode(interaction.user.id, notify)  # change notify mode
+        
+        if notify:
+            embed = discord.Embed(description=response.get('ENABLED'), color=0x77dd77)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        else:
+            embed = discord.Embed(description=response.get('DISABLED'), color=0x77dd77)
+            await interaction.followup.send(embed=embed, ephemeral=True)
     
     @notify.command(name='category', description=clocal.get("notify_category", {}).get("DESCRIPTION", ""))
     @app_commands.describe(category=clocal.get("notify_category", {}).get("DESCRIBE", {}).get("category", ""))

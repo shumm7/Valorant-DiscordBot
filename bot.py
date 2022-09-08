@@ -33,7 +33,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.4.0',
+    "version": 'fork-1.4.1',
     "presence": "/login | VALORANT"
 }
 
@@ -104,13 +104,7 @@ class ValorantBot(commands.Bot):
         try:
             open('config/config.json')
         except FileNotFoundError:
-            config = {
-                "default-language": "en-US",
-                "command-description-language": "en-US",
-                "owner-id": -1,
-                "emoji-server-id": -1
-            }
-            Config.SaveConfig(config)
+            Config.SaveConfig(Config.NewConfigData())
     
     async def close(self) -> None:
         await self.session.close()

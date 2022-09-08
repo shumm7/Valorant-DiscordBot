@@ -30,3 +30,16 @@ def LoadConfig() -> Dict:
 
 def SaveConfig(cfg: Dict) -> None:
     JSON.save("config", cfg, "config")
+
+def NewConfigData() -> Dict:
+    return {
+        "default-language": "en-US",
+        "command-description-language": "en-US",
+        "owner-id": -1,
+        "emoji-server-id": -1,
+        "reset-cache-when-updated": True,
+        "article": {
+            "description": 150
+        }
+    }
+    

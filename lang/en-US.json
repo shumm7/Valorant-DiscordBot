@@ -29,6 +29,11 @@
       "NOT_FOUND": "No command specified.",
       "TITLE": "Commands"
     },
+    "update":{
+      "NAME": "update",
+      "DESCRIPTION": "Show the bot's changelog",
+      "ERROR": "No changelog found"
+    },
     "login": {
       "NAME": "login",
       "DESCRIPTION": "Log in with your Riot acoount",
@@ -608,6 +613,15 @@
         "announcments": "ANNOUNCEMENTS"
       }
     },
+    "notify_update": {
+      "NAME": "update",
+      "DESCRIPTION": "Set the Bot update notification",
+      "DESCRIBE": {
+        "notify": "Notify Mode"
+      },
+      "ENABLED": "You have **ENABLED** an update notification.",
+      "DISABLED": "You have **DISABLED** an update notification."
+    },
     "notify_category": {
       "NAME": "category",
       "DESCRIPTION": "Set the category of articles to ignore",
@@ -661,6 +675,7 @@
       "MISSING_PERM": "I don't have permission to manage emojis!",
       "FAILED_MANAGE_EMOJI": "I can't create/delete emojis, please try again",
       "NOT_MAINSERVER": "I can't create emojis because it is not the main server."
-    }
+    },
+    "UPDATE_NOTIFY": "`NOTE: This message will appear only once.`"
   }
 }

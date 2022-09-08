@@ -2,7 +2,6 @@
 .vscode
 venv/
 temp/
-config/
 
 /*.json
 .env
@@ -12,9 +11,5 @@ config/
 .env
 
 
-/data/article.json
-/data/cache.json
-/data/conv.json
-/data/emoji.json
-/data/notifys.json
-/data/users.json
+/data
+/config/config.json
