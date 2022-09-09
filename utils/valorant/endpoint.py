@@ -284,7 +284,7 @@ class API_ENDPOINT:
         """
         GET Party_FetchParty
         """
-        data = self.fetch(endpoint=f'/parties/v1/parties/{party_id}', url='glz')
+        data = self.fetch(endpoint=f'/parties/v1/parties/{party_id}', url='glz', not_found_error=False)
         return data
 
     # store endpoints
@@ -435,8 +435,8 @@ class API_ENDPOINT:
             season_id = data['LatestCompetitiveUpdate']['SeasonID']
             if len(season_id) == 0:
                 season_id = self.__get_live_season()
-            current_season = data["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
-            current_Tier = current_season[season_id]['CompetitiveTier']
+            current_season = data.get("QueueSkills", {}).get('competitive', {}).get('SeasonalInfoBySeasonID', {})
+            current_Tier = current_season.get(season_id, {}).get('CompetitiveTier', 0)
             return current_Tier
         except:
             return 0

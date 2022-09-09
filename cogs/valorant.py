@@ -860,9 +860,10 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         # data
         user_data = endpoint.fetch_partyid_from_puuid(False)
-        if user_data.get("CurrentPartyID")==None:
-            raise ValorantBotError(response.get("FAILED"))
-        party_details = endpoint.fetch_party_details(party_id = user_data.get("CurrentPartyID", ""))
+        if user_data.get("CurrentPartyID")!=None:
+            party_details = endpoint.fetch_party_details(party_id = user_data.get("CurrentPartyID", ""))
+        else:
+            party_details = None
         
         # Embeds
         embeds = GetEmbed.custom(endpoint.puuid, party_details, endpoint, response)

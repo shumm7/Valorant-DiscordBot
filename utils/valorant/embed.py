@@ -268,16 +268,18 @@ class GetEmbed:
         if len(season_id) == 0:
             season_id = endpoint.__get_live_season()
 
-        current_season = mmr["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
+        current_season = mmr.get("QueueSkills", {}).get('competitive', {}).get('SeasonalInfoBySeasonID', {})
+        if current_season==None: current_season = {}
+
         tier = current_season.get(season_id, {}).get('CompetitiveTier', 0)
         rank_name = GetFormat.get_competitive_tier_name(tier)
 
         
         # other value
-        rankrating = current_season[season_id]["RankedRating"] # rank rating 
-        wins = current_season[season_id]["NumberOfWinsWithPlacements"] # number of wins
-        games = current_season[season_id]["NumberOfGames"] #number of games
-        leaderboard = current_season[season_id]["LeaderboardRank"]
+        rankrating = current_season.get(season_id, {}).get("RankedRating", 0) # rank rating 
+        wins = current_season.get(season_id, {}).get("NumberOfWinsWithPlacements", 0) # number of wins
+        games = current_season.get(season_id, {}).get("NumberOfGames", 0) #number of games
+        leaderboard = current_season.get(season_id, {}).get("LeaderboardRank", 0)
         if leaderboard==0: leaderboard="-"
 
         # win rate
@@ -299,7 +301,8 @@ class GetEmbed:
         embed = Embed(title=f"{title_rank}:")
         embed.add_field(name=title_current_tier, value=f"{rank_name}")
         embed.add_field(name=title_rankrating, value=title_rr_response.format(rankrating=rankrating))
-        embed.add_field(name=title_tier_matchmaking['TITLE'], value=rank_tiermsg, inline=False)
+        if len(rank_tiermsg)>0:
+            embed.add_field(name=title_tier_matchmaking['TITLE'], value=rank_tiermsg, inline=False)
         embed.add_field(name=title_wins["TITLE"], value=title_wins["RESPONSE"].format(wins=wins, games=games, win_rate=win_rate))
         embed.add_field(name=title_leaderboard["TITLE"], value=title_leaderboard["RESPONSE"].format(leaderboard=leaderboard))
 
@@ -1517,7 +1520,9 @@ class GetEmbed:
                 season_id = endpoint.__get_live_season()
 
             # player data
-            current_season = mmr["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
+            current_season = mmr.get("QueueSkills", {}).get('competitive', {}).get('SeasonalInfoBySeasonID', {})
+            if current_season==None: current_season = {}
+
             name_data = endpoint.fetch_name_by_puuid(p_puuid)
 
             # set data to dict
@@ -1527,9 +1532,9 @@ class GetEmbed:
                 "player_card": p["PlayerIdentity"]["PlayerCardID"],
                 "player_title": p["PlayerIdentity"]["PlayerTitleID"],
                 "level": p["PlayerIdentity"]["AccountLevel"],
-                "rank": current_season[season_id]['CompetitiveTier'],
-                "rr": current_season[season_id]['RankedRating'],
-                "leaderboard": current_season[season_id]["LeaderboardRank"] if current_season[season_id]["LeaderboardRank"]>0 else "-",
+                "rank": current_season.get(season_id, {}).get('CompetitiveTier', 0),
+                "rr": current_season.get(season_id, {}).get('RankedRating', 0),
+                "leaderboard": current_season[season_id]["LeaderboardRank"] if current_season.get(season_id, {}).get("LeaderboardRank", 0)>0 else "-",
                 "ready": response.get("READY") if p["IsReady"] else response.get("NO_READY"),
                 "owner": response.get("OWNER") if p.get("IsOwner", False) else "",
                 "membership": response.get("MEMBERSHIP", {}).get("DEFAULT")
@@ -1569,7 +1574,7 @@ class GetEmbed:
                 ready = players[p_puuid]["ready"],
                 owner = players[p_puuid]["owner"],
                 playercard = cache["playercards"][players[p_puuid]["player_card"]]["names"][str(VLR_locale)],
-                title = cache["titles"][players[p_puuid]["player_title"]]["text"][str(VLR_locale)],
+                title = cache["titles"][players[p_puuid]["player_title"]]["text"].get(str(VLR_locale)) if cache["titles"][players[p_puuid]["player_title"]]["text"]!=None else cache["titles"][players[p_puuid]["player_title"]].get("names", {}).get(str(VLR_locale)) or "",
                 membership = players[p_puuid]["membership"]
             )
 
@@ -1622,187 +1627,196 @@ class GetEmbed:
     @classmethod
     def custom(cls, puuid: str, data: Dict, endpoint: API_ENDPOINT, response: Dict, mode_rand: bool = False) -> discord.Embed:
         cache = JSON.read("cache")
+        embeds = []
         
         # Select Maps
         maps_c = cache["maps"]
+        del maps_c["ee613ee9-28b7-4beb-9666-08db13bb2244"]
         maps = []
 
         for m in maps_c.values():
             maps.append(m)
-        
-
-        # Select Team Member
-        teamA_members = data.get("CustomGameData", {}).get("Membership", {}).get("teamOne", [])
-        teamB_members = data.get("CustomGameData", {}).get("Membership", {}).get("teamTwo", [])
-
-        if teamA_members==None:
-            teamA_members = []
-        if teamB_members==None:
-            teamB_members = []
-
-        #if len(teamA_members)+len(teamB_members)<=0:
-        #    raise ValorantBotError(response.get("NOT_CUSTOM_MODE"))
-
-        # player data
-        players = {}
-        players_data_list = []
-        for p in (teamA_members + teamB_members):
-            # fetch mmr
-            p_puuid = p["Subject"]
-            mmr = endpoint.fetch_player_mmr(p_puuid)
-
-            season_id = mmr['LatestCompetitiveUpdate']['SeasonID']
-            if season_id==None:
-                season_id = ""
-            if len(season_id) == 0:
-                season_id = endpoint.__get_live_season()
-
-            # player data
-            current_season = mmr["QueueSkills"]['competitive']['SeasonalInfoBySeasonID']
-
-            # set data to dict
-            player = {
-                "name": "",
-                "user": "",
-                "puuid": p_puuid,
-                "rank": current_season[season_id]['CompetitiveTier'],
-                "rr": current_season[season_id]['RankedRating'],
-                "leaderboard": current_season[season_id]["LeaderboardRank"] if current_season[season_id]["LeaderboardRank"]>0 else "-",
-                "membership": response.get("MEMBERSHIP", {}).get("DEFAULT"),
-
-                "kda": 0,
-                "acs": 0,
-                "eco_rating": 0,
-                "adr": 0,
-                "custom_rating": 0
-            }
-
-            rank_weight = [
-                50, 50, 50, # Unrated & Unused
-                0.3, 1.5, 6.6, # Iron
-                11.6, 19.8, 27.0, # Bronze
-                37.5, 45.6, 53.3, # Silver
-                60.7, 67.4, 73.5, # Gold
-                79.1, 83.7, 87.9, # Platinum
-                91.6, 94.2, 96.0, # Diamond
-                97.4, 98.3, 98.8, # Ascendant
-                99.1, 99.2, 99.3, # Immortal
-                100 # Radiant
-            ]
-
-            data = endpoint.fetch_match_history(index=5, puuid=p_puuid, not_found_error=False, queue="competitive")["Matches"]
-            size = 0
-            if len(data)<1:
-                player["custom_rating"] = -1
-            else:
-                for d in data:
-                    match_id = d["MatchID"]
-
-                    match_info = cls.get_match_info(p_puuid, match_id, endpoint, response)
-
-                    player_data = match_info["players"].get(p_puuid)
-                    if player_data==None:
-                        continue
-                    
-                    player["name"] = player_data["name"]
-                    player["kda"] += player_data["kda"]
-                    player["acs"] += player_data["acs"]
-                    player["eco_rating"] += player_data["eco_rating"]
-                    player["adr"] += player_data["adr"]
-                    size += 1
-
-                player["kda"] /= size
-                player["acs"] /= size
-                player["eco_rating"] /= size
-                player["adr"] /= size
-            
-            rating = (player["kda"]*0.3) * (player["acs"] / 200 * 0.4) * (player["eco_rating"]/50 * 0.2) * (player["adr"] / 150 * 0.2) * (rank_weight[player["rank"]]/100* 0.8) * 1000
-            player["custom_rating"] = rating
-            players_data_list.append(player)
-
-            user_id = endpoint.get_discord_userid_from_puuid(p_puuid)
-            if len(user_id)>0:
-                player["user"] = f"<@{user_id}>"
-
-
-
-        sorted_players = sorted(players_data_list, key=lambda x: x.get('custom_rating', 0), reverse=True)
-        
-        def format_team_description(format: str, player_data: Dict):
-            return format.format(
-                name = player_data["name"],
-                puuid = player_data["puuid"],
-                rank = GetFormat.get_competitive_tier_name(player_data["rank"]),
-                rating = round(player_data["custom_rating"], 1),
-                user = player_data["user"]
-            )
-
-        members = len(sorted_players)
-        member = [0, 0, 0, 0]
-
-        if members%2==1:
-            member[2] = math.floor(members / 2) + 1
-            member[3] = math.floor(members / 2)
-        else:
-            member[2] = math.floor(members / 2)
-            member[3] = math.floor(members / 2)
-
-        teamA_description, teamB_description = "", ""
-        if mode_rand:
-            i = 0
-            for p in sorted_players:
-                r = random.random()
-
-                if (r<=0.3 and member[0]<member[2]) or (i%2==0 and member[0]<member[2]):
-                    if len(teamA_description)!=0:
-                        teamA_description += "\n"
-                    teamA_description += format_team_description(response.get("MEMBER"), p)
-                    member[0] += 1
-                else:
-                    if len(teamB_description)!=0:
-                        teamB_description += "\n"
-                    teamB_description += format_team_description(response.get("MEMBER"), p)
-                    member[1] += 1
-                i += 1
-        else:
-            i = 0
-            for p in sorted_players:
-                r = random.random()
-
-                if i%2==0:
-                    if len(teamA_description)!=0:
-                        teamA_description += "\n"
-                    teamA_description += format_team_description(response.get("MEMBER"), p)
-                    member[0] += 1
-                else:
-                    if len(teamB_description)!=0:
-                        teamB_description += "\n"
-                    teamB_description += format_team_description(response.get("MEMBER"), p)
-                    member[1] += 1
-
-                i += 1
-        
-        if len(teamA_description)==0:
-            teamA_description = response.get("NO_MEMBER")
-        if len(teamB_description)==0:
-            teamB_description = response.get("NO_MEMBER")
-
-        # Embed
-        embed_team = Embed(title=response.get("TITLE", {}).get("TEAM"))
-        embed_team.add_field(name=response.get("TEAM_A"), value=teamA_description, inline=False)
-        embed_team.add_field(name=response.get("TEAM_B"), value=teamB_description, inline=False)
         
         r = random.randint(0, len(maps)-1)
         description = response.get("MAP", "").format(
             name = maps[r]["name"][str(VLR_locale)],
             coordinate = maps[r]["coordinates"][str(VLR_locale)],
         )
-
         embed_map = Embed(title=response.get("TITLE", {}).get("MAP"), description=description)
         embed_map.set_thumbnail(url=maps[r]["icon"])
         embed_map.set_image(url=maps[r]["listview_icon"])
+        embeds.append(embed_map)
+        
 
-        return [embed_map, embed_team]
+        # Select Team Member
+        if data!=None:
+            teamA_members = data.get("CustomGameData", {}).get("Membership", {}).get("teamOne", [])
+            teamB_members = data.get("CustomGameData", {}).get("Membership", {}).get("teamTwo", [])
+
+            if teamA_members==None:
+                teamA_members = []
+            if teamB_members==None:
+                teamB_members = []
+
+            #if len(teamA_members)+len(teamB_members)<=0:
+            #    raise ValorantBotError(response.get("NOT_CUSTOM_MODE"))
+
+            # player data
+            players = {}
+            players_data_list = []
+            for p in (teamA_members + teamB_members):
+                # fetch mmr
+                p_puuid = p["Subject"]
+                mmr = endpoint.fetch_player_mmr(p_puuid)
+
+                season_id = mmr['LatestCompetitiveUpdate']['SeasonID']
+                if season_id==None:
+                    season_id = ""
+                if len(season_id) == 0:
+                    season_id = endpoint.__get_live_season()
+
+                # player data
+                current_season = mmr.get("QueueSkills", {}).get('competitive', {}).get('SeasonalInfoBySeasonID', {})
+                if current_season==None: current_season = {}
+
+                # set data to dict
+                player = {
+                    "name": "",
+                    "user": "",
+                    "puuid": p_puuid,
+                    "rank": current_season.get(season_id, {}).get('CompetitiveTier', 0),
+                    "rr": current_season.get(season_id, {}).get('RankedRating', 0),
+                    "leaderboard": current_season[season_id]["LeaderboardRank"] if current_season.get(season_id, {}).get("LeaderboardRank", 0)>0 else "-",
+                    "membership": response.get("MEMBERSHIP", {}).get("DEFAULT"),
+
+                    "kda": 0,
+                    "acs": 0,
+                    "eco_rating": 0,
+                    "adr": 0,
+                    "custom_rating": 0
+                }
+
+                rank_weight = [
+                    50, 50, 50, # Unrated & Unused
+                    0.3, 1.5, 6.6, # Iron
+                    11.6, 19.8, 27.0, # Bronze
+                    37.5, 45.6, 53.3, # Silver
+                    60.7, 67.4, 73.5, # Gold
+                    79.1, 83.7, 87.9, # Platinum
+                    91.6, 94.2, 96.0, # Diamond
+                    97.4, 98.3, 98.8, # Ascendant
+                    99.1, 99.2, 99.3, # Immortal
+                    100 # Radiant
+                ]
+
+                data = endpoint.fetch_match_history(index=5, puuid=p_puuid, not_found_error=False, queue="competitive")["Matches"]
+                size = 0
+                if len(data)<1:
+                    player["custom_rating"] = -1
+                    fetch_name = endpoint.fetch_name_by_puuid(p_puuid)[0]
+                    player["name"] = fetch_name["GameName"] + "#" + fetch_name["TagLine"]
+                else:
+                    for d in data:
+                        match_id = d["MatchID"]
+
+                        match_info = cls.get_match_info(p_puuid, match_id, endpoint, response)
+
+                        player_data = match_info["players"].get(p_puuid)
+                        if player_data==None:
+                            continue
+                        
+                        player["name"] = player_data["name"]
+                        player["kda"] += player_data["kda"]
+                        player["acs"] += player_data["acs"]
+                        player["eco_rating"] += player_data["eco_rating"]
+                        player["adr"] += player_data["adr"]
+                        size += 1
+
+                    player["kda"] /= size
+                    player["acs"] /= size
+                    player["eco_rating"] /= size
+                    player["adr"] /= size
+                
+                rating = (player["kda"]*0.3) * (player["acs"] / 200 * 0.4) * (player["eco_rating"]/50 * 0.2) * (player["adr"] / 150 * 0.2) * (rank_weight[player["rank"]]/100* 0.8) * 1000
+                player["custom_rating"] = rating
+                players_data_list.append(player)
+
+                user_id = endpoint.get_discord_userid_from_puuid(p_puuid)
+                if len(user_id)>0:
+                    player["user"] = f"<@{user_id}>"
+
+
+
+            sorted_players = sorted(players_data_list, key=lambda x: x.get('custom_rating', 0), reverse=True)
+            
+            def format_team_description(format: str, player_data: Dict):
+                return format.format(
+                    name = player_data["name"],
+                    puuid = player_data["puuid"],
+                    rank = GetFormat.get_competitive_tier_name(player_data["rank"]),
+                    rating = round(player_data["custom_rating"], 1),
+                    user = player_data["user"]
+                )
+
+            members = len(sorted_players)
+            member = [0, 0, 0, 0]
+
+            if members%2==1:
+                member[2] = math.floor(members / 2) + 1
+                member[3] = math.floor(members / 2)
+            else:
+                member[2] = math.floor(members / 2)
+                member[3] = math.floor(members / 2)
+
+            teamA_description, teamB_description = "", ""
+            if mode_rand:
+                i = 0
+                for p in sorted_players:
+                    r = random.random()
+
+                    if (r<=0.3 and member[0]<member[2]) or (i%2==0 and member[0]<member[2]):
+                        if len(teamA_description)!=0:
+                            teamA_description += "\n"
+                        teamA_description += format_team_description(response.get("MEMBER"), p)
+                        member[0] += 1
+                    else:
+                        if len(teamB_description)!=0:
+                            teamB_description += "\n"
+                        teamB_description += format_team_description(response.get("MEMBER"), p)
+                        member[1] += 1
+                    i += 1
+            else:
+                i = 0
+                for p in sorted_players:
+                    r = random.random()
+
+                    if i%2==0:
+                        if len(teamA_description)!=0:
+                            teamA_description += "\n"
+                        teamA_description += format_team_description(response.get("MEMBER"), p)
+                        member[0] += 1
+                    else:
+                        if len(teamB_description)!=0:
+                            teamB_description += "\n"
+                        teamB_description += format_team_description(response.get("MEMBER"), p)
+                        member[1] += 1
+
+                    i += 1
+            
+            if len(teamA_description)==0:
+                teamA_description = response.get("NO_MEMBER")
+            if len(teamB_description)==0:
+                teamB_description = response.get("NO_MEMBER")
+
+            # Embed
+            embed_team = Embed(title=response.get("TITLE", {}).get("TEAM"))
+            embed_team.add_field(name=response.get("TEAM_A"), value=teamA_description, inline=False)
+            embed_team.add_field(name=response.get("TEAM_B"), value=teamB_description, inline=False)
+            embeds.append(embed_team)
+        else:
+            embeds.append(Embed(title=response.get("TITLE", {}).get("TEAM"), description=response.get("FAILED")))
+
+        return embeds
 
 
 
