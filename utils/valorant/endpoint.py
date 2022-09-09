@@ -366,13 +366,17 @@ class API_ENDPOINT:
             print(f"[{datetime.datetime.now()}] Fetching failed (404): {endpoint_url}{endpoint}.")
             response = LocalErrorResponse('NOT_FOUND', self.locale_code)
             raise ResponseError(response)
+        elif r.status_code == 500:
+            print(f"[{datetime.datetime.now()}] Fetching failed (404): {endpoint_url}{endpoint}.")
+            response = LocalErrorResponse("INVALID_ARGUMENT", self.locale_code)
+            raise ResponseError(response)
         elif r.status_code == 200:
-            with open("temp/"+file_name, "wb") as f:
+            with open("resources/temp/"+file_name, "wb") as f:
                 f.write(r.content)
             f.close()
-            with open("temp/"+file_name, "rb") as f:
+            with open("resources/temp/"+file_name, "rb") as f:
                 file = io.BytesIO(f.read())
-            image = discord.File(file, filename=file_name)
+            image = discord.File(file, filename=f"{file_name}")
             return image
         return None
 

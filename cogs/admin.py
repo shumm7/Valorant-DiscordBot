@@ -97,7 +97,7 @@ class Admin(commands.Cog):
         
         embeds = GetEmbed.update_embed(self.bot.bot_version, self.bot)
         
-        if embeds:
+        if len(embeds)>0:
             await interaction.response.send_message(embeds=embeds)
         else:
             raise ValorantBotError(response.get("ERROR"))

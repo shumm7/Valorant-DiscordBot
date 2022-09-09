@@ -143,7 +143,7 @@
       },
       "STATS": {
         "TITLE": "{name}",
-        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
+        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n{before_rank_emoji}`{before_rank} ({before_rr} RR)` > {after_rank_emoji}`{after_rank} ({after_rr} RR)` ({rr} RR)",
         "HEADER": "",
         "FOOTER": "",
         "NO_MATCH": "No match found"
@@ -174,7 +174,7 @@
       },
       "RANK":{
         "TITLE": "Rank Rating",
-        "RESPONSE": "**{result}** {earned_rr} RR\n`{match_id: str, match_data: Dict, response: Dict, endpoint, puuid: str, queue: str, bot: ValorantBot)} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
+        "RESPONSE": "**{result}** {earned_rr} RR\n{before_rank_emoji}`{before_rank} ({before_rr} RR)` > {after_rank_emoji}`{after_rank} ({after_rr} RR)`"
       },
       "FAILED": "Argument \"matches\" should be between 1 and {limit}"
     },
@@ -187,7 +187,7 @@
         "match_id": "Match ID (Optional)"
       },
       "TITLE": "{map} {time}:  {point} ({result})",
-      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
+      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n{rank_emoji}`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
       "HEADER": "{queue} ({duration})",
       "FOOTER": "🆔{match_id}",
       "TEAM_A": "Team A",
@@ -195,12 +195,12 @@
       "PLAYERS":{
         "TITLE": "Players",
         "RESPONSE": "{team} ({result}): {point}",
-        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
-        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL": "{rank_emoji}｜{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL_DEATHMATCH": "{agent_emoji} {rank_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
         "DEATHMATCH": "Results"
       },
       "STATS": {
-        "TITLE": "{name}",
+        "TITLE": "{rank_emoji} {name}",
         "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
       },
       "ECONOMY": {
@@ -453,7 +453,7 @@
       "DESCRIPTION": "Generate the image from crosshair profile",
       "DESCRIBE": {
         "code": "Crosshair Profile Code (Optional)",
-        "player": "Pro Player's Name (Optional)"
+        "name": "Crosshair Name (Optional)"
       },
       "TITLE": "Crosshair",
       "RESPONSE": "**{player}**\n{code}",
@@ -647,6 +647,7 @@
   "errors": {
     "UNKNOW_ERROR": "An unknown error occurred.",
     "NOT_FOUND": "Your request was not found.",
+    "INVALID_ARGUMENT": "Invalid argument.",
     "AUTH": {
       "INVALID_PASSWORD": "Your username or password may be incorrect!",
       "RATELIMIT": "Please wait a few minutes and try again.",

@@ -754,6 +754,7 @@ class GetEmbed:
             puuid=puuid,
             name=players[puuid]["name"],
             rank=players[puuid]["rank"],
+            rank_emoji=GetEmoji.competitive_tier_by_bot(players[puuid]["rank_id"], bot),
             level=players[puuid]["level"],
             agent=players[puuid]["agent"],
             agent_emoji=GetEmoji.agent_by_bot(players[puuid]["agent_id"], bot),
@@ -784,7 +785,7 @@ class GetEmbed:
         )
 
     # ---------- MATCH DETAILS EMBED ---------- #
-    def __match_graph(rounds: Dict, teamA: str, teamB: str) -> discord.File:
+    def __match_graph(rounds: Dict, teamA: str, teamB: str, filename: str) -> discord.File:
 
         # create graph
         plt.figure(figsize=(15, 3), dpi=300)
@@ -821,16 +822,16 @@ class GetEmbed:
 
         plt.xticks(x)
         plt.yticks(y)
-        plt.savefig("temp/graph.png", bbox_inches='tight', transparent=True)
+        plt.savefig(f"resources/temp/{filename}", bbox_inches='tight', transparent=True)
         plt.close()
 
-        with open("temp/graph.png", "rb") as f:
+        with open(f"resources/temp/{filename}", "rb") as f:
             file = io.BytesIO(f.read())
-        image = discord.File(file, filename="graph.png")
+        image = discord.File(file, filename=filename)
 
         return image
 
-    def __match_heatmap(players: Dict, teams: Dict, teamA: str, teamB: str) -> discord.File:
+    def __match_heatmap(players: Dict, teams: Dict, teamA: str, teamB: str, filename: str) -> discord.File:
         # create graph
         plt.figure(figsize=(15, 15), dpi=300)
         plt.style.use("dark_background")
@@ -904,17 +905,17 @@ class GetEmbed:
         plt.xticks(range(5), ls, fontname="Noto Sans CJK JP", fontsize=8, rotation=45, horizontalalignment="right")
 
         # save image
-        plt.savefig("temp/heatmap.png", bbox_inches='tight', transparent=True)
+        plt.savefig(f"resources/temp/{filename}", bbox_inches='tight', transparent=True)
         plt.close()
 
-        with open("temp/heatmap.png", "rb") as f:
+        with open(f"resources/temp/{filename}", "rb") as f:
             file = io.BytesIO(f.read())
-        image = discord.File(file, filename="heatmap.png")
+        image = discord.File(file, filename=filename)
 
         return image
 
 
-    def __match_embed_players(cls, cache: Dict, response: Dict, teams: Dict, players: Dict, teamA: Dict, teamB: Dict, color: str, match_id, bot: ValorantBot) -> discord.Embed:
+    def __match_embed_players(cls, cache: Dict, response: Dict, teams: Dict, players: Dict, teamA: Dict, teamB: Dict, color: str, match_id, filename: str, bot: ValorantBot) -> discord.Embed:
         # player result post
         embed_players = Embed(title=response.get("PLAYER", {}).get("TITLE"), color=color)
 
@@ -942,9 +943,9 @@ class GetEmbed:
 
             ret = make_team_msg(teamB, response.get("PLAYERS", {}).get("RESPONSE"), response.get("PLAYERS", {}).get("DETAIL"), response.get("TEAM_B"))
             embed_players.add_field(name=ret[0], value=ret[1], inline=False)
-            embed_players.set_image(url=f"attachment://heatmap.png")
+            embed_players.set_image(url=f"attachment://{filename}")
 
-            graph = cls.__match_heatmap(players, teams, teamA, teamB)
+            graph = cls.__match_heatmap(players, teams, teamA, teamB, filename)
             return [embed_players, graph]
             
         else: # deathmatch 
@@ -977,8 +978,8 @@ class GetEmbed:
         
         return embed_team
 
-    def __match_embed_economy(cls, cache: Dict, response: Dict, teams: Dict, rounds: Dict, teamA: str, teamB: dict, color: str, bot: ValorantBot) -> List:
-        graph = cls.__match_graph(rounds, teamA, teamB)
+    def __match_embed_economy(cls, cache: Dict, response: Dict, teams: Dict, rounds: Dict, teamA: str, teamB: dict, color: str, filename: str, bot: ValorantBot) -> List:
+        graph = cls.__match_graph(rounds, teamA, teamB, filename)
 
         message_format = response.get("ECONOMY", {}).get("RESPONSE")
         message_team_format = response.get("ECONOMY", {}).get("RESPONSE_TEAM")
@@ -1054,11 +1055,11 @@ class GetEmbed:
         description_team = response.get("ECONOMY", {}).get("TITLE_TEAM_A") + f"\n{message_teamA}" + "\n\n" + response.get("ECONOMY", {}).get("TITLE_TEAM_B") + f"\n{message_teamB}"
 
         embed_economy = Embed(title=response.get("ECONOMY", {}).get("TITLE"), description=description, color=color)
-        embed_economy_team = Embed(description=description_team, color=color).set_image(url=f"attachment://graph.png")
+        embed_economy_team = Embed(description=description_team, color=color).set_image(url=f"attachment://{filename}")
         return [[embed_economy, embed_economy_team], graph]
     
     @classmethod
-    def match(cls, player: str, puuid: str, match_id: str, response: Dict, endpoint, bot: ValorantBot):
+    def match(cls, player: str, puuid: str, match_id: str, response: Dict, endpoint: API_ENDPOINT, filename: List[str], bot: ValorantBot):
         """Embed Match"""
         cache = JSON.read('cache')
 
@@ -1110,13 +1111,13 @@ class GetEmbed:
         embed_main.set_thumbnail(url=cache["maps"][match_info["match_info"]["map_id"]]["icon"])
         embed_main.set_image(url=cache["maps"][match_info["match_info"]["map_id"]]["listview_icon"])
         
-        embed_players = cls.__match_embed_players(cls, cache, response, match_info["teams"], match_info["players"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], match_info["match_info"]["match_id"], bot)
+        embed_players = cls.__match_embed_players(cls, cache, response, match_info["teams"], match_info["players"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], match_info["match_info"]["match_id"], filename[1], bot)
         if len(match_info["teams"])==2: # default
             embed_teamA = cls.__match_embed_team_stats(cls, response.get("TEAM_A"), cache, response, match_info["teams"], match_info["players"], match_info["match_info"]["teamA"], match_info["match_info"]["color"], match_id, bot)
             embed_teamB = cls.__match_embed_team_stats(cls, response.get("TEAM_B"), cache, response, match_info["teams"], match_info["players"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], match_id, bot)
-            embed_economy = cls.__match_embed_economy(cls, cache, response, match_info["teams"], match_info["rounds"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], bot)
+            embed_economy = cls.__match_embed_economy(cls, cache, response, match_info["teams"], match_info["rounds"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], filename[0], bot)
 
-            cls.__match_heatmap(match_info["players"], match_info["teams"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"])
+            cls.__match_heatmap(match_info["players"], match_info["teams"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], filename[1])
             return [[embed_main, embed_players[0], embed_teamA, embed_teamB, embed_economy[0][0], embed_economy[0][1]], [embed_players[1], embed_economy[1]]]
         else:
             return [[embed_main, embed_players[0]], None]
@@ -1146,6 +1147,7 @@ class GetEmbed:
                 puuid=puuid,
                 name=players[puuid]["name"],
                 rank=players[puuid]["rank"],
+                rank_emoji=GetEmoji.competitive_tier_by_bot(players[puuid]["rank_id"], bot),
                 level=players[puuid]["level"],
                 agent=players[puuid]["agent"],
                 agent_emoji=GetEmoji.agent_by_bot(players[puuid]["agent_id"], bot),
@@ -1186,7 +1188,9 @@ class GetEmbed:
                 before_rr = before_rr,
                 after_rr = after_rr,
                 before_rank = GetFormat.get_competitive_tier_name(before_rank),
-                after_rank = GetFormat.get_competitive_tier_name(after_rank)
+                after_rank = GetFormat.get_competitive_tier_name(after_rank),
+                before_rank_emoji = GetEmoji.competitive_tier_by_bot(before_rank, bot),
+                after_rank_emoji = GetEmoji.competitive_tier_by_bot(after_rank, bot)
             )
 
         if match_detail!=None:
@@ -1311,6 +1315,8 @@ class GetEmbed:
 
                     before_rank = match_stats["before_rank"],
                     after_rank = match_stats["after_rank"],
+                    before_rank_emoji = GetEmoji.competitive_tier_by_bot(match_stats["before_raw_rank"], bot),
+                    after_rank_emoji = GetEmoji.competitive_tier_by_bot(match_stats["after_raw_rank"], bot),
                     before_rr = match_stats["before_rr"],
                     after_rr = match_stats["after_rr"],
                     earned_rr = match_stats["earned_rr"],

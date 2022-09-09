@@ -34,5 +34,10 @@
             "TITLE": "/notify update コマンド",
             "RESPONSE": "上記のアップデートメッセージを通知するかどうかを設定することができます。"
         }
+    },
+    "fork-1.4.3": {
+        "HEADER": "Changelog // 1.4.3",
+        "RESPONSE": "一部のコマンドで、ランクの絵文字が表示されるように変更しました。",
+        "THUMBNAIL": null
     }
 }

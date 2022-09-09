@@ -33,7 +33,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.4.2',
+    "version": 'fork-1.4.3',
     "presence": "/login | VALORANT"
 }
 
@@ -105,6 +105,11 @@ class ValorantBot(commands.Bot):
             open('config/config.json')
         except FileNotFoundError:
             Config.SaveConfig(Config.NewConfigData())
+        
+        try:
+            os.mkdir("resources/temp")
+        except FileExistsError:
+            pass
     
     async def close(self) -> None:
         await self.session.close()

@@ -143,7 +143,7 @@
       },
       "STATS": {
         "TITLE": "{name}",
-        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)` ({rr} RR)",
+        "RESPONSE": "{win}W/{lose}L/{draw}D (Win%: {win_rate})\n{kills}K/{deaths}D/{assists}A (KD {kd}) - ACS: {acs}\n{before_rank_emoji}`{before_rank} ({before_rr} RR)` > {after_rank_emoji}`{after_rank} ({after_rr} RR)` ({rr} RR)",
         "HEADER": "",
         "FOOTER": "",
         "NO_MATCH": "マッチが見つかりませんでした"
@@ -174,7 +174,7 @@
       },
       "RANK":{
         "TITLE": "ランクレーティング",
-        "RESPONSE": "**{result}** {earned_rr} RR\n`{before_rank} ({before_rr} RR)` > `{after_rank} ({after_rr} RR)`"
+        "RESPONSE": "**{result}** {earned_rr} RR\n{before_rank_emoji}`{before_rank} ({before_rr} RR)` > {after_rank_emoji}`{after_rank} ({after_rr} RR)`"
       },
       "FAILED": "マッチ数は{limit}個までにしてください。"
     },
@@ -187,7 +187,7 @@
         "match_id": "マッチのID (任意)"
       },
       "TITLE": "{map} {time}:  {point} ({result})",
-      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
+      "RESPONSE": "**[{name}]({tracker})**\n{agent_emoji}{agent} ({role})\n{rank_emoji}`{rank} (Lv.{level})` **{kills}**K/**{deaths}**D/**{assists}**A (KD: **{kd}**)\nACS: **{acs}**/Econ: **{eco_rating}**/ADR: **{adr}**\nHead: **{hsrate}**%/Body: **{bsrate}**%/Leg: **{lsrate}**%",
       "HEADER": "{queue} ({duration})",
       "FOOTER": "🆔{match_id}",
       "TEAM_A": "チームA",
@@ -195,12 +195,12 @@
       "PLAYERS":{
         "TITLE": "プレイヤー",
         "RESPONSE": "{team} ({result}): {point}",
-        "DETAIL": "{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
-        "DETAIL_DEATHMATCH": "{agent_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL": "{rank_emoji}｜{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
+        "DETAIL_DEATHMATCH": "{agent_emoji} {rank_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
         "DEATHMATCH": "対戦結果"
       },
       "STATS": {
-        "TITLE": "{name}",
+        "TITLE": "{rank_emoji} {name}",
         "RESPONSE": "{agent_emoji} {role_emoji} {agent}\n```{rank} (Lv.{level})\n{kills}K/{deaths}D/{assists}A\nKD:{kd}/KDA:{kda}\nACS:{acs}/Econ:{eco_rating}/ADR:{adr}\nHS:{hsrate}%/BS:{bsrate}%/LS:{lsrate}%\nFB:{firstblood}/FD:{firstdeath}/MK:{multikills}```"
       },
       "ECONOMY": {
@@ -453,7 +453,7 @@
       "DESCRIPTION": "クロスヘアのプロファイルから画像を生成します",
       "DESCRIBE": {
         "code": "クロスヘアプロファイル (任意)",
-        "player": "選手名 (任意)"
+        "name": "クロスヘアの名前 (任意)"
       },
       "TITLE": "クロスヘア",
       "RESPONSE": "**{player}**\n{code}",
@@ -647,6 +647,7 @@
   "errors": {
     "UNKNOW_ERROR": "未知のエラーが発生しました。",
     "NOT_FOUND": "リクエストが見つかりませんでした。",
+    "INVALID_ARGUMENT": "不正な変数です。",
     "AUTH": {
       "INVALID_PASSWORD": "ユーザー名、またはパスワードが間違っている可能性があります。",
       "RATELIMIT": "数分後に再度お試しください。",

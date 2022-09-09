@@ -3,6 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 from typing import Optional, TYPE_CHECKING
 
+import asyncio
 import os
 import json
 import discord
@@ -124,30 +125,35 @@ def json_read(filename: str, force: bool = True) -> Dict:
 async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, force: bool = False, reset: bool = False) -> str:
     response = LocalErrorResponse('SETUP_EMOJI', local_code)
     cache = json_read('cache')
-    main_server_id = Config.LoadConfig().get("emoji-server-id")
+    config = Config.LoadConfig()
+
+    main_server_id = config.get("emoji-server-id", [])
+    emoji_mode = config.get("emojis", {})
     
     reg_emojis = []
 
     # default emojis
-    for key,value in emoji_icon_assests.items():
-        reg_emojis.append({"name": key, "url": value, "animated": False})
+    if emoji_mode.get("default", False):
+        for key,value in emoji_icon_assests.items():
+            reg_emojis.append({"name": key, "url": value, "animated": False})
     
     # agent emojis
-    for agent in cache["agents"].values():
-        name = "Agent" + agent["name"]["en-US"].replace("/", "") # for kay/o
-        reg_emojis.append({"name": name, "url": agent["icon"], "animated": False})
-
-        name = agent["role"]["name"]["en-US"]
-        if next((x for x in reg_emojis if x["name"]==name), None)==None:
-            reg_emojis.append({"name": name, "url": agent["role"]["icon"], "animated": False})
+    if emoji_mode.get("agent", False):
+        for agent in cache["agents"].values():
+            name = "Agent" + agent["name"]["en-US"].replace("/", "") # for kay/o
+            reg_emojis.append({"name": name, "url": agent["icon"], "animated": False})
+        
+        for agent in cache["agents"].values():
+            name = agent["role"]["name"]["en-US"]
+            if next((x for x in reg_emojis if x["name"]==name), None)==None:
+                reg_emojis.append({"name": name, "url": agent["role"]["icon"], "animated": False})
 
     # tiers emojis
-    """
-    for rank in cache["competitive_tiers"].values():
-        name = "Tier" + rank["name"]["en-US"].replace(" ", "").capitalize()
-        if rank["icon"]!=None:
-            reg_emojis.append({"name": name, "url": rank["icon"], "animated": False})
-    """
+    if emoji_mode.get("tier", False):
+        for rank in cache["competitive_tiers"].values():
+            name = "Tier" + rank["name"]["en-US"].replace(" ", "").capitalize()
+            if rank["icon"]!=None:
+                reg_emojis.append({"name": name, "url": rank["icon"], "animated": False})
 
     # Remove Emoji
     if reset:
@@ -156,7 +162,7 @@ async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, f
         for emoji in emojis:
             if bot.user==emoji.user:
                 try:
-                    await emoji.delete(reason="auto deletion")
+                    await asyncio.wait_for(emoji.delete(reason="auto deletion"), timeout=1)
                     print(f"Removed emoji \"{emoji.name}\", {emoji.id}.")
                 except discord.Forbidden:
                     if force:
@@ -164,6 +170,9 @@ async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, f
                     continue
                 except discord.HTTPException:
                     print(response.get('FAILED_MANAGE_EMOJI'))
+                    pass
+                except asyncio.TimeoutError:
+                    print(f"Failed to remove emoji \"{name}\" from \"{url}\". (TIMEOUT)")
                     pass
 
     # Setup emoji
@@ -179,8 +188,8 @@ async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, f
 
         if not emoji:
             try:
-                if int(str(guild.id)) == main_server_id:
-                    emoji = await guild.create_custom_emoji(name=name, image=__url_to_image(url), reason="auto creation")
+                if int(str(guild.id)) in main_server_id:
+                    emoji = await asyncio.wait_for(guild.create_custom_emoji(name=name, image=__url_to_image(url), reason="auto creation"), timeout=1)
                     
                     emoji_list[e["name"]] = f"<:{name}:{emoji.id}>"
                     ret_message += f"<:{name}:{emoji.id}> "
@@ -193,6 +202,9 @@ async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, f
                 continue
             except discord.HTTPException:
                 print(response.get('FAILED_MANAGE_EMOJI'))
+                pass
+            except asyncio.TimeoutError:
+                print(f"Failed to create emoji \"{name}\" from \"{url}\". (TIMEOUT)")
                 pass
         else:
             emoji_list[name] = f"<:{name}:{emoji.id}>"

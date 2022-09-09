@@ -374,6 +374,18 @@ class GetEmoji:
             return emoji_list.get(name)
         return emoji
     
+    def competitive_tier_by_bot(tier: int, bot: ValorantBot) -> discord.Emoji:
+        """ Get agent emoji from bot"""
+        rank = JSON.read("cache")["competitive_tiers"]
+        emoji_list = JSON.read("emoji")
+
+        name = "Tier" + rank[str(tier)]["name"]["en-US"].replace(" ", "").capitalize()
+
+        emoji = discord.utils.get(bot.emojis, name=name)
+        if emoji is None:
+            return emoji_list.get(name)
+        return emoji
+    
     def get(name: str, bot: ValorantBot) -> discord.Emoji:
         emoji_list = JSON.read("emoji")
         emoji = discord.utils.get(bot.emojis, name=name)

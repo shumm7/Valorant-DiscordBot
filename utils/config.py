@@ -36,10 +36,15 @@ def NewConfigData() -> Dict:
         "default-language": "en-US",
         "command-description-language": "en-US",
         "owner-id": -1,
-        "emoji-server-id": -1,
+        "emoji-server-id": [-1],
         "reset-cache-when-updated": True,
         "article": {
             "description": 150
+        },
+        "emojis": {
+            "default": True,
+            "tier": False,
+            "agent": True
         }
     }
     

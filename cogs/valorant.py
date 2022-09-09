@@ -360,7 +360,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
             if len(data)==1:
                 match_id = data[0]["MatchID"]
 
-        ret = GetEmbed.match(endpoint.player, endpoint.puuid, match_id, response, endpoint, self.bot)
+        date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
+        filename = [f"loadout_graph_{date}.png", f"duels_heatmap_{date}.png"]
+        ret = GetEmbed.match(endpoint.player, endpoint.puuid, match_id, response, endpoint, filename, self.bot)
         embeds, graph = ret[0], ret[1]
 
         if graph==None:
@@ -372,6 +374,15 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 await interaction.followup.send(embeds=embeds[4:], file=graph[1], view=View.share_button(interaction, embeds[4:]) if is_private_message else MISSING)
             else:
                 await interaction.followup.send(embeds=embeds, files=graph, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
+
+            try:
+                os.remove("resources/temp/" + filename[0])
+            except FileNotFoundError:
+                pass
+            try:
+                os.remove("resources/temp/" + filename[1])
+            except FileNotFoundError:
+                pass
             await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("mission", {}).get("DESCRIPTION", ""))
@@ -726,8 +737,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await self.check_update(interaction)
 
     @app_commands.command(description=clocal.get("crosshair", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(code=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("code", ""), player=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("player", ""))
-    async def crosshair(self, interaction: Interaction, code: str = "", player: str = "") -> None:
+    @app_commands.describe(code=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("code", ""), name=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("name", ""))
+    async def crosshair(self, interaction: Interaction, code: str = "", name: str = "") -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         await interaction.response.defer()
@@ -741,16 +752,16 @@ class ValorantCog(commands.Cog, name='Valorant'):
         template = JSON.read("crosshair", dir="config")
         icon = ""
 
-        if len(player)>0:
+        if len(name)>0:
             max = 0
             selected = ""
             for data in template.values():
-                for name in data["crosshairs"].keys():
-                    r = SequenceMatcher(None, name.lower(), player.lower()).ratio()
+                for n in data["crosshairs"].keys():
+                    r = SequenceMatcher(None, n.lower(), name.lower()).ratio()
                     if r>max:
                         max = r
                         selected_category = data
-                        selected = name
+                        selected = n
             
             player = ""
             if selected_category.get("category")=="esports":
@@ -766,15 +777,17 @@ class ValorantCog(commands.Cog, name='Valorant'):
             raise ValorantBotError(response.get("NO_CODE"))
         
         # data
-        file = endpoint.fetch_crosshair(code, "crosshair.png")
+        filename = f"crosshair_" + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f') +".png"
+        file = endpoint.fetch_crosshair(code, filename)
         if file==None:
             raise ValorantBotError(response.get("ERROR"))
         
         # embed
-        embed = Embed(title=response.get("TITLE"), description=response.get("RESPONSE").format(player=player, code=code)).set_image(url=f"attachment://crosshair.png")
+        embed = Embed(title=response.get("TITLE"), description=response.get("RESPONSE").format(player=player, code=code)).set_image(url=f"attachment://{filename}")
         embed.set_thumbnail(url=icon)
         await interaction.followup.send(embed=embed, file=file)
         await self.check_update(interaction)
+        os.remove(f"resources/temp/{filename}")
     
     @app_commands.command(description=clocal.get("party", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("party", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("party", {}).get("DESCRIBE", {}).get("password", ""))

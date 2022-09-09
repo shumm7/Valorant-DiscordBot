@@ -1,13 +1,13 @@
 *.pyc
 .vscode
 venv/
-temp/
 
 /*.json
 .env
 /Valorant-DiscordBot.code-workspace
 /heatmap.png
 /*.png
+/resources/temp/
 .env
 
 
