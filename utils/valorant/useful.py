@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 import dateutil.parser
 import json
 import os
+import io
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import uuid
 
@@ -21,6 +22,13 @@ if TYPE_CHECKING:
 
 current_season_id = '99ac9283-4dd3-5248-2e01-8baf778affb4'
 current_season_end = datetime(2022, 8, 24, 17, 0, 0)
+
+def load_file(dir: str, filename: str = "image.png") -> discord.File:
+    with open(dir, "rb") as f:
+        file = io.BytesIO(f.read())
+    f.close()
+    image = discord.File(file, filename=f"{filename}")
+    return image
 
 def is_valid_uuid(value: str) -> bool:
     """

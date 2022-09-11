@@ -866,7 +866,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
             party_details = None
         
         # Embeds
-        embeds = GetEmbed.custom(endpoint.puuid, party_details, endpoint, response)
+        embeds = GetEmbed.custom(endpoint.puuid, party_details, endpoint, response, self.bot)
         
         await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
         await self.check_update(interaction)

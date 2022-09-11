@@ -13,7 +13,7 @@ import urllib3
 import urllib.parse
 
 from .local import LocalErrorResponse
-from .useful import JSON
+from .useful import JSON, load_file
 # Local
 from .resources import (base_endpoint, base_endpoint_glz, base_endpoint_shared, base_endpoint_henrik, region_shard_override,
                         shard_region_override)
@@ -374,10 +374,7 @@ class API_ENDPOINT:
             with open("resources/temp/"+file_name, "wb") as f:
                 f.write(r.content)
             f.close()
-            with open("resources/temp/"+file_name, "rb") as f:
-                file = io.BytesIO(f.read())
-            image = discord.File(file, filename=f"{file_name}")
-            return image
+            return load_file("resources/temp/"+file_name, file_name)
         return None
 
 

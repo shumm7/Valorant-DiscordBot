@@ -475,7 +475,7 @@
       },
       "READY": "準備完了",
       "NO_READY": "ゲーム中",
-      "OWNER": "🔶 ",
+      "OWNER": "👑 ",
       "PLAYER": {
         "TITLE": "",
         "RESPONSE": "{owner}**{name}** (Lv.{level})\n`{title}`",

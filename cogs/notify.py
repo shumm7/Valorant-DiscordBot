@@ -21,7 +21,7 @@ from utils.valorant.db import DATABASE
 from utils.valorant.embed import Embed, GetEmbed
 from utils.valorant.endpoint import API_ENDPOINT
 from utils.valorant.local import ResponseLanguage
-from utils.valorant.useful import (format_relative, GetEmoji, GetItems, JSON)
+from utils.valorant.useful import (format_relative, GetEmoji, GetItems, JSON, load_file)
 
 VLR_locale = ValorantTranslator()
 clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
@@ -297,14 +297,17 @@ class Notify(commands.Cog):
         turn_off = response.get("TURN_OFF")
         
         embed = Embed(success.format(mode=mode))
+        file: discord.File = None
         if mode == 'Specified Skin':
-            embed.set_image(url='https://i.imgur.com/RF6fHRY.png')
+            file = load_file("resources/notify_mode_specified.png", "notify_mode_specified.png")
+            embed.set_image(url=f'attachment://notify_mode_specified.png')
         elif mode == 'All Skin':
-            embed.set_image(url='https://i.imgur.com/Gedqlzc.png')
+            file = load_file("resources/notify_mode_allskin.png", "notify_mode_allskin.png")
+            embed.set_image(url=f'attachment://notify_mode_allskin.png')
         elif mode == 'Off':
             embed.description = turn_off
         
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, file=file, ephemeral=True)
     
     @notify.command(name='channel', description=clocal.get("notify_channel", {}).get("DESCRIPTION", ""))
     @app_commands.describe(channel=clocal.get("notify_channel", {}).get("DESCRIBE", {}).get("channel", ""))
@@ -377,7 +380,7 @@ class Notify(commands.Cog):
                     break
             
             elif data['notify_mode'] == 'All':
-                embeds = GetEmbed.notify_all_send(endpoint.player, offer, response_send, self.bot)
+                embeds = GetEmbed.notify_all_send(endpoint.player, offer, response_send, str(VLR_locale), self.bot)
                 await channel_send.send(embeds=embeds)
             
             else:
@@ -411,8 +414,9 @@ class Notify(commands.Cog):
         self.db.change_article_notify_mode(interaction.user.id, notify)  # change notify mode
         
         if notify:
-            embed = discord.Embed(description=response.get('ENABLED'), color=0x77dd77)
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            file = load_file("resources/notify_article.png", "notify_article.png")
+            embed = discord.Embed(description=response.get('ENABLED'), color=0x77dd77).set_image(url="attachment://notify_article.png")
+            await interaction.followup.send(embed=embed, file=file, ephemeral=True)
         else:
             embed = discord.Embed(description=response.get('DISABLED'), color=0x77dd77)
             await interaction.followup.send(embed=embed, ephemeral=True)

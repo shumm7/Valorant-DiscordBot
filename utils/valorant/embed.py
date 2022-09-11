@@ -1625,7 +1625,7 @@ class GetEmbed:
 
     # ---------- CUSTOM EMBED ---------- #
     @classmethod
-    def custom(cls, puuid: str, data: Dict, endpoint: API_ENDPOINT, response: Dict, mode_rand: bool = False) -> discord.Embed:
+    def custom(cls, puuid: str, data: Dict, endpoint: API_ENDPOINT, response: Dict, bot: ValorantBot, mode_rand: bool = False) -> discord.Embed:
         cache = JSON.read("cache")
         embeds = []
         
@@ -1754,6 +1754,7 @@ class GetEmbed:
                     name = player_data["name"],
                     puuid = player_data["puuid"],
                     rank = GetFormat.get_competitive_tier_name(player_data["rank"]),
+                    rank_emoji = GetEmoji.competitive_tier_by_bot(player_data["rank"], bot),
                     rating = round(player_data["custom_rating"], 1),
                     user = player_data["user"]
                 )
