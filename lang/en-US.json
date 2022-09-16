@@ -637,6 +637,15 @@
       },
       "NO_CATEGORY": "None"
     },
+    "notify_auth": {
+      "NAME": "auth",
+      "DESCRIPTION": "Set account login expiration notification",
+      "DESCRIBE": {
+        "notify": "Notify Mode"
+      },
+      "ENABLED": "You have **ENABLED** an account login expiration notification.",
+      "DISABLED": "You have **DISABLED** an account login expiration notification."
+    },
     "notify_send": {
       "RESPONSE_SPECIFIED": "{emoji} **{name}** is in your daily store!\nRemaining {duration}",
       "RESPONSE_ALL": "Daily store for **{username}** | Remaining {duration}",
@@ -659,7 +668,8 @@
       "2FA_ENABLE": "You have 2FA enabled!",
       "2FA_TO_EMAIL": "Riot sent a code to",
       "2FA_INVALID_CODE": "Code is Invalid. Please `/login` again",
-      "TEMP_LOGIN_NOT_SUPPORT_2FA": "Not supported 2FA, Please use `/login` and use other cmd without username, password."
+      "TEMP_LOGIN_NOT_SUPPORT_2FA": "Not supported 2FA, Please use `/login` and use other cmd without username, password.",
+      "AUTO_CHECK": "**{name}**'s cookies has expired.\nPlease `/login` again!"
     },
     "DATABASE": {
       "NOT_LOGIN": "You're not registered!, please `/login` to register!",
@@ -677,6 +687,7 @@
       "FAILED_MANAGE_EMOJI": "I can't create/delete emojis, please try again",
       "NOT_MAINSERVER": "I can't create emojis because it is not the main server."
     },
-    "UPDATE_NOTIFY": "`NOTE: This message will appear only once.`"
+    "UPDATE_NOTIFY": "`NOTE: This message will appear only once.`",
+    "BOT_READY": "{name} is now ready."
   }
 }

@@ -286,6 +286,42 @@ class API_ENDPOINT:
         """
         data = self.fetch(endpoint=f'/parties/v1/parties/{party_id}', url='glz', not_found_error=False)
         return data
+    
+    # current game
+
+    def fetch_coregame_player(self, puuid: str = None) -> Mapping[str, Any]:
+        """
+        GET CoreGame_FetchPlayer
+        """
+        if puuid==None:
+            puuid = self.puuid   
+        data = self.fetch(endpoint=f'/core-game/v1/players/{puuid}', url='glz', not_found_error=False)
+        return data
+    
+    def fetch_coregame_match(self, match_id: str) -> Mapping[str, Any]:
+        """
+        GET CoreGame_FetchMatch
+        """
+        data = self.fetch(endpoint=f'/core-game/v1/matches/{match_id}', url='glz', not_found_error=False)
+        return data
+    
+    # pregame 
+
+    def fetch_pregame_player(self, puuid: str = None) -> Mapping[str, Any]:
+        """
+        GET CoreGame_FetchPlayer
+        """
+        if puuid==None:
+            puuid = self.puuid   
+        data = self.fetch(endpoint=f'/pregame/v1/players//{puuid}', url='glz', not_found_error=False)
+        return data
+    
+    def fetch_pregame_match(self, match_id: str) -> Mapping[str, Any]:
+        """
+        GET CoreGame_FetchMatch
+        """
+        data = self.fetch(endpoint=f'/pregame/v1/matches/{match_id}', url='glz', not_found_error=False)
+        return data
 
     # store endpoints
 

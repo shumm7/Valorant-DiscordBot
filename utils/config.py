@@ -33,6 +33,7 @@ def SaveConfig(cfg: Dict) -> None:
 
 def NewConfigData() -> Dict:
     return {
+        "bot-start-notify": False,
         "default-language": "en-US",
         "command-description-language": "en-US",
         "owner-id": -1,
@@ -45,6 +46,11 @@ def NewConfigData() -> Dict:
             "default": True,
             "tier": False,
             "agent": True
+        },
+        "colors": {
+            "default": 16598356
         }
     }
     
+def GetColor(key: str) -> int:
+    return LoadConfig().get("colors", {}).get(key, 0x000000)

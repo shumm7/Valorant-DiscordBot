@@ -10,6 +10,7 @@ from discord.ext import commands
 from discord.ext.commands import (BadLiteralArgument, CheckFailure, CommandNotFound, MissingRequiredArgument)
 
 from utils.errors import (AuthenticationError, BadArgument, DatabaseError, HandshakeError, NotOwner, ResponseError, ValorantBotError)
+from utils.config import GetColor
 
 if TYPE_CHECKING:
     from bot import ValorantBot
@@ -50,14 +51,14 @@ class ErrorHandler(commands.Cog):
             error = f"An unknown error occurred, sorry"
             traceback.print_exception(type(error), error)
         
-        embed = discord.Embed(description=f'{str(error)[:2000]}', color=0xfe676e)
+        embed = discord.Embed(description=f'{str(error)[:2000]}', color=GetColor("error"))
         if interaction.response.is_done():
             return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
-        embed = discord.Embed(color=0xfe676e)
+        embed = discord.Embed(color=GetColor("error"))
         
         if isinstance(error, CommandNotFound):
             return

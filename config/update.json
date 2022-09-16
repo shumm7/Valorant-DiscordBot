@@ -49,5 +49,10 @@
         "HEADER": "Changelog // 1.4.5",
         "RESPONSE": "/notifyコマンドの画像を追加・変更しました。\n/partyコマンドの表示を変更しました。",
         "THUMBNAIL": null
+    },
+    "fork-1.4.6": {
+        "HEADER": "Changelog // 1.4.6",
+        "RESPONSE": "ログイン期限切れ時に通知を行う機能を追加しました。",
+        "THUMBNAIL": null
     }
 }

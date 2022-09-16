@@ -9,6 +9,7 @@ from urllib import response
 import discord
 from discord import ButtonStyle, Interaction, TextStyle, ui
 from discord.utils import MISSING
+from utils.config import GetColor
 from utils.valorant import endpoint
 from utils.valorant.embed import Embed
 
@@ -120,7 +121,7 @@ class NotifyViewList(ui.View):
     
     async def on_timeout(self) -> None:
         """ Called when the view times out. """
-        embed = discord.Embed(color=0x2F3136, description='🕙 Timeout')
+        embed = discord.Embed(color=GetColor("error"), description='🕙 Timeout')
         await self.interaction.edit_original_message(embed=embed, view=None)
     
     async def interaction_check(self, interaction: Interaction) -> bool:
@@ -165,7 +166,7 @@ class NotifyViewList(ui.View):
         vp_emoji = discord.utils.get(self.bot.emojis, name='ValorantPointIcon')
         
         title = self.response.get('TITLE')
-        embed = discord.Embed(description='\u200b', title=title, color=0xfd4554)
+        embed = Embed(description='\u200b', title=title)
         
         click_for_remove = self.response.get('REMOVE_NOTIFY')
         
@@ -227,7 +228,7 @@ class TwoFA_UI(ui.Modal, title='Two-factor authentication'):
             auth.locale_code = self.interaction.locale
             
             async def send_embed(content: str) -> Awaitable[None]:
-                embed = discord.Embed(description=content, color=0xfd4554)
+                embed = Embed(description=content)
                 if interaction.response.is_done():
                     return await interaction.followup.send(embed=embed, ephemeral=True)
                 await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -251,7 +252,7 @@ class TwoFA_UI(ui.Modal, title='Two-factor authentication'):
     async def on_error(self, interaction: Interaction, error: Exception) -> None:
         """ Called when the user submits the modal with an error. """
         print("TwoFA_UI:", error)
-        embed = discord.Embed(description='Oops! Something went wrong.', color=0xfd4554)
+        embed = discord.Embed(description='Oops! Something went wrong.', color=GetColor("error"))
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
@@ -375,7 +376,7 @@ class BaseBundle(ui.View):
             self.add_item(self.back_button)
             self.add_item(self.next_button)
     
-    def base_embed(self, title: str, description: str, icon: str, color: int = 0x0F1923) -> discord.Embed:
+    def base_embed(self, title: str, description: str, icon: str, color: int = GetColor("items")) -> discord.Embed:
         """ Base embed for the view """
         
         embed = discord.Embed(title=title, description=description, color=color)
@@ -394,7 +395,7 @@ class BaseBundle(ui.View):
         
         for index, bundle in enumerate(sorted(self.entries, key=lambda c: c['names'][self.language]), start=1):
             if index == selected_bundle:
-                embeds.append(discord.Embed(title=bundle['names'][self.language] + f" {collection_title}", description=f"{vp_emoji} {bundle['price']}", color=0xfd4554).set_image(url=bundle['icon']))
+                embeds.append(Embed(title=bundle['names'][self.language] + f" {collection_title}", description=f"{vp_emoji} {bundle['price']}").set_image(url=bundle['icon']))
                 
                 for items in sorted(bundle['items'], key=lambda x: x['price'], reverse=True):
                     item = GetItems.get_item_by_type(items['type'], items['uuid'])
@@ -402,7 +403,7 @@ class BaseBundle(ui.View):
                     
                     emoji = GetEmoji.tier_by_bot(items['uuid'], self.bot) if item_type == 'Skins' else ''
                     icon = item['icon'] if item_type != 'Player Cards' else item['icon']['large']
-                    color = 0xfd4554 if item_type == 'Skins' else 0x0F1923
+                    color = GetColor("default") if item_type == 'Skins' else GetColor("items")
                     
                     embed = self.base_embed(f"{emoji} {item['names'][self.language]}", f"{vp_emoji} {items['price']}", icon, color)
                     embeds.append(embed)
@@ -432,11 +433,10 @@ class BaseBundle(ui.View):
         bundle_base_price = bundle['base_price']
         bundle_price_text = f"**{bundle_price}** {(f'~~{bundle_base_price}~~' if bundle_base_price != bundle_price else '')}"
         
-        embed = discord.Embed(
+        embed = Embed(
             title=featured_bundle_title.format(bundle=name),
             description=f"{vp_emoji} {bundle_price_text}"
-                        f" ({duration_text})",
-            color=0xfd4554
+                        f" ({duration_text})"
         )
         embed.set_image(url=bundle['icon'])
         
@@ -450,7 +450,7 @@ class BaseBundle(ui.View):
             item_type = get_item_type(items['type'])
             emoji = GetEmoji.tier_by_bot(items['uuid'], self.bot) if item_type == 'Skins' else ''
             icon = item['icon'] if item_type != 'Player Cards' else item['icon']['large']
-            color = 0xfd4554 if item_type == 'Skins' else 0x0F1923
+            color = GetColor("default") if item_type == 'Skins' else GetColor("items")
             
             item_price = items['price']
             item_base_price = items['base_price']
@@ -962,7 +962,7 @@ class BaseCollection(ui.View):
             self.add_item(self.back_button)
             self.add_item(self.next_button)
     
-    def base_embed(self, title: str, description: str, icon: str, color: int = 0x0F1923) -> discord.Embed:
+    def base_embed(self, title: str, description: str, icon: str, color: int = GetColor("items")) -> discord.Embed:
         """ Base embed for the view """
         
         embed = discord.Embed(title=title, description=description, color=color)
@@ -981,7 +981,7 @@ class BaseCollection(ui.View):
 
         # Main
         embeds.append(
-            discord.Embed(description=lang.get("TITLE", "").format(name=self.endpoint.player), color=0x0F1923)
+            discord.Embed(description=lang.get("TITLE", "").format(name=self.endpoint.player), color=GetColor("default"))
         )
         
         # Identity
@@ -990,7 +990,7 @@ class BaseCollection(ui.View):
         # Player Card
         card_embed = discord.Embed(
             title=cache["playercards"][item["PlayerCardID"]]["names"][self.language],
-            color = 0x45FD9C
+            color = GetColor("items")
         ).set_author(name = self.response.get("ITEMS", {})["PLAYER_CARD"])
         #card_embed.set_thumbnail(url=cache["playercards"][item["PlayerCardID"]]["icon"]["small"])
         card_embed.set_thumbnail(url=cache["playercards"][item["PlayerCardID"]]["icon"]["large"])
@@ -1001,14 +1001,14 @@ class BaseCollection(ui.View):
         title_embed = discord.Embed(
             title=cache["titles"][item["PlayerTitleID"]]["names"][self.language],
             description= "`" + cache["titles"][item["PlayerTitleID"]]["text"][self.language] + "`",
-            color = 0x45FD9C
+            color = GetColor("items")
         ).set_author(name = self.response.get("ITEMS", {})["PLAYER_TITLE"])
         embeds.append(title_embed)
 
         # Levelboarder
         level_embed = discord.Embed(
             title=self.response.get("LEVELBORDERS").format(level=cache["levelborders"][item["PreferredLevelBorderID"]]["level"]),
-            color = 0x45FD9C
+            color = GetColor("items")
         )
         level_embed.set_thumbnail(url = cache["levelborders"][item["PreferredLevelBorderID"]]["icon"])
         level_embed.set_author(name = self.response.get("ITEMS", {})["LEVELBORDER"])
@@ -1025,7 +1025,7 @@ class BaseCollection(ui.View):
 
                     gun_embed = discord.Embed(
                         title = cache["skins"][skin_uuid]["chromas"][chroma_uuid]["names"][self.language],
-                        color = 0xfd4554
+                        color = GetColor("default")
                     )
                     if cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon")!=None:
                         gun_embed.set_image(url=cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon"))
@@ -1055,7 +1055,7 @@ class BaseCollection(ui.View):
             slot = spray_slot[item["EquipSlotID"]]
             embed = discord.Embed(
                 title = cache["sprays"][item["SprayID"]]["names"][self.language],
-                color = 0x4563FD
+                color = GetColor("items")
             )
             if cache["sprays"][item["SprayID"]].get("animation_gif")!=None:
                 embed.set_thumbnail(url=cache["sprays"][item["SprayID"]]["animation_gif"])
@@ -1173,7 +1173,7 @@ class BaseSkin(ui.View):
                     rp_emoji = GetEmoji.get("RadianitePointIcon", self.bot),
                     rp = level["price"] if level.get("price")!=None else "-"
                 ),
-                color=0x0F1923
+                color=GetColor("default")
             ).set_thumbnail(url=level.get("icon", ""))
             embeds.append(embed)
 

@@ -12,15 +12,17 @@ from discord import (app_commands, Forbidden, HTTPException, Interaction)
 from discord.ext import commands, tasks
 
 from utils.errors import (
-    ValorantBotError
+    ValorantBotError,
+    AuthenticationError
 )
+from utils.config import GetColor
 from utils.locale_v2 import ValorantTranslator
 from utils.valorant import view as View
 from utils.valorant.cache import create_json
 from utils.valorant.db import DATABASE
 from utils.valorant.embed import Embed, GetEmbed
 from utils.valorant.endpoint import API_ENDPOINT
-from utils.valorant.local import ResponseLanguage
+from utils.valorant.local import ResponseLanguage, LocalErrorResponse
 from utils.valorant.useful import (format_relative, GetEmoji, GetItems, JSON, load_file)
 
 VLR_locale = ValorantTranslator()
@@ -40,12 +42,14 @@ class Notify(commands.Cog):
     def cog_unload(self) -> None:
         self.notifys.cancel()
         self.reload_article.cancel()
+        self.check_auth.cancel()
     
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         self.db = DATABASE()
         self.endpoint = API_ENDPOINT()
         self.reload_article.start()
+        self.check_auth.start()
     
     async def get_endpoint_and_data(self, user_id: int) -> Tuple[API_ENDPOINT, Any]:
         data = await self.db.is_data(user_id, 'en-US')
@@ -97,7 +101,7 @@ class Notify(commands.Cog):
                             notify_send: str = response.get('RESPONSE_SPECIFIED')
                             duration = format_relative(datetime.utcnow() + timedelta(seconds=duration))
                             
-                            embed = Embed(notify_send.format(emoji=emoji, name=name, duration=duration), color=0xfd4554)
+                            embed = Embed(notify_send.format(emoji=emoji, name=name, duration=duration))
                             embed.set_thumbnail(url=icon)
                             view = View.NotifyView(user_id, uuid, name, ResponseLanguage('notify_add', guild_locale))
                             view.message = await channel_send.send(content=f'||{author.mention}||', embed=embed, view=view)
@@ -179,8 +183,25 @@ class Notify(commands.Cog):
                             notify_list.append(user_id)
                     
                     await self.send_article(notify_list, article_lang)
-
     
+    @tasks.loop(minutes=20)
+    async def check_auth(self) -> None:
+        users = self.db.read_db()
+
+        for user_id, user in users.items():
+            if user.get("auth_notify", False):
+                author = self.bot.get_user(int(user_id)) or await self.bot.fetch_user(int(user_id))
+                local = LocalErrorResponse("AUTH", user.get("lang", "en-US"))
+                for uuid, account in user.get("auth", {}).items():
+                    if not account.get("notified_expire", False):
+                        cookie = account.get("cookie", {}).get("ssid")
+                        try:
+                            await self.db.auth.login_with_cookie(cookie)
+                        except Exception as e:
+                            users[str(user_id)]["auth"][str(uuid)]["notified_expire"] = True
+                            self.db.insert_user(users)
+                            await author.send(embed=Embed(description=local.get("AUTO_CHECK").format(name=account.get("username"))))
+        
     @notifys.before_loop
     async def before_daily_send(self) -> None:
         await self.bot.wait_until_ready()
@@ -327,7 +348,7 @@ class Notify(commands.Cog):
         
         channel = '**DM Message**' if channel == 'DM Message' else f'{interaction.channel.mention}'
         
-        embed = discord.Embed(description=response.get('SUCCESS').format(channel=channel), color=0x77dd77)
+        embed = discord.Embed(description=response.get('SUCCESS').format(channel=channel), color=GetColor("success"))
         
         await interaction.followup.send(embed=embed, ephemeral=True)
     
@@ -373,7 +394,7 @@ class Notify(commands.Cog):
                     notify_send: str = response_send.get('RESPONSE_SPECIFIED')
                     duration = format_relative(datetime.utcnow() + timedelta(seconds=duration))
                     
-                    embed = Embed(notify_send.format(emoji=emoji, name=name, duration=duration), color=0xfd4554)
+                    embed = Embed(notify_send.format(emoji=emoji, name=name, duration=duration))
                     embed.set_thumbnail(url=icon)
                     view = View.NotifyView(interaction.user.id, uuid, name, response_add)
                     view.message = await channel_send.send(embed=embed, view=view)
@@ -396,7 +417,7 @@ class Notify(commands.Cog):
             print(e)
             raise ValorantBotError(f"{response_test.get('FAILED_SEND_NOTIFY')} - {e}")
         else:
-            await interaction.followup.send(embed=Embed(response_test.get('NOTIFY_IS_WORKING'), color=0x77dd77), ephemeral=True)
+            await interaction.followup.send(embed=Embed(response_test.get('NOTIFY_IS_WORKING'), color=GetColor("success")), ephemeral=True)
 
     @notify.command(name='article', description=clocal.get("notify_article", {}).get("DESCRIPTION", ""))
     @app_commands.describe(notify=clocal.get("notify_article", {}).get("DESCRIBE", {}).get("notify", ""))
@@ -415,10 +436,10 @@ class Notify(commands.Cog):
         
         if notify:
             file = load_file("resources/notify_article.png", "notify_article.png")
-            embed = discord.Embed(description=response.get('ENABLED'), color=0x77dd77).set_image(url="attachment://notify_article.png")
+            embed = discord.Embed(description=response.get('ENABLED'), color=GetColor("success")).set_image(url="attachment://notify_article.png")
             await interaction.followup.send(embed=embed, file=file, ephemeral=True)
         else:
-            embed = discord.Embed(description=response.get('DISABLED'), color=0x77dd77)
+            embed = discord.Embed(description=response.get('DISABLED'), color=GetColor("success"))
             await interaction.followup.send(embed=embed, ephemeral=True)
         
     @notify.command(name='update', description=clocal.get("notify_update", {}).get("DESCRIPTION", ""))
@@ -437,10 +458,10 @@ class Notify(commands.Cog):
         self.db.change_update_notify_mode(interaction.user.id, notify)  # change notify mode
         
         if notify:
-            embed = discord.Embed(description=response.get('ENABLED'), color=0x77dd77)
+            embed = discord.Embed(description=response.get('ENABLED'), color=GetColor("success"))
             await interaction.followup.send(embed=embed, ephemeral=True)
         else:
-            embed = discord.Embed(description=response.get('DISABLED'), color=0x77dd77)
+            embed = discord.Embed(description=response.get('DISABLED'), color=GetColor("success"))
             await interaction.followup.send(embed=embed, ephemeral=True)
     
     @notify.command(name='category', description=clocal.get("notify_category", {}).get("DESCRIPTION", ""))
@@ -472,9 +493,32 @@ class Notify(commands.Cog):
         if len(list)==0:
             category_text = response.get("NO_CATEGORY")
 
-        embed = discord.Embed(description=response.get('SUCCESS').format(category=category_text), color=0x77dd77)
+        embed = discord.Embed(description=response.get('SUCCESS').format(category=category_text), color=GetColor("success"))
         await interaction.followup.send(embed=embed, ephemeral=True)
     
+    
+    @notify.command(name='auth', description=clocal.get("notify_auth", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(notify=clocal.get("notify_auth", {}).get("DESCRIBE", {}).get("notify", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def notify_auth(self, interaction: Interaction, notify: bool) -> None:
+        print(f"[{datetime.now()}] {interaction.user.name} issued a command /notify {interaction.command.name}.") 
+
+        await interaction.response.defer(ephemeral=True)
+        
+        # language
+        response = ResponseLanguage('notify_auth', interaction.locale)
+        
+        await self.db.is_data(interaction.user.id, interaction.locale)  # check if user is in db
+        
+        self.db.change_auth_notify_mode(interaction.user.id, notify)  # change notify mode
+        
+        if notify:
+            file = load_file("resources/notify_auth.png", "notify_auth.png")
+            embed = discord.Embed(description=response.get('ENABLED'), color=GetColor("success")).set_image(url="attachment://notify_auth.png")
+            await interaction.followup.send(embed=embed, file=file, ephemeral=True)
+        else:
+            embed = discord.Embed(description=response.get('DISABLED'), color=GetColor("success"))
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
     # @notify.command(name='manage', description='Manage notification list.')
     # @owner_only()

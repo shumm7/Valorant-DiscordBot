@@ -9,7 +9,8 @@ import datetime
 from discord import app_commands, Interaction, ui
 from discord.ext import commands
 from utils.errors import ValorantBotError
-from utils.valorant.embed import GetEmbed
+from utils.checks import owner_only
+from utils.valorant.embed import GetEmbed, Embed
 from utils.valorant.local import ResponseLanguage
 from bot import bot_option
 from utils.valorant.useful import JSON
@@ -70,7 +71,7 @@ class Admin(commands.Cog):
         owner_url = f"https://discord.com/users/{config}"
         titles = [response.get("FIELD1")["TITLE"], response.get("FIELD2")["TITLE"], response.get("FIELD3")["TITLE"]]
         
-        embed = discord.Embed(color=0xffffff)
+        embed = Embed()
         bot_version = bot_option["version"]
         embed.set_footer(text = f"Version: {bot_version}")
         embed.set_author(name=response.get("TITLE"), url=response.get("PROJECT_URL"))
@@ -108,7 +109,7 @@ class Admin(commands.Cog):
 
         command = command.replace("_", " ")
         response = ResponseLanguage(interaction.command.name, interaction.locale)
-        embed = discord.Embed(color=0xffffff)
+        embed = Embed()
 
         if command == None: # WIP
             embed.title = response.get("TITLE")

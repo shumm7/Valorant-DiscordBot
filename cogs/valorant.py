@@ -13,6 +13,7 @@ from discord.utils import MISSING
 
 from utils.checks import owner_only
 from utils.errors import (
+    AuthenticationError,
     ValorantBotError
 )
 from utils.valorant import cache as Cache, useful, view as View
@@ -825,6 +826,26 @@ class ValorantCog(commands.Cog, name='Valorant'):
             await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
         await self.check_update(interaction)
     
+    """
+    @app_commands.command(description=clocal.get("member", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("member", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("member", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def member(self, interaction: Interaction, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        await interaction.response.defer()
+        
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale)
+
+        pregame = endpoint.fetch_pregame_player()
+        coregame = endpoint.fetch_coregame_player()
+
+        await self.check_update(interaction)
+    """
+
     @app_commands.command(description=clocal.get("custom", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("custom", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("custom", {}).get("DESCRIBE", {}).get("password", ""), random=clocal.get("custom", {}).get("DESCRIBE", {}).get("random", ""))
     # @dynamic_cooldown(cooldown_5s)

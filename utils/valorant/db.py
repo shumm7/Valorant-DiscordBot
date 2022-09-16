@@ -232,6 +232,15 @@ class DATABASE:
         
         self.insert_user(db)
     
+    def change_auth_notify_mode(self, user_id: int, mode: bool) -> None:
+        """ Change auth notify mode """
+        
+        db = self.read_db()
+        
+        db[str(user_id)]['auth_notify'] = mode
+        
+        self.insert_user(db)
+    
     def change_ignore_article_category(self, user_id: int, category: str) -> None:
         """ Change article notify mode """
         

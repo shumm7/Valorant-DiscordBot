@@ -11,6 +11,8 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import ExtensionFailed, ExtensionNotFound, NoEntryPointError
 from dotenv import load_dotenv
+from cogs.notify import VLR_locale
+from utils.valorant.local import LocalErrorResponse
 
 from utils.valorant.useful import JSON
 from utils import locale_v2
@@ -33,8 +35,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.4.5',
-    "presence": "/login | VALORANT"
+    "version": 'fork-1.4.6'
 }
 
 
@@ -63,11 +64,21 @@ class ValorantBot(commands.Bot):
         print(f"[{datetime.datetime.now()}] Bot logged in as: {self.user}")
         print(f"[{datetime.datetime.now()}] Valorant Bot is ready !")
         print(f"[{datetime.datetime.now()}] Version: {self.bot_version}")
-        
+
+        config = Config.LoadConfig()
+
         # bot presence
         activity_type = discord.ActivityType.listening
-        await self.change_presence(activity=discord.Game(name=bot_option["presence"]))
-    
+        await self.change_presence(activity=discord.Game(name=config.get("presence", "")))
+
+        # ready notify
+        if config.get("bot-start-notify", False):
+            user_id = config.get("owner-id", -1)
+            owner = self.get_user(int(user_id)) or await self.fetch_user(int(user_id))
+            locale = config.get("command-description-language") or str(VLR_locale)
+            embed = discord.Embed(description=LocalErrorResponse("BOT_READY", locale).format(name=self.user), color=Config.GetColor("default"))
+            await owner.send(embed=embed)
+
     async def setup_hook(self) -> None:
         if self.session is None:
             self.session = aiohttp.ClientSession()

@@ -510,6 +510,15 @@
       },
       "FAILED": "パーティ情報の取得に失敗しました。"
     },
+    "member": {
+      "NAME": "member",
+      "DESCRIPTION": "マッチしているプレイヤーの情報を表示します。",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "NOT_FOUND": "プレイヤーが見つかりませんでした。"
+    },
     "custom": {
       "NAME": "custom",
       "DESCRIPTION": "カスタムマッチのマップとチームをランダムで決定します",
@@ -637,6 +646,15 @@
       },
       "NO_CATEGORY": "なし"
     },
+    "notify_auth": {
+      "NAME": "auth",
+      "DESCRIPTION": "アカウントのログイン期限切れを通知します。",
+      "DESCRIBE": {
+        "notify": "通知モード"
+      },
+      "ENABLED": "ログイン期限切れの通知モードを**オン**に変更しました。",
+      "DISABLED": "ログイン期限切れの通知モードを**オフ**に変更しました。"
+    },
     "notify_send": {
       "RESPONSE_SPECIFIED": "{emoji} **{name}**がデイリーストアに登場しました！\n残り {duration}",
       "RESPONSE_ALL": "**{username}**のデイリーストア | 残り時間 {duration}",
@@ -659,7 +677,8 @@
       "2FA_ENABLE": "二段階認証がONになっています。",
       "2FA_TO_EMAIL": "Riotが次のメールアドレスにコードを送信しました:",
       "2FA_INVALID_CODE": "コードが間違っています。再度 `/login` をお試しください。",
-      "TEMP_LOGIN_NOT_SUPPORT_2FA": "サポートされていない2FA、`/login` を使用して、別のコマンドを使用しないでください。"
+      "TEMP_LOGIN_NOT_SUPPORT_2FA": "サポートされていない2FA、`/login` を使用して、別のコマンドを使用しないでください。",
+      "AUTO_CHECK": "**{name}** のログイン期限が切れています。\n`/login` をお試しください。"
     },
     "DATABASE": {
       "NOT_LOGIN": "あなたはまだ登録されていません。`/login` で登録してください。",
@@ -677,6 +696,7 @@
       "FAILED_MANAGE_EMOJI": "絵文字の作成/削除に失敗しました。再度お試しください。",
       "NOT_MAINSERVER": "メインサーバーではないため、絵文字を追加できませんでした。"
     },
-    "UPDATE_NOTIFY": "`※ このメッセージは一度しか表示されません。`"
+    "UPDATE_NOTIFY": "`※ このメッセージは一度しか表示されません。`",
+    "BOT_READY": "{name}が起動しました。"
   }
 }

@@ -27,6 +27,7 @@ from .endpoint import API_ENDPOINT
 import utils.config as Config
 from .useful import (calculate_level_xp, format_relative, GetEmoji, GetFormat, GetItems, iso_to_time, format_timedelta, JSON)
 from ..locale_v2 import ValorantTranslator
+from utils.config import GetColor
 
 VLR_locale = ValorantTranslator()
 
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
 
 
 class Embed(discord.Embed):  # Custom Embed
-    def __init__(self, description: str = None, color: Union[discord.Color, int] = 0xfd4554, **kwargs: Any) -> None:
+    def __init__(self, description: str = None, color: Union[discord.Color, int] = GetColor("default"), **kwargs: Any) -> None:
         super().__init__(description=description, color=color, **kwargs)
 
 
@@ -108,7 +109,7 @@ class GetEmbed:
         
         vp_emoji = GetEmoji.point_by_bot('ValorantPointIcon', bot)
         
-        embed = Embed(response.get("SKIN", "").format(emoji=emoji, name=name, vp_emoji=vp_emoji, price=price, video=video), color=0x0F1923)
+        embed = Embed(response.get("SKIN", "").format(emoji=emoji, name=name, vp_emoji=vp_emoji, price=price, video=video), color=GetColor("items"))
         embed.set_thumbnail(url=icon)
         return embed
     
@@ -209,7 +210,7 @@ class GetEmbed:
                 inline=False
             )
         if len(embed.fields) == 0:
-            embed.color = 0x77dd77
+            embed.color = GetColor("success")
             embed.description = clear_all_mission
         
         return embed
@@ -667,34 +668,34 @@ class GetEmbed:
             if is_played and point_v[0]>point_v[1]:
                 temp_result = 1
                 results = response.get("RESULT", {}).get("WIN", "")
-                color=0x3cb371
+                color=GetColor("win")
             elif is_played and point_v[1]>point_v[0]:
                 temp_result = -1
                 results = response.get("RESULT", {}).get("LOSE", "")
-                color=0xff0000
+                color=GetColor("lose")
             elif point_v[1]==point_v[0]:
                 results = response.get("RESULT", {}).get("DRAW", "")
-                color=0x4169e1
+                color=GetColor("draw")
             elif (not is_played) and point_v[1]!=point_v[0]:
                 temp_result = 1
                 results = response.get("RESULT", {}).get("WIN", "")
-                color=0x3cb371
+                color=GetColor("win")
         else:
             if is_played and point_v[0]==40 and teams[puuid]["point"]==40:
                 temp_result = 1
                 results = response.get("RESULT", {}).get("WIN", "")
-                color=0x3cb371
+                color=GetColor("win")
             elif is_played and point_v[0]==40 and teams[puuid]["point"]<40:
                 temp_result = -1
                 results = response.get("RESULT", {}).get("LOSE", "")
-                color=0xff0000
+                color=GetColor("lose")
             elif point_v[0]<=40:
                 results = response.get("RESULT", {}).get("DRAW", "")
-                color=0x4169e1
+                color=GetColor("draw")
             else:
                 temp_result = 1
                 results = response.get("RESULT", {}).get("WIN", "")
-                color=0x3cb371
+                color=GetColor("win")
         match_info["color"] = color
         match_info["results"] = results
 
@@ -1351,7 +1352,7 @@ class GetEmbed:
         
         vp_emoji = GetEmoji.point_by_bot('ValorantPointIcon', bot)
         
-        embed = Embed(f"{GetEmoji.tier(uuid)} **{name}**\n{vp_emoji} {dpice} ~~{price}~~", color=0x0F1923)
+        embed = Embed(f"{GetEmoji.tier(uuid)} **{name}**\n{vp_emoji} {dpice} ~~{price}~~", color=GetColor("items"))
         embed.set_thumbnail(url=icon)
         return embed
     
@@ -1419,7 +1420,7 @@ class GetEmbed:
                     max_tier=tiers
                 )
             
-            embed = Embed(battlepass_format(MSG_RESPONSE), title=battlepass_format(MSG_TITLE), color=0x0F1923)
+            embed = Embed(battlepass_format(MSG_RESPONSE), title=battlepass_format(MSG_TITLE), color=GetColor("items"))
             embed.set_footer(text=battlepass_format(MSG_FOOTER))
             embed.set_author(name=battlepass_format(MSG_HEADER))
             
@@ -1427,7 +1428,7 @@ class GetEmbed:
                 embed.set_thumbnail(url=icon)
             
             if tier >= 50:
-                embed.color = 0xf1b82d
+                embed.color = GetColor("premium")
             
             if tier == tiers:
                 embed.description = battlepass_format(MSG_COMPLETE)
@@ -1478,7 +1479,7 @@ class GetEmbed:
                 max_tier=tiers
             )
 
-        embed = Embed(battlepass_format(MSG_RESPONSE), title=battlepass_format(MSG_TITLE), color=0x0F1923)
+        embed = Embed(battlepass_format(MSG_RESPONSE), title=battlepass_format(MSG_TITLE), color=GetColor("items"))
         embed.set_footer(text=battlepass_format(MSG_FOOTER))
         embed.set_author(name=battlepass_format(MSG_HEADER))
         
@@ -1490,6 +1491,7 @@ class GetEmbed:
         
         if tier == tiers:
             embed.description = battlepass_format(MSG_COMPLETE)
+            embed.color = GetColor("premium")
         
         return embed
     
@@ -1579,7 +1581,7 @@ class GetEmbed:
             )
 
         if is_custom_game:
-            def make_embed(p_puuid: str, membership: str, color: int = 0x0F1923):
+            def make_embed(p_puuid: str, membership: str, color: int = GetColor("items")):
                 players[p_puuid]["membership"] = membership
                 embed_player = Embed(
                     title=format_player_info(response.get("CUSTOM", {}).get("TITLE"), p_puuid),
@@ -1595,15 +1597,15 @@ class GetEmbed:
                 return embed_player
 
             for p in data["CustomGameData"]["Membership"].get("teamOne", []):
-                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("TEAM_B"), 0x3cb371))
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("TEAM_B"), GetColor("win")))
             for p in data["CustomGameData"]["Membership"].get("teamTwo", []):
-                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("TEAM_A"), 0xff0000))
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("TEAM_A"), GetColor("lose")))
             for p in data["CustomGameData"]["Membership"].get("teamOneCoaches", []):
-                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("COACH_B"), 0x3cb371))
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("COACH_B"), GetColor("win")))
             for p in data["CustomGameData"]["Membership"].get("teamTwoCoaches", []):
-                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("COACH_A"), 0xff0000))
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("COACH_A"), GetColor("lose")))
             for p in data["CustomGameData"]["Membership"].get("teamSpectate", []):
-                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("SPECTATE"), 0x4169e1))
+                embeds.append(make_embed(p["Subject"], response.get("MEMBERSHIP", {}).get("SPECTATE"), GetColor("draw")))
                 
         else:
             for p in players.values():
@@ -1611,7 +1613,7 @@ class GetEmbed:
                 embed_player = Embed(
                     title=format_player_info(response.get("PLAYER", {}).get("TITLE"), p_puuid),
                     description=format_player_info(response.get("PLAYER", {}).get("RESPONSE"), p_puuid),
-                    color = 0x0F1923
+                    color = GetColor("items")
                 )
                 embed_player.set_thumbnail(url=cache["playercards"][players[p_puuid]["player_card"]]["icon"]["small"])
                 embed_player.set_author(
