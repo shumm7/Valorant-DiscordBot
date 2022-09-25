@@ -307,11 +307,14 @@
       "NAME": "agent",
       "DESCRIPTION": "Show the details of a specified agent",
       "DESCRIBE": {
-        "agent": "The name of the agent"
+        "agent": "The name of the agent",
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
       },
       "TITLE": "{role_emoji} {role}",
       "RESPONSE": "{description}",
       "HEADER": "{name_en_capital}",
+      "FOOTER": "{own}",
       "THUMBNAIL": "{icon}",
       "IMAGE": "{portrait}",
       "KEYS": {
@@ -321,6 +324,8 @@
         "KEY4": "X",
         "PASSIVE": "Passive"
       },
+      "OWN": "🔓 Unlocked",
+      "DONT_OWN": "🔒 Locked",
       "DROPDOWN_CHOICE_TITLE": "Select the Agent",
       "NOT_FOUND": "No agents found that match your keyword entries."
     },
@@ -447,6 +452,62 @@
       "DONT_OWN": "🔒",
       "DROPDOWN_CHOICE_TITLE": "Select the skin",
       "NOT_FOUND": "No skins found that match your keyword entries."
+    },
+    "spray": {
+      "NAME": "spray",
+      "DESCRIPTION": "Show the details of a specified spray",
+      "DESCRIBE": {
+        "spray": "The name of the spray",
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "Select the spray",
+      "NOT_FOUND": "No sprays found that match your keyword entries."
+    },
+    "playercard": {
+      "NAME": "playercard",
+      "DESCRIPTION": "Show the details of a specified playercard",
+      "DESCRIBE": {
+        "playercard": "The name of the playercard",
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "Select the playercard",
+      "NOT_FOUND": "No playercards found that match your keyword entries."
+    },
+    "buddy": {
+      "NAME": "buddy",
+      "DESCRIPTION": "Show the details of a specified gun buddy",
+      "DESCRIBE": {
+        "buddy": "The name of the gun buddy",
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "Select the buddy",
+      "NOT_FOUND": "No buddies found that match your keyword entries."
+    },
+    "title": {
+      "NAME": "title",
+      "DESCRIPTION": "Show the details of a specified title",
+      "DESCRIBE": {
+        "title": "The name of the title",
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}\n`{title}`",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "Select the title",
+      "NOT_FOUND": "No titles found that match your keyword entries."
     },
     "crosshair": {
       "NAME": "crosshair",

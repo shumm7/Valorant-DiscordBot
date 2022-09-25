@@ -307,11 +307,14 @@
       "NAME": "agent",
       "DESCRIPTION": "エージェントの詳細を表示します",
       "DESCRIBE": {
-        "agent": "エージェントの名前"
+        "agent": "エージェントの名前",
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
       },
       "TITLE": "{role_emoji} {role}",
       "RESPONSE": "{description}",
       "HEADER": "{name} // {name_en_capital}",
+      "FOOTER": "{own}",
       "THUMBNAIL": "{icon}",
       "IMAGE": "{portrait}",
       "KEYS": {
@@ -321,6 +324,8 @@
         "KEY4": "X",
         "PASSIVE": "Passive"
       },
+      "OWN": "🔓 アンロック済",
+      "DONT_OWN": "🔒 ロック",
       "DROPDOWN_CHOICE_TITLE": "エージェントを選択",
       "NOT_FOUND": "入力されたキーワードと一致するエージェントが見つかりませんでした。"
     },
@@ -447,6 +452,62 @@
       "DONT_OWN": "🔒",
       "DROPDOWN_CHOICE_TITLE": "スキンを選択",
       "NOT_FOUND": "入力されたキーワードと一致するスキンが見つかりませんでした。"
+    },
+    "spray": {
+      "NAME": "spray",
+      "DESCRIPTION": "スプレーの詳細を表示します",
+      "DESCRIBE": {
+        "spray": "スプレーの名前",
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "スプレーを選択",
+      "NOT_FOUND": "入力されたキーワードと一致するスプレーが見つかりませんでした。"
+    },
+    "playercard": {
+      "NAME": "playercard",
+      "DESCRIPTION": "プレイヤーカードの詳細を表示します",
+      "DESCRIBE": {
+        "playercard": "プレイヤーカードの名前",
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "プレイヤーカードを選択",
+      "NOT_FOUND": "入力されたキーワードと一致するプレイヤーカードが見つかりませんでした。"
+    },
+    "buddy": {
+      "NAME": "buddy",
+      "DESCRIPTION": "ガンバディの詳細を表示します",
+      "DESCRIBE": {
+        "buddy": "ガンバディの名前",
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "ガンバディを選択",
+      "NOT_FOUND": "入力されたキーワードと一致するガンバディが見つかりませんでした。"
+    },
+    "title": {
+      "NAME": "title",
+      "DESCRIPTION": "タイトルの詳細を表示します",
+      "DESCRIBE": {
+        "title": "タイトルの名前",
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "RESPONSE": "{own}**{name}**\n{vp_emoji} {price}\n`{title}`",
+      "OWN": "",
+      "DONT_OWN": "🔒 ",
+      "DROPDOWN_CHOICE_TITLE": "タイトルを選択",
+      "NOT_FOUND": "入力されたキーワードと一致するタイトルが見つかりませんでした。"
     },
     "crosshair": {
       "NAME": "crosshair",

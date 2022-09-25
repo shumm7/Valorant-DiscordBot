@@ -524,21 +524,29 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("agent", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(agent=clocal.get("agent", {}).get("DESCRIBE", {}).get("agent", ""))
+    @app_commands.describe(agent=clocal.get("agent", {}).get("DESCRIBE", {}).get("agent", ""), username=clocal.get("agent", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("agent", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
-    async def agent(self, interaction: Interaction, agent: str) -> None:
+    async def agent(self, interaction: Interaction, agent: str, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
-        await interaction.response.defer()
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
         
+        # language
         response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
         
         # cache
         cache = self.db.read_cache()
         
         # default language language
         default_language = JSON.read("config", dir="config").get("default-language", "en-US")
-        
+
+        # entitlements
+        entitlements = endpoint.store_fetch_entitlements()
         
         # find agents
         find_agent_en_US = []
@@ -564,7 +572,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         find_agent = find_agent_en_US if len(find_agent_en_US) > 0 else find_agent_locale
 
         # agents view
-        view = View.BaseAgent(interaction, find_agent, response)
+        view = View.BaseAgent(interaction, find_agent, entitlements, response, is_private_message)
         await view.start()
         await self.check_update(interaction)
     
@@ -736,6 +744,190 @@ class ValorantCog(commands.Cog, name='Valorant'):
         view = View.BaseSkin(interaction, find_skin[:25], response, entitlements, is_private_message)
         await view.start()
         await self.check_update(interaction)
+    
+    @app_commands.command(description=clocal.get("spray", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(spray=clocal.get("spray", {}).get("DESCRIBE", {}).get("spray", ""), username=clocal.get("spray", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("spray", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def spray(self, interaction: Interaction, spray: str, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
+
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # cache
+        cache = self.db.read_cache()
+        
+        # default language language
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+
+        # fetch sprat owns
+        skin_price = endpoint.store_fetch_offers()
+        self.db.insert_skin_price(skin_price)
+        entitlements = endpoint.store_fetch_entitlements()
+        
+        # find spray
+        find_spray_en_US = []
+        find_spray_locale = []
+
+        for item in cache['sprays'].values():
+            if spray.lower() in cache['sprays'][item["uuid"]]['names'][default_language].lower():
+                find_spray_en_US.append(item)
+            
+            if spray.lower() in cache['sprays'][item["uuid"]]['names'][str(VLR_locale)].lower():
+                find_spray_locale.append(item)
+            
+        find_spray = find_spray_en_US if len(find_spray_en_US) > 0 else find_spray_locale
+
+        # skin view
+        view = View.BaseSpray(interaction, find_spray[:25], response, entitlements, is_private_message)
+        await view.start()
+        await self.check_update(interaction)
+
+
+    @app_commands.command(description=clocal.get("playercard", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(playercard=clocal.get("playercard", {}).get("DESCRIBE", {}).get("playercard", ""), username=clocal.get("playercard", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("playercard", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def playercard(self, interaction: Interaction, playercard: str, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
+
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # cache
+        cache = self.db.read_cache()
+        
+        # default language language
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+
+        # fetch sprat owns
+        skin_price = endpoint.store_fetch_offers()
+        self.db.insert_skin_price(skin_price)
+        entitlements = endpoint.store_fetch_entitlements()
+        
+        # find cards
+        find_card_en_US = []
+        find_card_locale = []
+
+        for item in cache['playercards'].values():
+            if playercard.lower() in cache['playercards'][item["uuid"]]['names'][default_language].lower():
+                find_card_en_US.append(item)
+            
+            if playercard.lower() in cache['playercards'][item["uuid"]]['names'][str(VLR_locale)].lower():
+                find_card_locale.append(item)
+            
+        find_card = find_card_en_US if len(find_card_en_US) > 0 else find_card_locale
+
+        # skin view
+        view = View.BaseCard(interaction, find_card[:25], response, entitlements, is_private_message)
+        await view.start()
+        await self.check_update(interaction)
+
+
+    @app_commands.command(description=clocal.get("buddy", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(buddy=clocal.get("buddy", {}).get("DESCRIBE", {}).get("buddy", ""), username=clocal.get("buddy", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("buddy", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def buddy(self, interaction: Interaction, buddy: str, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
+
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # cache
+        cache = self.db.read_cache()
+        
+        # default language language
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+
+        # fetch sprat owns
+        skin_price = endpoint.store_fetch_offers()
+        self.db.insert_skin_price(skin_price)
+        entitlements = endpoint.store_fetch_entitlements()
+        
+        # find cards
+        find_card_en_US = []
+        find_card_locale = []
+
+        for item in cache['buddies'].values():
+            if buddy.lower() in cache['buddies'][item["uuid"]]['names'][default_language].lower():
+                find_card_en_US.append(item)
+            
+            if buddy.lower() in cache['buddies'][item["uuid"]]['names'][str(VLR_locale)].lower():
+                find_card_locale.append(item)
+            
+        find_card = find_card_en_US if len(find_card_en_US) > 0 else find_card_locale
+
+        # skin view
+        view = View.BaseBuddy(interaction, find_card[:25], response, entitlements, is_private_message)
+        await view.start()
+        await self.check_update(interaction)
+
+
+    @app_commands.command(description=clocal.get("title", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(title=clocal.get("title", {}).get("DESCRIBE", {}).get("title", ""), username=clocal.get("title", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("title", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def title(self, interaction: Interaction, title: str, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
+
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+        
+        # cache
+        cache = self.db.read_cache()
+        
+        # default language language
+        default_language = JSON.read("config", dir="config").get("default-language", "en-US")
+
+        # fetch sprat owns
+        skin_price = endpoint.store_fetch_offers()
+        self.db.insert_skin_price(skin_price)
+        entitlements = endpoint.store_fetch_entitlements()
+        
+        # find cards
+        find_card_en_US = []
+        find_card_locale = []
+
+        for item in cache['titles'].values():
+            if title.lower() in cache['titles'][item["uuid"]]['names'][default_language].lower():
+                find_card_en_US.append(item)
+            
+            if title.lower() in cache['titles'][item["uuid"]]['names'][str(VLR_locale)].lower():
+                find_card_locale.append(item)
+            
+        find_card = find_card_en_US if len(find_card_en_US) > 0 else find_card_locale
+
+        # skin view
+        view = View.BaseTitle(interaction, find_card[:25], response, entitlements, is_private_message)
+        await view.start()
+        await self.check_update(interaction)
+
 
     @app_commands.command(description=clocal.get("crosshair", {}).get("DESCRIPTION", ""))
     @app_commands.describe(code=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("code", ""), name=clocal.get("crosshair", {}).get("DESCRIBE", {}).get("name", ""))

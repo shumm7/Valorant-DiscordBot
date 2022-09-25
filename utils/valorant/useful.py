@@ -286,21 +286,46 @@ class GetItems:
 
         return ret
     
-    def is_skin_owns(entitlements: Dict, uuid: str) -> bool:
-        for entitlement in entitlements[0]["EntitlementsByTypes"]:
-            if entitlement["ItemTypeID"] == "e7c63390-eda7-46e0-bb7a-a6abdacd2433":
+    def is_owns(entitlements: Dict, uuid: str, type_id: str) -> bool:
+        for entitlement in entitlements[0].get("EntitlementsByTypes"):
+            if entitlement["ItemTypeID"] == type_id:
                 for item in entitlement["Entitlements"]:
                     if item["ItemID"]==uuid:
                         return True
         return False
     
-    def is_skin_variant_owns(entitlements: Dict, uuid: str) -> bool:
-        for entitlement in entitlements[0]["EntitlementsByTypes"]:
-            if entitlement["ItemTypeID"] == "3ad1b2b2-acdb-4524-852f-954a76ddae0a":
+    @classmethod
+    def is_skin_owns(cls, entitlements: Dict, uuid: str) -> bool:
+        return cls.is_owns(entitlements, uuid, "e7c63390-eda7-46e0-bb7a-a6abdacd2433")
+    
+    @classmethod
+    def is_skin_variant_owns(cls, entitlements: Dict, uuid: str) -> bool:
+        return cls.is_owns(entitlements, uuid, "3ad1b2b2-acdb-4524-852f-954a76ddae0a")
+    
+    def is_agent_owns(entitlements: Dict, uuid: str) -> bool:
+        type_id = "01bb38e1-da47-4e6a-9b3d-945fe4655707"
+        for entitlement in entitlements.get("EntitlementsByTypes"):
+            if entitlement["ItemTypeID"] == type_id:
                 for item in entitlement["Entitlements"]:
                     if item["ItemID"]==uuid:
                         return True
         return False
+    
+    @classmethod
+    def is_spray_owns(cls, entitlements: Dict, uuid: str) -> bool:
+        return cls.is_owns(entitlements, uuid, "d5f120f8-ff8c-4aac-92ea-f2b5acbe9475")
+    
+    @classmethod
+    def is_playercard_owns(cls, entitlements: Dict, uuid: str) -> bool:
+        return cls.is_owns(entitlements, uuid, "3f296c07-64c3-494c-923b-fe692a4fa1bd")
+    
+    @classmethod
+    def is_buddy_owns(cls, entitlements: Dict, uuid: str) -> bool:
+        return cls.is_owns(entitlements, uuid, "dd3bf334-87f3-40bd-b043-682a57a8dc3a")
+        
+    @classmethod
+    def is_title_owns(cls, entitlements: Dict, uuid: str) -> bool:
+        return cls.is_owns(entitlements, uuid, "de7caa6b-adf7-4588-bbd1-143831e786c6")
 
 
 # ---------- GET EMOJI ---------- #

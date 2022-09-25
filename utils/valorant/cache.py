@@ -583,9 +583,10 @@ def fetch_price(data_price: Dict) -> None:
     data = JSON.read('cache')
     payload = {}
     for skin in data_price['Offers']:
-        if skin["OfferID"] in data['skins']:
+        offer = skin["OfferID"]
+        if  offer in data['skins'] or offer in data['sprays'] or offer in data['playercards'] or offer in data['buddies'] or offer in data['titles']:
             *cost, = skin["Cost"].values()
-            payload[skin['OfferID']] = cost[0]
+            payload[ offer] = cost[0]
     # prices['is_price'] = True
     data['prices'] = payload
     JSON.save('cache', data)

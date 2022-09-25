@@ -54,5 +54,18 @@
         "HEADER": "Changelog // 1.4.6",
         "RESPONSE": "ログイン期限切れ時に通知を行う機能を追加しました。",
         "THUMBNAIL": null
+    },
+    "fork-1.4.7": {
+        "HEADER": "Changelog // 1.4.7",
+        "RESPONSE": "ログイン期限切れ時に通知を行う機能を追加しました。",
+        "FIELD1": {
+            "TITLE": "/spray /title /playercard /buddy",
+            "RESPONSE": "スプレー、タイトル、プレイヤーカード、ガンバディを調べることのできるコマンドが追加されました。"
+        },
+        "FIELD2": {
+            "TITLE": "/agent コマンドの変更",
+            "RESPONSE": "Riotアカウントへのログインが必須になりました。そのエージェントを所有しているかどうかを確認することができます。"
+        },
+        "THUMBNAIL": null
     }
 }

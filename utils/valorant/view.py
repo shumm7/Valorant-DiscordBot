@@ -576,10 +576,12 @@ class BaseBundle(ui.View):
         await self.interaction.followup.send(embeds=self.embeds[0], view=self)
 
 class BaseAgent(ui.View):
-    def __init__(self, interaction: Interaction, entries: Dict, response: Dict) -> None:
+    def __init__(self, interaction: Interaction, entries: Dict, entitlements: Dict, response: Dict, is_private_message: bool) -> None:
         self.interaction: Interaction = interaction
         self.entries = entries
         self.response = response
+        self.entitlements = entitlements
+        self.is_private_message = is_private_message
         self.language = str(VLR_locale)
         self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
         self.current_page: int = 0
@@ -590,6 +592,7 @@ class BaseAgent(ui.View):
     
     def agent_format(self, format: str, agent: Dict) -> str:
         default_language = 'en-US'
+        own, dont_own = self.response.get("OWN"), self.response.get("DONT_OWN")
 
         return format.format(
             name = agent['name'][self.language],
@@ -606,6 +609,7 @@ class BaseAgent(ui.View):
             bust_portrait = agent['bust_portrait'],
             killfeed_portrait = agent["killfeed_portrait"],
             background = agent["background"],
+            own = own if GetItems.is_agent_owns(self.entitlements, agent["uuid"]) else dont_own,
 
             agent_emoji = GetEmoji.agent_by_bot(agent["uuid"], self.bot),
             role_emoji = GetEmoji.role_by_bot(agent["uuid"], self.bot)
@@ -626,6 +630,7 @@ class BaseAgent(ui.View):
                     color=color
                 )
                 embed.set_author(name=self.agent_format(response.get("HEADER", ""), agent))
+                embed.set_footer(text=self.agent_format(response.get("FOOTER", ""), agent))
                 embed.set_thumbnail(url=self.agent_format(response.get("THUMBNAIL", ""), agent))
                 embed.set_image(url=self.agent_format(response.get("IMAGE", ""), agent))
 
@@ -668,13 +673,13 @@ class BaseAgent(ui.View):
         if len(self.entries) == 1:
             self.build_embeds(self.entries[0]["uuid"], self.response)
             embeds = self.embeds
-            return await self.interaction.followup.send(embeds=embeds, view=self)
+            return await self.interaction.followup.send(embeds=embeds, view=self, ephemeral=self.is_private_message)
         elif len(self.entries) != 0:
             self.add_item(self.select_agent)
             placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
             self.select_agent.placeholder = placeholder
             self.build_select()
-            return await self.interaction.followup.send('\u200b', view=self)
+            return await self.interaction.followup.send('\u200b', view=self, ephemeral=self.is_private_message)
         
         not_found_agent = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found_agent)
@@ -1214,6 +1219,304 @@ class BaseSkin(ui.View):
         
         not_found = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found)
+
+class BaseSpray(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict, entitlements: Dict, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        self.entitlements = entitlements,
+        self.is_private_message = is_private_message
+        super().__init__()
+        self.clear_items()
+    
+
+    def build_embeds(self, selected: str, response: Dict) -> None:
+        """ Builds the agent embeds """
+        
+        embeds = []
+        uuid = selected
+        spray = JSON.read("cache")["sprays"][uuid]
+
+        own, dont_own = response.get("OWN"), response.get("DONT_OWN")
+
+        # main embed
+        embed = Embed(description=self.response.get("RESPONSE").format(
+                name = spray["names"][self.language],
+                vp_emoji = GetEmoji.get("ValorantPointIcon", self.bot),
+                price = GetItems.get_skin_price(uuid),
+                own = own if GetItems.is_spray_owns(self.entitlements, uuid) else dont_own
+            )
+        ).set_image(url=spray.get("animation_gif") or spray.get("icon"))
+        embeds.append(embed)
+
+        self.embeds = embeds
+
+    
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, skin in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_spray.add_option(label=skin['names'][self.language], value=skin["uuid"])
+    
+    @ui.select(placeholder='Select a spray:')
+    async def select_spray(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0], self.response)
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=share_button(self.interaction, self.embeds) if self.is_private_message else MISSING)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the sprays view """
+
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"], self.response)
+            embeds = self.embeds
+            return await self.interaction.followup.send(embeds=embeds, view=share_button(self.interaction, embeds) if self.is_private_message else MISSING)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_spray)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_spray.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self, ephemeral=self.is_private_message)
+        
+        not_found = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found)
+
+class BaseCard(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict, entitlements: Dict, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        self.entitlements = entitlements,
+        self.is_private_message = is_private_message
+        super().__init__()
+        self.clear_items()
+    
+
+    def build_embeds(self, selected: str, response: Dict) -> None:
+        """ Builds the agent embeds """
+        
+        embeds = []
+        uuid = selected
+        card = JSON.read("cache")["playercards"][uuid]
+
+        own, dont_own = response.get("OWN"), response.get("DONT_OWN")
+
+        # main embed
+        embed = Embed(description=self.response.get("RESPONSE").format(
+                name = card["names"][self.language],
+                vp_emoji = GetEmoji.get("ValorantPointIcon", self.bot),
+                price = GetItems.get_skin_price(uuid),
+                own = own if GetItems.is_playercard_owns(self.entitlements, uuid) else dont_own
+            )
+        ).set_image(url=card.get("icon", {}).get("wide")).set_thumbnail(url=card.get("icon", {}).get("small"))
+        embeds.append(embed)
+
+        # large card embed
+        embed = Embed().set_image(url=card.get("icon", {}).get("large"))
+        embeds.append(embed)
+
+        self.embeds = embeds
+
+    
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, skin in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_card.add_option(label=skin['names'][self.language], value=skin["uuid"])
+    
+    @ui.select(placeholder='Select a playercard:')
+    async def select_card(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0], self.response)
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=share_button(self.interaction, self.embeds) if self.is_private_message else MISSING)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the playercards view """
+
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"], self.response)
+            embeds = self.embeds
+            return await self.interaction.followup.send(embeds=embeds, view=share_button(self.interaction, embeds) if self.is_private_message else MISSING)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_card)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_card.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self, ephemeral=self.is_private_message)
+        
+        not_found = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found)
+
+class BaseBuddy(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict, entitlements: Dict, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        self.entitlements = entitlements,
+        self.is_private_message = is_private_message
+        super().__init__()
+        self.clear_items()
+    
+
+    def build_embeds(self, selected: str, response: Dict) -> None:
+        """ Builds the agent embeds """
+        
+        embeds = []
+        uuid = selected
+        card = JSON.read("cache")["buddies"][uuid]
+
+        own, dont_own = response.get("OWN"), response.get("DONT_OWN")
+
+        # main embed
+        embed = Embed(description=self.response.get("RESPONSE").format(
+                name = card["names"][self.language],
+                vp_emoji = GetEmoji.get("ValorantPointIcon", self.bot),
+                price = GetItems.get_skin_price(uuid),
+                own = own if GetItems.is_buddy_owns(self.entitlements, uuid) else dont_own
+            )
+        ).set_image(url=card.get("icon"))
+        embeds.append(embed)
+
+        self.embeds = embeds
+
+    
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, skin in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_card.add_option(label=skin['names'][self.language], value=skin["uuid"])
+    
+    @ui.select(placeholder='Select a gun buddy:')
+    async def select_card(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0], self.response)
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=share_button(self.interaction, self.embeds) if self.is_private_message else MISSING)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the playercards view """
+
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"], self.response)
+            embeds = self.embeds
+            return await self.interaction.followup.send(embeds=embeds, view=share_button(self.interaction, embeds) if self.is_private_message else MISSING)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_card)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_card.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self, ephemeral=self.is_private_message)
+        
+        not_found = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found)
+
+class BaseTitle(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict, entitlements: Dict, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.language = str(VLR_locale)
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.page_format = {}
+        self.entitlements = entitlements,
+        self.is_private_message = is_private_message
+        super().__init__()
+        self.clear_items()
+    
+
+    def build_embeds(self, selected: str, response: Dict) -> None:
+        """ Builds the title embeds """
+        
+        embeds = []
+        uuid = selected
+        card = JSON.read("cache")["titles"][uuid]
+
+        own, dont_own = response.get("OWN"), response.get("DONT_OWN")
+
+        # main embed
+        embed = Embed(description=self.response.get("RESPONSE").format(
+                name = card["names"][self.language],
+                vp_emoji = GetEmoji.get("ValorantPointIcon", self.bot),
+                price = GetItems.get_skin_price(uuid),
+                own = own if GetItems.is_title_owns(self.entitlements, uuid) else dont_own,
+                title = card["text"].get(self.language, "")
+            )
+        )
+        embeds.append(embed)
+
+        self.embeds = embeds
+
+    
+    def build_select(self) -> None:
+        """ Builds the select bundle """
+        for index, skin in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_card.add_option(label=skin['names'][self.language], value=skin["uuid"])
+    
+    @ui.select(placeholder='Select a title:')
+    async def select_card(self, interaction: Interaction, select: ui.Select):
+        self.clear_items()
+        self.build_embeds(select.values[0], self.response)
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=share_button(self.interaction, self.embeds) if self.is_private_message else MISSING)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the playercards view """
+
+        if len(self.entries) == 1:
+            self.build_embeds(self.entries[0]["uuid"], self.response)
+            embeds = self.embeds
+            return await self.interaction.followup.send(embeds=embeds, view=share_button(self.interaction, embeds) if self.is_private_message else MISSING)
+        elif len(self.entries) != 0:
+            self.add_item(self.select_card)
+            placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+            self.select_card.placeholder = placeholder
+            self.build_select()
+            return await self.interaction.followup.send('\u200b', view=self, ephemeral=self.is_private_message)
+        
+        not_found = self.response.get('NOT_FOUND')
+        raise ValorantBotError(not_found)
+
 
 class BaseContract(ui.View):
     def __init__(self, interaction: Interaction, entries: Dict, contracts: Dict, response: Dict, player: str, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
