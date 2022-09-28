@@ -571,6 +571,32 @@
       },
       "FAILED": "Failed to fetch the party info."
     },
+    "member": {
+      "NAME": "member",
+      "DESCRIPTION": "Shows information about the players in a current match",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "PREGAME": {
+        "TITLE": "**Members matched by {player}**",
+        "PLAYER": {
+          "TITLE": "{name}",
+          "RESPONSE": "{rank_emoji} **{rank}**｜Lv. **{level}**\n`{title}`\n{agent_emoji} **{agent}** {select}"
+        },
+        "SELECTION_STATE": {
+          "None": "",
+          "selected": "`SELECTED`",
+          "locked": "`LOCKED`"
+        },
+        "NONE": "AGENT NOT SELECTED"
+      },
+      "COREGAME": {
+        "TITLE": "**Members matched by {player}**\nMAP: {map}",
+        "RESPONSE": "{rank_emoji} **{name}** (Lv.{level})｜{agent_emoji} **{agent}**"
+      },
+      "NOT_FOUND": "Player not found."
+    },
     "custom": {
       "NAME": "custom",
       "DESCRIPTION": "Decide on the map and team members for the custom match.",

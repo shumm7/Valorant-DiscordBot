@@ -1476,7 +1476,7 @@ class BaseTitle(ui.View):
                 own = own if GetItems.is_title_owns(self.entitlements, uuid) else dont_own,
                 title = card["text"].get(self.language, "")
             )
-        )
+        ).set_thumbnail(url = GetItems.get_title_icon())
         embeds.append(embed)
 
         self.embeds = embeds

@@ -1018,14 +1018,15 @@ class ValorantCog(commands.Cog, name='Valorant'):
             await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
         await self.check_update(interaction)
     
-    """
     @app_commands.command(description=clocal.get("member", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("member", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("member", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
     async def member(self, interaction: Interaction, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
-        await interaction.response.defer()
+        is_private_message = True if username is not None or password is not None else False
+        
+        await interaction.response.defer(ephemeral=is_private_message)
         
         response = ResponseLanguage(interaction.command.name, interaction.locale)
         
@@ -1035,8 +1036,16 @@ class ValorantCog(commands.Cog, name='Valorant'):
         pregame = endpoint.fetch_pregame_player()
         coregame = endpoint.fetch_coregame_player()
 
+        embeds = None
+        if pregame.get("MatchID"):
+            embeds = GetEmbed.member_pregame(self.bot, endpoint.player, endpoint.fetch_pregame_match(pregame.get("MatchID")), endpoint, response)
+        elif coregame.get("MatchID"):
+            embeds = GetEmbed.member_coregame(self.bot, endpoint.player, endpoint.puuid, endpoint.fetch_coregame_match(coregame.get("MatchID")), endpoint, response)
+        else:
+            raise ValorantBotError(response.get("NOT_FOUND"))
+
+        await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
         await self.check_update(interaction)
-    """
 
     @app_commands.command(description=clocal.get("custom", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("custom", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("custom", {}).get("DESCRIBE", {}).get("password", ""), random=clocal.get("custom", {}).get("DESCRIBE", {}).get("random", ""))

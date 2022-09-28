@@ -471,7 +471,7 @@ class API_ENDPOINT:
             current_season = data.get("QueueSkills", {}).get('competitive', {}).get('SeasonalInfoBySeasonID', {})
             current_Tier = current_season.get(season_id, {}).get('CompetitiveTier', 0)
             return current_Tier
-        except:
+        except Exception as e:
             return 0
     
     def get_discord_userid_from_puuid(self, puuid: str) -> str:
@@ -535,7 +535,7 @@ class API_ENDPOINT:
         data = r.json()['data']
         return data['version']
     
-    def _debug_output_json(self, json_data: json, filename: str = "debug.json"):
+    def _debug_output_json(self, json_data: json, filename: str = "debug"):
         f = open(filename + ".json", "w")
         f.write(json.dumps(json_data, sort_keys=True, indent=4))
         f.close()

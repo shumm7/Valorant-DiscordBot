@@ -313,7 +313,7 @@ class GetEmbed:
         return embed
     
     # ---------- MATCH DATA UTILS ----------- #
-    def get_match_info(puuid: str, match_id: str, endpoint, response: Dict) -> Dict:
+    def get_match_info(puuid: str, match_id: str, endpoint: API_ENDPOINT, response: Dict) -> Dict:
         # cache
         cache = JSON.read("cache")
 
@@ -1624,6 +1624,109 @@ class GetEmbed:
                 embeds.append(embed_player)
 
         return [embed_main, embeds]
+
+    # ---------- MEMBER EMBED ---------- #
+
+    def member_pregame(bot: ValorantBot, player: str, data: Dict, endpoint: API_ENDPOINT, response: Dict) -> List[discord.Embed]:
+        cache = JSON.read("cache")
+        embeds = []
+
+        embeds.append(Embed(description=response.get("PREGAME").get("TITLE").format(player=player)))
+
+        for team in data.get("Teams", []):
+            for player in team.get("Players"):
+
+                def format_player(format: str) -> str:
+                    rank = player.get("CompetitiveTier") if player.get("CompetitiveTier")!=0 else endpoint.get_player_tier_rank(puuid=player.get("Subject"))
+                    fetch_name = endpoint.fetch_name_by_puuid(player.get("Subject"))[0]
+
+                    return format.format(
+                        puuid = player.get("Subject"),
+                        name = fetch_name["GameName"] + "#" + fetch_name["TagLine"],
+                        agent = cache["agents"].get(player.get("CharacterID"), {}).get("name", {}).get(str(VLR_locale), response.get("PREGAME").get("NONE")),
+                        agent_emoji = GetEmoji.agent_by_bot(player.get("CharacterID"), bot) if len(player.get("CharacterID"))>0 else "",
+                        select = response.get("PREGAME").get("SELECTION_STATE").get(player.get("CharacterSelectionState")) if response.get("PREGAME").get("SELECTION_STATE").get(player.get("CharacterSelectionState"))!=None else response.get("PREGAME").get("SELECTION_STATE").get("None"),
+                        rank = GetFormat.get_competitive_tier_name(rank),
+                        rank_emoji = GetEmoji.competitive_tier_by_bot(rank, bot),
+                        level = player.get("PlayerIdentity", {}).get("AccountLevel", 0),
+                        title = cache["titles"].get(player.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text", {}).get(str(VLR_locale)) if cache["titles"].get(player.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text")!=None else ""
+                    )
+                
+                embed = Embed(
+                    title=format_player(response.get("PREGAME").get("PLAYER").get("TITLE")),
+                    description=format_player(response.get("PREGAME").get("PLAYER").get("RESPONSE")),
+                    color = Config.GetColor("items")
+                )
+                embed.set_thumbnail(url=cache["playercards"].get(player.get("PlayerIdentity", {}).get("PlayerCardID", ""), {}).get("icon", {}).get("small", ""))
+                embeds.append(embed)
+        return embeds
+    
+    def member_coregame(bot: ValorantBot, player: str, puuid: str, data: Dict, endpoint: API_ENDPOINT, response: Dict) -> List[discord.Embed]:
+        map_id = GetFormat.get_mapuuid_from_mapid(data.get("MapID"))
+        cache = JSON.read("cache")
+
+        # teams
+        teams = {}
+        main_team = ""
+        for playerdata in data.get("Players", []):
+            if not(playerdata.get("IsCoach")):
+                team = playerdata.get("TeamID")
+
+                if teams.get(team)==None:
+                    teams[team] = {}
+                
+                if puuid == playerdata.get("Subject"):
+                    main_team = team
+                
+                rank = endpoint.get_player_tier_rank(puuid=playerdata.get("Subject"))
+                fetch_name = endpoint.fetch_name_by_puuid(playerdata.get("Subject"))[0]
+
+                teams[team][playerdata.get("Subject")] = {
+                    "puuid": playerdata.get("Subject"),
+                    "name": fetch_name["GameName"] + "#" + fetch_name["TagLine"],
+                    "agent": cache["agents"].get(playerdata.get("CharacterID"), {}).get("name", {}).get(str(VLR_locale), ""),
+                    "agent_emoji": GetEmoji.agent_by_bot(playerdata.get("CharacterID"), bot) if len(playerdata.get("CharacterID"))>0 else "",
+                    "rank": GetFormat.get_competitive_tier_name(rank),
+                    "rank_emoji": GetEmoji.competitive_tier_by_bot(rank, bot),
+                    "level": playerdata.get("PlayerIdentity", {}).get("AccountLevel", 0),
+                    "title": cache["titles"].get(playerdata.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text", {}).get(str(VLR_locale)) if cache["titles"].get(playerdata.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text")!=None else "",
+                    "playercard": cache["playercards"].get(playerdata.get("PlayerIdentity", {}).get("PlayerCardID", ""), {}).get("icon", {}).get("small", "")
+                }
+
+        # embed
+        embeds = []
+
+        embed = Embed(description=response.get("COREGAME").get("TITLE").format(player=player, map=cache["maps"][map_id]["name"][str(VLR_locale)]))
+        embed.set_thumbnail(url=cache["maps"][map_id]["icon"])
+        embed.set_image(url=cache["maps"][map_id]["listview_icon"])
+        embeds.append(embed)
+
+        for team_name,team in teams.items():
+            member_text = ""
+
+            for player in team.values():
+                if member_text!="":
+                    member_text += "\n"
+                
+                def format_player(format: str) -> str:
+                    return format.format(
+                        puuid = player["puuid"],
+                        name = player["name"],
+                        agent = player["agent"],
+                        agent_emoji = player["agent_emoji"],
+                        rank = player["rank"],
+                        rank_emoji = player["rank_emoji"],
+                        level = player["level"],
+                        title = player["title"]
+                    )
+                
+                member_text += format_player(response.get("COREGAME").get("RESPONSE"))
+            
+            if team_name==main_team:
+                embeds.insert(1, Embed(description=member_text))
+            else:
+                embeds.append(Embed(description=member_text))
+        return embeds
 
     # ---------- CUSTOM EMBED ---------- #
     @classmethod

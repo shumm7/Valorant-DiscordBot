@@ -578,6 +578,23 @@
         "username": "ユーザー名 (一時ログイン)",
         "password": "パスワード (一時ログイン)"
       },
+      "PREGAME": {
+        "TITLE": "**{player} がマッチングしたメンバー**",
+        "PLAYER": {
+          "TITLE": "{name}",
+          "RESPONSE": "{rank_emoji} **{rank}**｜Lv. **{level}**\n`{title}`\n{agent_emoji} **{agent}** {select}"
+        },
+        "SELECTION_STATE": {
+          "None": "",
+          "selected": "`選択中`",
+          "locked": "`ロック中`"
+        },
+        "NONE": "エージェント未選択"
+      },
+      "COREGAME": {
+        "TITLE": "**{player} がマッチ中のメンバー**\nマップ: {map}",
+        "RESPONSE": "{rank_emoji} **{name}** (Lv.{level})｜{agent_emoji} **{agent}**"
+      },
       "NOT_FOUND": "プレイヤーが見つかりませんでした。"
     },
     "custom": {

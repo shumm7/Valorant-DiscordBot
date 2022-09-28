@@ -9,7 +9,7 @@
         },
         "FIELD2": {
             "TITLE": "📌 新たなコマンド",
-            "RESPONSE": "`/contract`： エージェントの契約書の確認・変更\n`/collection`：現在装備している武器のスキン\n`/skin`：武器のスキンを検索",
+            "RESPONSE": "`/contract`： エージェントの契約書の確認・変更\n`/collection`：現在装備している武器のスキン\n`/skin`：武器のスキンを検索\n`/member`：マッチ内のプレイヤーを表示",
             "INLINE": false
         },
         "FIELD3": {
@@ -65,6 +65,14 @@
         "FIELD2": {
             "TITLE": "/agent コマンドの変更",
             "RESPONSE": "Riotアカウントへのログインが必須になりました。そのエージェントを所有しているかどうかを確認することができます。"
+        },
+        "THUMBNAIL": null
+    },
+    "fork-1.5.0": {
+        "HEADER": "Changelog // 1.5.0",
+        "FIELD1": {
+            "TITLE": "/member コマンド",
+            "RESPONSE": "マッチングしているプレイヤーのエージェントやランクを表示するコマンドを追加しました。"
         },
         "THUMBNAIL": null
     }

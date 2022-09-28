@@ -294,6 +294,9 @@ class GetItems:
                         return True
         return False
     
+    def get_title_icon() -> str:
+        return "https://valorantinfo.com/images/us/team-player-title_valorant_icon_33436.webp"
+    
     @classmethod
     def is_skin_owns(cls, entitlements: Dict, uuid: str) -> bool:
         return cls.is_owns(entitlements, uuid, "e7c63390-eda7-46e0-bb7a-a6abdacd2433")
@@ -587,8 +590,9 @@ class GetFormat:
         elif type == 'Title':
             data = JSON.read('cache')
             name = data['titles'][uuid]['names'][locale]
+            icon = GetItems.get_title_icon()
             item_type = response.get('PLAYER_TITLE', 'Title')
-            return {"success": True, "data": {'type': item_type, 'name': name, 'icon': False}}
+            return {"success": True, "data": {'type': item_type, 'name': name, 'icon': icon}}
 
         elif type == 'Spray':
             data = JSON.read('cache')
