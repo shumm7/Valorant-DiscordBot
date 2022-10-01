@@ -42,7 +42,7 @@ class Embed(discord.Embed):  # Custom Embed
 
 class GetEmbed:
 
-    def update_embed(version: str, bot: ValorantBot) -> List[discord.Embed]:
+    def update_embed(version: str, bot: ValorantBot, general: bool = True) -> List[discord.Embed]:
         embeds = []
 
         update = JSON.read("update", dir="config")
@@ -68,9 +68,10 @@ class GetEmbed:
             embed.set_author(name=data.get("HEADER", ""))
             return embed
 
-        general_data = update.get("general")
-        if general_data:
-            embeds.append(get_embed(general_data))
+        if general:
+            general_data = update.get("general")
+            if general_data:
+                embeds.append(get_embed(general_data))
 
         ver_data = update.get(version)
         if ver_data:
@@ -1643,13 +1644,13 @@ class GetEmbed:
                     return format.format(
                         puuid = player.get("Subject"),
                         name = fetch_name["GameName"] + "#" + fetch_name["TagLine"],
-                        agent = cache["agents"].get(player.get("CharacterID"), {}).get("name", {}).get(str(VLR_locale), response.get("PREGAME").get("NONE")),
+                        agent = cache["agents"].get(player.get("CharacterID").lower(), {}).get("name", {}).get(str(VLR_locale), response.get("PREGAME").get("NONE")),
                         agent_emoji = GetEmoji.agent_by_bot(player.get("CharacterID"), bot) if len(player.get("CharacterID"))>0 else "",
                         select = response.get("PREGAME").get("SELECTION_STATE").get(player.get("CharacterSelectionState")) if response.get("PREGAME").get("SELECTION_STATE").get(player.get("CharacterSelectionState"))!=None else response.get("PREGAME").get("SELECTION_STATE").get("None"),
                         rank = GetFormat.get_competitive_tier_name(rank),
                         rank_emoji = GetEmoji.competitive_tier_by_bot(rank, bot),
                         level = player.get("PlayerIdentity", {}).get("AccountLevel", 0),
-                        title = cache["titles"].get(player.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text", {}).get(str(VLR_locale)) if cache["titles"].get(player.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text")!=None else ""
+                        title = "`" + cache["titles"].get(player.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text", {}).get(str(VLR_locale)) + "`" if cache["titles"].get(player.get("PlayerIdentity", {}).get("PlayerTitleID", ""), {}).get("text")!=None else ""
                     )
                 
                 embed = Embed(
@@ -1684,8 +1685,8 @@ class GetEmbed:
                 teams[team][playerdata.get("Subject")] = {
                     "puuid": playerdata.get("Subject"),
                     "name": fetch_name["GameName"] + "#" + fetch_name["TagLine"],
-                    "agent": cache["agents"].get(playerdata.get("CharacterID"), {}).get("name", {}).get(str(VLR_locale), ""),
-                    "agent_emoji": GetEmoji.agent_by_bot(playerdata.get("CharacterID"), bot) if len(playerdata.get("CharacterID"))>0 else "",
+                    "agent": cache["agents"].get(playerdata.get("CharacterID").lower(), {}).get("name", {}).get(str(VLR_locale), ""),
+                    "agent_emoji": GetEmoji.agent_by_bot(playerdata.get("CharacterID").lower(), bot) if len(playerdata.get("CharacterID"))>0 else "",
                     "rank": GetFormat.get_competitive_tier_name(rank),
                     "rank_emoji": GetEmoji.competitive_tier_by_bot(rank, bot),
                     "level": playerdata.get("PlayerIdentity", {}).get("AccountLevel", 0),
@@ -1717,7 +1718,7 @@ class GetEmbed:
                         rank = player["rank"],
                         rank_emoji = player["rank_emoji"],
                         level = player["level"],
-                        title = player["title"]
+                        title = "`" + player["title"] + "`"
                     )
                 
                 member_text += format_player(response.get("COREGAME").get("RESPONSE"))

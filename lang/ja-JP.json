@@ -582,7 +582,7 @@
         "TITLE": "**{player} がマッチングしたメンバー**",
         "PLAYER": {
           "TITLE": "{name}",
-          "RESPONSE": "{rank_emoji} **{rank}**｜Lv. **{level}**\n`{title}`\n{agent_emoji} **{agent}** {select}"
+          "RESPONSE": "{rank_emoji} **{rank}**｜Lv. **{level}**\n{title}\n{agent_emoji} **{agent}** {select}"
         },
         "SELECTION_STATE": {
           "None": "",

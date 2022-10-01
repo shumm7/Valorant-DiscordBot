@@ -50,7 +50,7 @@
         "RESPONSE": "/notifyコマンドの画像を追加・変更しました。\n/partyコマンドの表示を変更しました。",
         "THUMBNAIL": null
     },
-    "fork-1.4.6": {
+    "fork-1.4.6": { 
         "HEADER": "Changelog // 1.4.6",
         "RESPONSE": "ログイン期限切れ時に通知を行う機能を追加しました。",
         "THUMBNAIL": null
@@ -74,6 +74,11 @@
             "TITLE": "/member コマンド",
             "RESPONSE": "マッチングしているプレイヤーのエージェントやランクを表示するコマンドを追加しました。"
         },
+        "THUMBNAIL": null
+    },
+    "fork-1.5.1": {
+        "HEADER": "Changelog // 1.5.1",
+        "RESPONSE": "/member コマンドで発生していた不具合を修正しました。",
         "THUMBNAIL": null
     }
 }

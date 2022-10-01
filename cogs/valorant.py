@@ -99,7 +99,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
         try:
             if db.get(str(user_id), {}).get("update_notify", False) and db.get(str(user_id), {}).get("update") != version:
-                embeds = GetEmbed.update_embed(version, self.bot)
+                embeds = GetEmbed.update_embed(version, self.bot, False)
                 if len(embeds)>0:
                     await interaction.followup.send(content=oncemsg, embeds=embeds, ephemeral=True)
 
