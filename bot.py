@@ -35,7 +35,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.5.1'
+    "version": 'fork-1.5.2'
 }
 
 
@@ -76,7 +76,11 @@ class ValorantBot(commands.Bot):
             user_id = config.get("owner-id", -1)
             owner = self.get_user(int(user_id)) or await self.fetch_user(int(user_id))
             locale = config.get("command-description-language") or str(VLR_locale)
-            embed = discord.Embed(description=LocalErrorResponse("BOT_READY", locale).format(name=self.user), color=Config.GetColor("default"))
+            embed = discord.Embed(
+                description=LocalErrorResponse("BOT_READY", locale).format(name=self.user),
+                color=Config.GetColor("default"),
+                timestamp=datetime.datetime.now()
+            ).set_author(icon_url=self.user.display_avatar.url, name = self.user)
             await owner.send(embed=embed)
 
     async def setup_hook(self) -> None:

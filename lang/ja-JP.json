@@ -34,6 +34,17 @@
       "NOT_FOUND": "コマンドが見つかりませんでした。",
       "TITLE": "コマンド一覧"
     },
+    "dump": {
+      "NAME": "dump",
+      "DESCRIPTION": "キャッシュファイルの内容を出力します",
+      "DESCRIBE": {
+        "data": "項目"
+      },
+      "RESPONSE": "出力に成功しました。",
+      "NOT_FOUND": "項目が見つかりませんでした。",
+      "FILESIZE_ERROR": "ファイルサイズが大きすぎます。",
+      "ERROR": "出力に失敗しました。"
+    },
     "login": {
       "NAME": "login",
       "DESCRIPTION": "あなたのRiotアカウントにログインします",

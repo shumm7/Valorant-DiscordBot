@@ -3,7 +3,7 @@ from re import M
 
 from typing import Literal, TYPE_CHECKING
 
-import os
+import os, json
 import discord
 import datetime
 from discord import app_commands, Interaction, ui
@@ -13,7 +13,7 @@ from utils.checks import owner_only
 from utils.valorant.embed import GetEmbed, Embed
 from utils.valorant.local import ResponseLanguage
 from bot import bot_option
-from utils.valorant.useful import JSON
+from utils.valorant.useful import JSON, load_file
 import utils.config as Config
 
 clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
@@ -104,6 +104,7 @@ class Admin(commands.Cog):
             raise ValorantBotError(response.get("ERROR"))
     
     @app_commands.command(description=clocal.get("help", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(command=clocal.get("help", {}).get("DESCRIBE", {}).get("command", ""))
     async def help(self, interaction: Interaction, command: str) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
@@ -145,6 +146,46 @@ class Admin(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    @app_commands.command(description=clocal.get("dump", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(data=clocal.get("dump", {}).get("DESCRIBE", {}).get("data", ""))
+    @commands.is_owner()
+    async def dump(self, interaction: Interaction, data: str) -> None:
+        """ Dump cache.json """
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        cache = JSON.read("cache")
+        raw: str
+        name: str
+
+        if data == None:
+            raw = json.dumps(cache, indent=4, ensure_ascii=False)
+            name = "cache.json"
+        else:
+            dict = cache.get(data)
+            if dict:
+                raw = json.dumps(dict, indent=4, ensure_ascii=False)
+                name = f"{data}.json"
+            else:
+                raise ValorantBotError(response.get("NOT_FOUND"))
+
+        try:
+            f = open("resources/temp/cache.json", 'w', encoding="utf-8")
+            f.write(raw)
+            f.close()
+
+            size = os.path.getsize("resources/temp/cache.json")
+            if size > 8388608:
+                raise ValorantBotError(response.get("FILESIZE_ERROR"))
+
+            embed = Embed(response.get("RESPONSE"))
+            file = load_file("resources/temp/cache.json", name)
+
+            await interaction.response.send_message(embed=embed, file=file)
+        except Exception as e:
+            print(e)
+            raise ValorantBotError(response.get("ERROR"))
+    
 
 async def setup(bot: ValorantBot) -> None:
     await bot.add_cog(Admin(bot))

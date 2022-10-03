@@ -19,6 +19,11 @@
         "RESPONSE": ""
       } 
     },
+    "update":{
+      "NAME": "update",
+      "DESCRIPTION": "Show the bot's changelog",
+      "ERROR": "No changelog found"
+    },
     "help":{
       "NAME": "help",
       "DESCRIPTION": "Show the detail of commands",
@@ -29,10 +34,16 @@
       "NOT_FOUND": "No command specified.",
       "TITLE": "Commands"
     },
-    "update":{
-      "NAME": "update",
-      "DESCRIPTION": "Show the bot's changelog",
-      "ERROR": "No changelog found"
+    "dump": {
+      "NAME": "dump",
+      "DESCRIPTION": "Outputs the contents of the cache file",
+      "DESCRIBE": {
+        "data": "Index"
+      },
+      "RESPONSE": "Output was successful.",
+      "NOT_FOUND": "Index not found.",
+      "FILESIZE_ERROR": "File size is too large.",
+      "ERROR": "Output failed."
     },
     "login": {
       "NAME": "login",
