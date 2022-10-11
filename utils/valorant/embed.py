@@ -836,6 +836,8 @@ class GetEmbed:
         return image
 
     def __match_heatmap(players: Dict, teams: Dict, teamA: str, teamB: str, filename: str) -> discord.File:
+        font: str = Config.LoadConfig().get("font")
+
         # create graph
         plt.figure(figsize=(15, 15), dpi=300)
         plt.style.use("dark_background")
@@ -877,7 +879,7 @@ class GetEmbed:
                     color="Black",
                     fontsize=13,
                     alpha=0.5,
-                    fontname="Noto Sans CJK JP"
+                    fontname=font
                 )
                 ax.text(
                     x,
@@ -888,7 +890,7 @@ class GetEmbed:
                     color="Black",
                     fontsize=8,
                     alpha=0.5,
-                    fontname="Noto Sans CJK JP",
+                    fontname=font
                 )
         
         # ticks
@@ -899,14 +901,14 @@ class GetEmbed:
             n = players[player]["name"].split("#")
             agent = players[player]["agent"]
             ls.append(f"{n[0]}\n#{n[1]}\n({agent})")
-        plt.yticks(range(5), ls, fontname="Noto Sans CJK JP", fontsize=8)
+        plt.yticks(range(5), ls, fontname=font, fontsize=8)
 
         ls = []
         for player in teams[teamB]["players"]:
             n = players[player]["name"].split("#")
             agent = players[player]["agent"]
             ls.append(f"{n[0]}\n#{n[1]}\n({agent})")
-        plt.xticks(range(5), ls, fontname="Noto Sans CJK JP", fontsize=8, rotation=45, horizontalalignment="right")
+        plt.xticks(range(5), ls, fontname=font, fontsize=8, rotation=45, horizontalalignment="right")
 
         # save image
         plt.savefig(f"resources/temp/{filename}", bbox_inches='tight', transparent=True)

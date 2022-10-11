@@ -39,6 +39,7 @@ def NewConfigData() -> Dict:
         "owner-id": -1,
         "emoji-server-id": [-1],
         "reset-cache-when-updated": True,
+        "font": "Noto Sans CJK JP",
         "article": {
             "description": 150
         },
@@ -48,7 +49,14 @@ def NewConfigData() -> Dict:
             "agent": True
         },
         "colors": {
-            "default": 16598356
+            "default": 16598356,
+            "success": 7855479,
+            "error": 16598356,
+            "items": 989475,
+            "premium": 15841325,
+            "win": 3978097,
+            "draw": 4286945,
+            "lose": 16598356
         }
     }
     
