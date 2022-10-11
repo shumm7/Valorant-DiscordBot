@@ -140,7 +140,8 @@
         "LEVELBORDER": "Level Borders",
         "SPRAY_BEFORE": "Preround Spray",
         "SPRAY_INGAME": "Midround Spray",
-        "SPRAY_AFTER": "Postround Spray"
+        "SPRAY_AFTER": "Postround Spray",
+        "UNEQUIPPED": "Unequipped"
       }
     },
     "career":{

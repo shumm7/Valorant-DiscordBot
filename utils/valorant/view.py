@@ -595,14 +595,14 @@ class BaseAgent(ui.View):
         own, dont_own = self.response.get("OWN"), self.response.get("DONT_OWN")
 
         return format.format(
-            name = agent['name'][self.language],
+            name = agent['names'][self.language],
             description = agent['description'][self.language],
-            role = agent["role"]["name"][self.language],
+            role = agent["role"]["names"][self.language],
 
-            name_en = agent["name"][default_language],
-            role_en = agent["role"]["name"][default_language],
-            name_en_capital = agent["name"][default_language].upper(),
-            role_en_capital = agent["role"]["name"][default_language].upper(),
+            name_en = agent["names"][default_language],
+            role_en = agent["role"]["names"][default_language],
+            name_en_capital = agent["names"][default_language].upper(),
+            role_en_capital = agent["role"]["names"][default_language].upper(),
 
             icon = agent['icon'],
             portrait = agent['portrait'],
@@ -640,7 +640,7 @@ class BaseAgent(ui.View):
                 key_text = response.get("KEYS", {})
                 keys = [key_text.get("KEY1", ""), key_text.get("KEY2", ""), key_text.get("KEY3", ""), key_text.get("KEY4", ""), key_text.get("PASSIVE", "")]
                 for ability in agent["abilities"]:
-                    name, description, icon = ability["name"][self.language], ability["description"][self.language], ability["icon"]
+                    name, description, icon = ability["names"][self.language], ability["description"][self.language], ability["icon"]
                     embed_ability = discord.Embed(title=f"{keys[i]} - {name}", description=f"{description}", color=subcolor).set_thumbnail(url=icon)
                     embeds.append(embed_ability)
                     
@@ -651,8 +651,8 @@ class BaseAgent(ui.View):
     
     def build_select(self) -> None:
         """ Builds the select bundle """
-        for index, agent in enumerate(sorted(self.entries, key=lambda c: c['name']['en-US']), start=1):
-            self.select_agent.add_option(label=agent['name'][self.language], value=agent["uuid"])
+        for index, agent in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_agent.add_option(label=agent['names'][self.language], value=agent["uuid"])
     
     @ui.select(placeholder='Select an agent:')
     async def select_agent(self, interaction: Interaction, select: ui.Select):
@@ -1004,22 +1004,52 @@ class BaseCollection(ui.View):
 
         # Title
         title_embed = discord.Embed(
-            title=cache["titles"][item["PlayerTitleID"]]["names"][self.language],
-            description= "`" + cache["titles"][item["PlayerTitleID"]]["text"][self.language] + "`",
+            title=cache["titles"][item["PlayerTitleID"]]["names"][self.language] if cache["titles"][item["PlayerTitleID"]]["text"]!=None else self.response.get("ITEMS", {})["UNEQUIPPED"],
+            description= "`" + cache["titles"][item["PlayerTitleID"]]["text"][self.language]+ "`" if cache["titles"][item["PlayerTitleID"]]["text"]!=None else "",
             color = GetColor("items")
-        ).set_author(name = self.response.get("ITEMS", {})["PLAYER_TITLE"])
+        ).set_author(name = self.response.get("ITEMS", {})["PLAYER_TITLE"]).set_thumbnail(url=GetItems.get_title_icon())
         embeds.append(title_embed)
 
         # Levelboarder
-        level_embed = discord.Embed(
-            title=self.response.get("LEVELBORDERS").format(level=cache["levelborders"][item["PreferredLevelBorderID"]]["level"]),
-            color = GetColor("items")
-        )
-        level_embed.set_thumbnail(url = cache["levelborders"][item["PreferredLevelBorderID"]]["icon"])
-        level_embed.set_author(name = self.response.get("ITEMS", {})["LEVELBORDER"])
-        embeds.append(level_embed)
+        if item["PreferredLevelBorderID"]!='00000000-0000-0000-0000-000000000000':
+            level_embed = discord.Embed(
+                title=self.response.get("LEVELBORDERS").format(level=cache["levelborders"][item["PreferredLevelBorderID"]]["level"]),
+                color = GetColor("items")
+            )
+            level_embed.set_thumbnail(url = cache["levelborders"][item["PreferredLevelBorderID"]]["icon"])
+            level_embed.set_author(name = self.response.get("ITEMS", {})["LEVELBORDER"])
+            embeds.append(level_embed)
+        else: # unequipped
+            level_embed = discord.Embed(
+                title= self.response.get("ITEMS", {})["UNEQUIPPED"],
+                color = GetColor("items")
+            )
+            level_embed.set_thumbnail(url = cache["levelborders"]["ebc736cd-4b6a-137b-e2b0-1486e31312c9"]["icon"])
+            level_embed.set_author(name = self.response.get("ITEMS", {})["LEVELBORDER"])
+            embeds.append(level_embed)
 
         # Guns
+        default_skin_list = [
+            "d91fb318-4e40-b4c9-8c0b-bb9da28bac55", #odin
+            "0f5f60f4-4c94-e4b2-ceab-e2b4e8b41784", #ares
+            "1ab72e66-4da3-33a0-164f-908113e075a4", #vandal
+            "c8e6ac70-48ef-9d96-d964-a88e8890b885", #bulldog
+            "871e73ed-452d-eb5a-3d6b-1d87060f35ce", #phantom
+            "6942d8d1-4370-a144-2140-22a6d2be2697", #judge
+            "2f5078c7-4381-492d-cc00-9f96966ba1ec", #buckey
+            "80fabd74-4438-a2dd-0c39-42ab449f9ec6", #frenzy
+            "51cbccad-487c-50ed-2ffd-c88b4240fab3", #classic
+            "0a7e786c-444e-6a80-8bda-e2b714d68332", #ghost
+            "feaf05a1-492f-d154-a9f5-0eb1fe9a603e", #sheriff
+            "a7f92a1c-4465-5ea3-7745-bd876117f4a7", #shorty
+            "88cba358-4f4d-4d0e-69fc-b48f4c65cb2d", #operator
+            "414d888a-41ce-fcf0-e545-c49018ec9cf4", #guardian
+            "f0389390-49eb-a43e-27fa-fc9f9f8aa9de", #marshal
+            "1dc45e18-4a07-c85f-0020-6da4db1486ce", #spectre
+            "471fc2a5-47a7-5b12-2895-0899117d2f57", #stinger
+            "854938f3-4532-b300-d9a2-379d987d7469"  #melee
+        ]
+
         for weapon in cache["weapons"].values():
             weapon_uuid = weapon["uuid"]
 
@@ -1029,13 +1059,20 @@ class BaseCollection(ui.View):
                     chroma_uuid = item["ChromaID"]
 
                     gun_embed = discord.Embed(
-                        title = cache["skins"][skin_uuid]["chromas"][chroma_uuid]["names"][self.language],
+                        title = cache["skins"][skin_uuid]["chromas"][chroma_uuid]["names"][self.language] if len(cache["skins"][skin_uuid]["chromas"])>1 else cache["skins"][skin_uuid]["names"][self.language],
                         color = GetColor("default")
                     )
-                    if cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon")!=None:
-                        gun_embed.set_image(url=cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon"))
+
+                    if cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon")!=None and len(cache["skins"][skin_uuid]["chromas"])>1:
+                        icon= cache["skins"][skin_uuid]["chromas"][chroma_uuid].get("icon")
                     else:
-                        gun_embed.set_image(url=cache["skins"][skin_uuid]["icon"])
+                        if skin_uuid in default_skin_list:
+                            icon = weapon["icon"]
+                        else:
+                            icon = cache["skins"][skin_uuid]["icon"]
+                    
+                    gun_embed.set_image(url=icon)
+
                     gun_embed.set_author(
                         name = weapon["names"][self.language],
                         icon_url = weapon.get("killfeed_icon", "")
@@ -1611,8 +1648,8 @@ class BaseContract(ui.View):
     
     def build_select(self) -> None:
         """ Builds the select bundle """
-        for index, agent in enumerate(sorted(self.entries, key=lambda c: c['name']['en-US']), start=1):
-            self.select_agent.add_option(label=agent['name'][self.language], value=agent["uuid"])
+        for index, agent in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
+            self.select_agent.add_option(label=agent['names'][self.language], value=agent["uuid"])
     
     @ui.select(placeholder='Select an agent:')
     async def select_agent(self, interaction: Interaction, select: ui.Select):

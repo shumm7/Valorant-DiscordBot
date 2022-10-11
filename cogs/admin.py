@@ -1,5 +1,6 @@
 from __future__ import annotations
 from re import M
+from tkinter import E
 
 from typing import Literal, TYPE_CHECKING
 
@@ -13,7 +14,7 @@ from utils.checks import owner_only
 from utils.valorant.embed import GetEmbed, Embed
 from utils.valorant.local import ResponseLanguage
 from bot import bot_option
-from utils.valorant.useful import JSON, load_file
+from utils.valorant.useful import JSON, GetFormat, load_file, GetEmoji, format_relative
 import utils.config as Config
 
 clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
@@ -146,10 +147,10 @@ class Admin(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(description=clocal.get("dump", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(data=clocal.get("dump", {}).get("DESCRIBE", {}).get("data", ""))
+    @app_commands.command(description=clocal.get("cache", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(data=clocal.get("cache", {}).get("DESCRIBE", {}).get("data", ""))
     @commands.is_owner()
-    async def dump(self, interaction: Interaction, data: str) -> None:
+    async def cache(self, interaction: Interaction, data: str) -> None:
         """ Dump cache.json """
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
@@ -181,7 +182,113 @@ class Admin(commands.Cog):
             embed = Embed(response.get("RESPONSE"))
             file = load_file("resources/temp/cache.json", name)
 
-            await interaction.response.send_message(embed=embed, file=file)
+            await interaction.response.send_message(embed=embed, file=file, ephemeral=True)
+        except Exception as e:
+            print(e)
+            raise ValorantBotError(response.get("ERROR"))
+    
+    @app_commands.command(description=clocal.get("user", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(user=clocal.get("user", {}).get("DESCRIBE", {}).get("user", ""))
+    @commands.is_owner()
+    async def user(self, interaction: Interaction, user: discord.User) -> None:
+        """ Show users.json """
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        db = JSON.read("users")
+        userid = str(user.id)
+
+        embeds = []
+        if db.get(userid)==None:
+            raise ValorantBotError(response.get("NOT_FOUND"))
+        ud = db.get(userid)
+
+        # main embed
+        embed = Embed(title=response.get("TITLE").format(user=user.name)).set_author(icon_url=user.avatar.url, name=user.name)
+        description: str = ""
+        for key,item in ud.items():
+            if len(description)!=0:
+                description+="\n"
+            if key!="auth":
+                description += response.get("RESPONSE").format(key=key, value=str(item))
+        embed.description = description
+        embeds.append(embed)
+
+        # auth embed
+        for auth in ud.get("auth", {}).values():
+            
+            description: str = ""
+            for key,item in auth.items():
+                if len(description)!=0:
+                    description+="\n"
+                if key!="cookie":
+                    if len(str(item))>30:
+                        item = str(item)[:30] + " ..."
+                    description += response.get("RESPONSE").format(key=key, value=str(item))
+            embed = Embed(title=auth.get("username"), description=description, color=Config.GetColor("items"))
+            embeds.append(embed)
+
+        try:
+            raw = json.dumps(ud, indent=4, ensure_ascii=False)
+            f = open("resources/temp/users.json", 'w', encoding="utf-8")
+            f.write(raw)
+            f.close()
+
+            size = os.path.getsize("resources/temp/users.json")
+            if size > 8388608:
+                raise ValorantBotError(response.get("FILESIZE_ERROR"))
+
+            embed = Embed(response.get("TITLE"))
+            file = load_file("resources/temp/users.json", "user.json")
+            
+            await interaction.response.send_message(embeds=embeds[:10], file=file, ephemeral=True)
+        except Exception as e:
+            print(e)
+            raise ValorantBotError(response.get("ERROR"))
+    
+    @app_commands.command(description=clocal.get("emoji", {}).get("DESCRIPTION", ""))
+    @commands.is_owner()
+    async def emoji(self, interaction: Interaction) -> None:
+        """ Show emoji.json """
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+        emojis = JSON.read("emoji")
+
+        # embed
+        embeds = []
+        embed = Embed(title=response.get("TITLE"))
+        description = ""
+        for name in emojis.keys():
+            e: discord.Emoji = GetEmoji.get(name, self.bot)
+            if len(description)!=0:
+                description+="\n"
+            d = response.get("RESPONSE").format(name=e.name, emoji=e, date=format_relative(e.created_at), server=e.guild.name, id=e.id, user=e.user.mention)
+
+            if len(d) + len(description) > 4096:
+                embed.description = description
+                embeds.append(embed)
+                description = d
+                embed = Embed()
+            else:
+                description += d
+                
+        embed.description = description
+        embeds.append(embed)
+        
+        try:
+            raw = json.dumps(emojis, indent=4, ensure_ascii=False)
+            f = open("resources/temp/emoji.json", 'w', encoding="utf-8")
+            f.write(raw)
+            f.close()
+
+            size = os.path.getsize("resources/temp/emoji.json")
+            if size > 8388608:
+                raise ValorantBotError(response.get("FILESIZE_ERROR"))
+
+            file = load_file("resources/temp/emoji.json", "emoji.json")
+            
+            await interaction.response.send_message(embeds=embeds, file=file, ephemeral=True)
         except Exception as e:
             print(e)
             raise ValorantBotError(response.get("ERROR"))

@@ -34,14 +34,34 @@
       "NOT_FOUND": "コマンドが見つかりませんでした。",
       "TITLE": "コマンド一覧"
     },
-    "dump": {
-      "NAME": "dump",
+    "cache": {
+      "NAME": "cache",
       "DESCRIPTION": "キャッシュファイルの内容を出力します",
       "DESCRIBE": {
         "data": "項目"
       },
       "RESPONSE": "出力に成功しました。",
       "NOT_FOUND": "項目が見つかりませんでした。",
+      "FILESIZE_ERROR": "ファイルサイズが大きすぎます。",
+      "ERROR": "出力に失敗しました。"
+    },
+    "user": {
+      "NAME": "user",
+      "DESCRIPTION": "ユーザーデータの内容を出力します",
+      "DESCRIBE": {
+        "user": "ユーザー"
+      },
+      "TITLE": "{user} のユーザー情報",
+      "RESPONSE": "`{key}`: {value}",
+      "NOT_FOUND": "そのユーザーは登録されていません。",
+      "FILESIZE_ERROR": "ファイルサイズが大きすぎます。",
+      "ERROR": "出力に失敗しました。"
+    },
+    "emoji": {
+      "NAME": "emoji",
+      "DESCRIPTION": "絵文字の一覧を出力します",
+      "TITLE": "絵文字の一覧",
+      "RESPONSE": "`{server}`: {date} {emoji} `{name}`",
       "FILESIZE_ERROR": "ファイルサイズが大きすぎます。",
       "ERROR": "出力に失敗しました。"
     },
@@ -140,7 +160,8 @@
         "LEVELBORDER": "レベルボーダー",
         "SPRAY_BEFORE": "スプレー (ラウンド前)",
         "SPRAY_INGAME": "スプレー (ラウンド中)",
-        "SPRAY_AFTER": "スプレー (ラウンド後)"
+        "SPRAY_AFTER": "スプレー (ラウンド後)",
+        "UNEQUIPPED": "未装備"
       }
     },
     "career":{

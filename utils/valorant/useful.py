@@ -391,7 +391,7 @@ class GetEmoji:
         agent = JSON.read("cache")["agents"]
         emoji_list = JSON.read("emoji")
 
-        name = "Agent" + agent[agent_id]["name"]["en-US"].replace("/", "")
+        name = "Agent" + agent[agent_id]["names"]["en-US"].replace("/", "")
 
         emoji = discord.utils.get(bot.emojis, name=name)
         if emoji is None:
@@ -403,7 +403,7 @@ class GetEmoji:
         agent = JSON.read("cache")["agents"]
         emoji_list = JSON.read("emoji")
 
-        name = agent[agent_id]["role"]["name"]["en-US"]
+        name = agent[agent_id]["role"]["names"]["en-US"]
 
         emoji = discord.utils.get(bot.emojis, name=name)
         if emoji is None:
@@ -415,7 +415,7 @@ class GetEmoji:
         rank = JSON.read("cache")["competitive_tiers"]
         emoji_list = JSON.read("emoji")
 
-        name = "Tier" + rank[str(tier)]["name"]["en-US"].replace(" ", "").capitalize()
+        name = "Tier" + rank[str(tier)]["names"]["en-US"].replace(" ", "").capitalize()
 
         emoji = discord.utils.get(bot.emojis, name=name)
         if emoji is None:
@@ -678,7 +678,7 @@ class GetFormat:
     def get_competitive_tier_name(tier: int) -> str:
         """Get competitive tier name"""
         ranks = JSON.read('cache')
-        return ranks['competitive_tiers'][str(tier)]['name'][str(VLR_locale)]
+        return ranks['competitive_tiers'][str(tier)]['names'][str(VLR_locale)]
     
     def get_competitive_tier_matching(tier: int) -> List[List]:
         """Get competitive tier matching"""

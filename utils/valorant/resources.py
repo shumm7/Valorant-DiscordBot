@@ -140,18 +140,18 @@ async def setup_emoji(bot: ValorantBot, guild: discord.Guild, local_code: str, f
     # agent emojis
     if emoji_mode.get("agent", False):
         for agent in cache["agents"].values():
-            name = "Agent" + agent["name"]["en-US"].replace("/", "") # for kay/o
+            name = "Agent" + agent["names"]["en-US"].replace("/", "") # for kay/o
             reg_emojis.append({"name": name, "url": agent["icon"], "animated": False})
         
         for agent in cache["agents"].values():
-            name = agent["role"]["name"]["en-US"]
+            name = agent["role"]["names"]["en-US"]
             if next((x for x in reg_emojis if x["name"]==name), None)==None:
                 reg_emojis.append({"name": name, "url": agent["role"]["icon"], "animated": False})
 
     # tiers emojis
     if emoji_mode.get("tier", False):
         for rank in cache["competitive_tiers"].values():
-            name = "Tier" + rank["name"]["en-US"].replace(" ", "").capitalize()
+            name = "Tier" + rank["names"]["en-US"].replace(" ", "").capitalize()
             if rank["icon"]!=None:
                 reg_emojis.append({"name": name, "url": rank["icon"], "animated": False})
 

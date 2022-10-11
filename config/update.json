@@ -82,8 +82,13 @@
         "THUMBNAIL": null
     },
     "fork-1.5.2": {
-        "HEADER": "Changelog // 1.5.1",
+        "HEADER": "Changelog // 1.5.2",
         "RESPONSE": "/member コマンドで発生していた不具合を修正しました。",
+        "THUMBNAIL": null
+    },
+    "fork-1.5.3": {
+        "HEADER": "Changelog // 1.5.3",
+        "RESPONSE": "/collection コマンドで発生していた不具合を修正しました。",
         "THUMBNAIL": null
     }
 }

@@ -52,7 +52,7 @@ def fetch_agents() -> None:
             role = info['role']
             json[info['uuid']] = {
                 'description': info['description'],
-                'name': info['displayName'],
+                'names': info['displayName'],
                 'icon': info['displayIcon'],
                 'bust_portrait': info['bustPortrait'],
                 'portrait': info['fullPortrait'],
@@ -60,7 +60,7 @@ def fetch_agents() -> None:
                 'background': info['background'],
                 'role': {
                     'uuid': role['uuid'],
-                    'name': role['displayName'],
+                    'names': role['displayName'],
                     'description': role['description'],
                     'icon': role['displayIcon']
                 },
@@ -71,7 +71,7 @@ def fetch_agents() -> None:
 
             abilities = info["abilities"]
             for m in abilities:
-                json[info['uuid']]["abilities"].append({"slot": m["slot"], "name": m["displayName"], "description": m["description"], "icon": m["displayIcon"]})
+                json[info['uuid']]["abilities"].append({"slot": m["slot"], "names": m["displayName"], "description": m["description"], "icon": m["displayIcon"]})
             
             colors = []
             for color in info["backgroundGradientColors"]:
@@ -163,7 +163,7 @@ def fetch_weapon() -> None:
             if weapon.get("shopData") != None:
                 json[weapon['uuid']]["cost"] = weapon.get("shopData", {}).get("cost", 0)
                 json[weapon['uuid']]["category"] = {
-                    "name": weapon.get("shopData", {}).get("category"),
+                    "names": weapon.get("shopData", {}).get("category"),
                     "text": weapon.get("shopData", {}).get("categoryText")
                 }
                 json[weapon['uuid']]['shop_icon'] = weapon.get("shopData", {}).get("newImage") if weapon.get("shopData", {}).get("newImage2")==None else weapon.get("shopData", {}).get("newImage2")
@@ -189,7 +189,7 @@ def fetch_gear() -> None:
                 'icon': gear['displayIcon'],
                 'cost': gear.get("shopData", {}).get("cost", 0),
                 'category': {
-                    'name': gear.get("shopData", {}).get("category"),
+                    'names': gear.get("shopData", {}).get("category"),
                     'text': gear.get("shopData", {}).get("categoryText")
                 },
                 'shop_icon': gear.get("shopData", {}).get("newImage")
@@ -260,7 +260,7 @@ def fetch_tier() -> None:
         for tier in resp.json()['data']:
             json[tier['uuid']] = {
                 'uuid': tier['uuid'],
-                'name': tier['devName'],
+                'names': tier['devName'],
                 'icon': tier['displayIcon'],
             }
         data['tiers'] = json
@@ -516,7 +516,7 @@ def fetch_contracts() -> None:
 #             for i in rank['tiers']:
 #                 json[i['tier']] = {
 #                     'tier':i['tier'],
-#                     'name':i['tierName'],
+#                     'names':i['tierName'],
 #                     'subname':i['divisionName'],
 #                     'icon':i['largeIcon'],
 #                     'rankup':i['rankTriangleUpIcon'],
@@ -604,7 +604,7 @@ def fetch_maps() -> None:
         json = {}
         for info in resp.json()['data']:
             json[info['uuid']] = {
-                'name': info['displayName'],
+                'names': info['displayName'],
                 'coordinates': info['coordinates'],
                 'icon': info['displayIcon'],
                 'listview_icon': info['listViewIcon'],
@@ -627,7 +627,7 @@ def fetch_rank() -> None:
         json = {}
         for info in resp.json()['data'][len(resp.json()["data"])-1]['tiers']:
             json[info['tier']] = {
-                'name': info['tierName'],
+                'names': info['tierName'],
                 'division': info['divisionName'],
                 'color': info['color'],
                 'icon_small': info['smallIcon'],
@@ -651,7 +651,7 @@ def fetch_gamemode() -> None:
         json = {}
         for info in resp.json()['data']:
             json[info['uuid']] = {
-                'name': info['displayName'],
+                'names': info['displayName'],
                 'duration': info['duration'],
                 'icon': info['displayIcon']
             }
@@ -671,7 +671,7 @@ def fetch_ceremony() -> None:
         json = {}
         for info in resp.json()['data']:
             json[info['uuid']] = {
-                'name': info['displayName'],
+                'names': info['displayName'],
                 'id': info["assetPath"].replace("Ceremony_PrimaryAsset", "").replace("ShooterGame/Content/Ceremonies/", "Ceremony")
             }
 

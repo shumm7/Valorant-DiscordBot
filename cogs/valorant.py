@@ -559,12 +559,12 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 data["uuid"] = item_key
                 find_agent_en_US.append(data)
             else:
-                if agent.lower() in cache['agents'][item_key]['name'][default_language].lower():
+                if agent.lower() in cache['agents'][item_key]['names'][default_language].lower():
                     data = item_agent
                     data["uuid"] = item_key
                     find_agent_en_US.append(data)
                 
-                if agent.lower() in cache['agents'][item_key]['name'][str(VLR_locale)].lower():
+                if agent.lower() in cache['agents'][item_key]['names'][str(VLR_locale)].lower():
                     data = item_agent
                     data["uuid"] = item_key
                     find_agent_locale.append(data)
@@ -616,12 +616,12 @@ class ValorantCog(commands.Cog, name='Valorant'):
                     data["uuid"] = item_key
                     find_agent_en_US.append(data)
                 else:
-                    if agent.lower() in cache['agents'][item_key]['name'][default_language].lower():
+                    if agent.lower() in cache['agents'][item_key]['names'][default_language].lower():
                         data = item_agent
                         data["uuid"] = item_key
                         find_agent_en_US.append(data)
                     
-                    if agent.lower() in cache['agents'][item_key]['name'][str(VLR_locale)].lower():
+                    if agent.lower() in cache['agents'][item_key]['names'][str(VLR_locale)].lower():
                         data = item_agent
                         data["uuid"] = item_key
                         find_agent_locale.append(data)

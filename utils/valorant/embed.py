@@ -325,7 +325,7 @@ class GetEmbed:
         info = match_detail["matchInfo"]
         start_time, duration = format_relative(datetime.fromtimestamp(info["gameStartMillis"]/1000, timezone.utc)), format_timedelta(timedelta(milliseconds=info["gameLengthMillis"]))
         mapid = GetFormat.get_mapuuid_from_mapid(info["mapId"])
-        match_id, map = info["matchId"], cache["maps"][mapid]["name"][str(VLR_locale)]
+        match_id, map = info["matchId"], cache["maps"][mapid]["names"][str(VLR_locale)]
         season_id = info["seasonId"]
         penalties = info.get("partyRRPenalties", {})
         is_played = False
@@ -396,8 +396,8 @@ class GetEmbed:
                 "player_card": p["playerCard"],
                 "player_title": p["playerTitle"],
                 
-                "agent": cache["agents"][p["characterId"]]["name"][str(VLR_locale)],
-                "role": cache["agents"][p["characterId"]]["role"]["name"][str(VLR_locale)],
+                "agent": cache["agents"][p["characterId"]]["names"][str(VLR_locale)],
+                "role": cache["agents"][p["characterId"]]["role"]["names"][str(VLR_locale)],
 
                 "firstblood": 0,
                 "firstdeath": 0,
@@ -456,7 +456,7 @@ class GetEmbed:
             if ceremony_id==None or len(ceremony_id)==0:
                 _round["ceremony"] = ""
             else:
-                _round["ceremony"] = cache["ceremonies"][ceremony_id]["name"][str(VLR_locale)]
+                _round["ceremony"] = cache["ceremonies"][ceremony_id]["names"][str(VLR_locale)]
 
             # economy
             if r.get("playerEconomies")!=None:
@@ -1643,7 +1643,7 @@ class GetEmbed:
                     return format.format(
                         puuid = player.get("Subject"),
                         name = fetch_name["GameName"] + "#" + fetch_name["TagLine"],
-                        agent = cache["agents"].get(player.get("CharacterID").lower(), {}).get("name", {}).get(str(VLR_locale), response.get("PREGAME").get("NONE")),
+                        agent = cache["agents"].get(player.get("CharacterID").lower(), {}).get("names", {}).get(str(VLR_locale), response.get("PREGAME").get("NONE")),
                         agent_emoji = GetEmoji.agent_by_bot(player.get("CharacterID"), bot) if len(player.get("CharacterID"))>0 else "",
                         select = response.get("PREGAME").get("SELECTION_STATE").get(player.get("CharacterSelectionState")) if response.get("PREGAME").get("SELECTION_STATE").get(player.get("CharacterSelectionState"))!=None else response.get("PREGAME").get("SELECTION_STATE").get("None"),
                         rank = GetFormat.get_competitive_tier_name(rank),
@@ -1684,7 +1684,7 @@ class GetEmbed:
                 teams[team][playerdata.get("Subject")] = {
                     "puuid": playerdata.get("Subject"),
                     "name": fetch_name["GameName"] + "#" + fetch_name["TagLine"],
-                    "agent": cache["agents"].get(playerdata.get("CharacterID").lower(), {}).get("name", {}).get(str(VLR_locale), ""),
+                    "agent": cache["agents"].get(playerdata.get("CharacterID").lower(), {}).get("names", {}).get(str(VLR_locale), ""),
                     "agent_emoji": GetEmoji.agent_by_bot(playerdata.get("CharacterID").lower(), bot) if len(playerdata.get("CharacterID"))>0 else "",
                     "rank": GetFormat.get_competitive_tier_name(rank),
                     "rank_emoji": GetEmoji.competitive_tier_by_bot(rank, bot),
@@ -1696,7 +1696,7 @@ class GetEmbed:
         # embed
         embeds = []
 
-        embed = Embed(description=response.get("COREGAME").get("TITLE").format(player=player, map=cache["maps"][map_id]["name"][str(VLR_locale)]))
+        embed = Embed(description=response.get("COREGAME").get("TITLE").format(player=player, map=cache["maps"][map_id]["names"][str(VLR_locale)]))
         embed.set_thumbnail(url=cache["maps"][map_id]["icon"])
         embed.set_image(url=cache["maps"][map_id]["listview_icon"])
         embeds.append(embed)
@@ -1744,7 +1744,7 @@ class GetEmbed:
         
         r = random.randint(0, len(maps)-1)
         description = response.get("MAP", "").format(
-            name = maps[r]["name"][str(VLR_locale)],
+            name = maps[r]["names"][str(VLR_locale)],
             coordinate = maps[r]["coordinates"][str(VLR_locale)],
         )
         embed_map = Embed(title=response.get("TITLE", {}).get("MAP"), description=description)
