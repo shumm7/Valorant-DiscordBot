@@ -259,10 +259,11 @@ class ValorantCog(commands.Cog, name='Valorant'):
         
         # data
         data = endpoint.fetch_player_mmr()
-        embed = GetEmbed.rank(endpoint.player, data, response, endpoint, self.bot)
+        ret = GetEmbed.rank(endpoint.player, data, response, endpoint, self.bot)
         
-        await interaction.followup.send(embed=embed, view=View.share_button(interaction, [embed]) if is_private_message else MISSING)
+        await interaction.followup.send(embeds=ret[0], file=ret[1], view=View.share_button(interaction, ret[0]) if is_private_message else MISSING)
         await self.check_update(interaction)
+        os.remove(f"resources/temp/rendered_border.png")
     
     @app_commands.command(description=clocal.get("collection", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("collection", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("collection", {}).get("DESCRIBE", {}).get("password", ""))
@@ -982,42 +983,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await self.check_update(interaction)
         os.remove(f"resources/temp/{filename}")
     
-    @app_commands.command(description=clocal.get("party", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(username=clocal.get("party", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("party", {}).get("DESCRIBE", {}).get("password", ""))
-    # @dynamic_cooldown(cooldown_5s)
-    async def party(self, interaction: Interaction, username: str = None, password: str = None) -> None:
-        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
-
-        # check if user is logged in
-        is_private_message = True if username is not None or password is not None else False
-        
-        await interaction.response.defer(ephemeral=is_private_message)
-        
-        response = ResponseLanguage(interaction.command.name, interaction.locale)
-        
-        # endpoint
-        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
-        
-        # data
-        user_data = endpoint.fetch_partyid_from_puuid(False)
-        if user_data.get("CurrentPartyID")==None:
-            raise ValorantBotError(response.get("FAILED"))
-        party_details = endpoint.fetch_party_details(party_id = user_data.get("CurrentPartyID", ""))
-
-        temp_embeds = GetEmbed.party(endpoint.player, endpoint.puuid, party_details, endpoint, response)
-        main_embed, embeds = temp_embeds[0], temp_embeds[1]
-        
-        if len(embeds)>6:
-            for i in range(math.ceil(len(embeds) / 5)):
-                e = embeds[0+(i*5):5+(i*5)]
-                if i==0:
-                    e.insert(0, main_embed)
-                await interaction.followup.send(embeds=e, view=View.share_button(interaction, e) if is_private_message else MISSING)
-        else:
-            embeds.insert(0, main_embed)
-            await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
-        await self.check_update(interaction)
-    
     @app_commands.command(description=clocal.get("member", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("member", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("member", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
@@ -1035,12 +1000,26 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
         pregame = endpoint.fetch_pregame_player()
         coregame = endpoint.fetch_coregame_player()
-
+        user_data = endpoint.fetch_partyid_from_puuid(False)
+        
         embeds = None
         if pregame.get("MatchID"):
             embeds = GetEmbed.member_pregame(self.bot, endpoint.player, endpoint.fetch_pregame_match(pregame.get("MatchID")), endpoint, response)
         elif coregame.get("MatchID"):
             embeds = GetEmbed.member_coregame(self.bot, endpoint.player, endpoint.puuid, endpoint.fetch_coregame_match(coregame.get("MatchID")), endpoint, response)
+        elif user_data.get("CurrentPartyID"):
+            party_details = endpoint.fetch_party_details(party_id = user_data.get("CurrentPartyID", ""))
+
+            temp_embeds = GetEmbed.member_party(endpoint.player, endpoint.puuid, party_details, endpoint, response.get("PARTY"), self.bot)
+            main_embed, embeds = temp_embeds[0], temp_embeds[1]
+            if len(embeds)>6:
+                for i in range(math.ceil(len(embeds) / 5)):
+                    e = embeds[0+(i*5):5+(i*5)]
+                    if i==0:
+                        e.insert(0, main_embed)
+                    embeds=e
+            else:
+                embeds.insert(0, main_embed)
         else:
             raise ValorantBotError(response.get("NOT_FOUND"))
 

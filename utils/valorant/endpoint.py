@@ -11,9 +11,11 @@ import datetime
 import requests
 import urllib3
 import urllib.parse
+import urllib.error
+import urllib.request
 
 from .local import LocalErrorResponse
-from .useful import JSON, load_file
+from .useful import JSON, GetItems, load_file
 # Local
 from .resources import (base_endpoint, base_endpoint_glz, base_endpoint_shared, base_endpoint_henrik, region_shard_override,
                         shard_region_override)
@@ -158,6 +160,15 @@ class API_ENDPOINT:
                 return {}
             # await self.refresh_token()
             # return await self.fetch(endpoint=endpoint, url=url, errors=errors)
+    
+    def download(self, url: str, dst_path: str):
+        try:
+            with urllib.request.urlopen(url) as web_file:
+                data = web_file.read()
+                with open(dst_path, mode='wb') as local_file:
+                    local_file.write(data)
+        except urllib.error.URLError as e:
+            print(e)
 
     # contracts endpoints
 

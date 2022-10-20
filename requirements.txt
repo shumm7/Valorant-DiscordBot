@@ -7,3 +7,4 @@ multidict~=6.0.2
 matplotlib==3.5.3
 python-dateutil==2.8.2
 beautifulsoup4==4.11.1
+Pillow==9.2.0

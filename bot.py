@@ -35,7 +35,7 @@ intents.message_content = True
 BOT_PREFIX = '-'
 
 bot_option = {
-    "version": 'fork-1.5.4'
+    "version": 'fork-1.6.0'
 }
 
 

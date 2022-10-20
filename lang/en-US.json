@@ -108,10 +108,17 @@
         "username": "Username (temporary login)",
         "password": "Password (temporary login)"
       },
-      "TITLE": "Competitive Tier",
-      "CURRENT_RANK": "Current Rank",
-      "CURRENT_RR": "Rank Rating",
-      "RESPONSE": "{rankrating} RR",
+      "TITLE": "**{player}'s Ranks**",
+      "RANK": "Competitive Tier",
+      "ACT_RANK": "Act Rank",
+      "CURRENT_RANK": {
+        "TITLE": "Current Rank",
+        "RESPONSE": "{rank}"
+      },
+      "CURRENT_RR": {
+        "TITLE": "Rank Rating",
+        "RESPONSE": "{rankrating} RR"
+      },
       "TIER_MATCHMAKING": {
         "TITLE": "Allowed Range of Ranks",
         "RESPONSE": "`{rank1} to {rank2}`"
@@ -123,6 +130,26 @@
       "LEADERBOARD": {
         "TITLE": "Leaderboard",
         "RESPONSE": "# {leaderboard}"
+      },
+      "ACT_RANK_TIER": {
+        "TITLE": "Rank",
+        "RESPONSE": "{rank}"
+      },
+      "ACT_RANK_WINS": {
+        "TITLE": "Total Wins",
+        "RESPONSE": "{wins}"
+      },
+      "BORDER_LEVEL": {
+        "TITLE": "Border Level",
+        "RESPONSE": "{level}"
+      },
+      "WINS_NEEDED": {
+        "TITLE": "Wins To Go",
+        "RESPONSE": "{wins}"
+      },
+      "WINS_BY_TIER": {
+        "TITLE": "Wins By Rank",
+        "RESPONSE": "`{rank}: {wins}`"
       }
     },
     "collection": {
@@ -533,56 +560,6 @@
       "NO_CODE": "No crosshair profile.",
       "ERROR": "Failed to fetch the crosshair image."
     },
-    "party": {
-      "NAME": "party",
-      "DESCRIPTION": "Get information about the party you belong to",
-      "DESCRIBE": {
-        "username": "Username (temporary login)",
-        "password": "Password (temporary login)"
-      },
-      "TITLE": "{name}'s Party",
-      "RESPONSE": "Members: **{members}**\nQueue: **{queue}**\nAccessibility:** {access}**",
-      "ACCESS": {
-        "OPEN": "Open",
-        "CLOSED": "Closed"
-      },
-      "READY": "Ready",
-      "NO_READY": "In Game",
-      "OWNER": "👑 ",
-      "PLAYER": {
-        "TITLE": "",
-        "RESPONSE": "{owner}**{name}** (Lv.{level})\n`{title}`",
-        "HEADER": "{rank} ({rr} RR)",
-        "FOOTER": "{ready}"
-      },
-      "CUSTOM": {
-        "TITLE": "",
-        "RESPONSE": "{membership}\n{owner}**{name}** (Lv.{level})\n`{title}`",
-        "HEADER": "{rank} ({rr} RR)",
-        "FOOTER": "{ready}"
-      },
-      "MEMBERSHIP": {
-        "DEFAULT": "Player",
-        "COACH_A": "Coach A",
-        "COACH_B": "Coach B",
-        "TEAM_A": "Team A",
-        "TEAM_B": "Team B",
-        "SPECTATE": "Spectater"
-      },
-      "QUEUE":{
-        "unknown": "Unknown",
-        "unrated": "Unrated",
-        "competitive": "Competitive",
-        "deathmatch": "Deathmatch",
-        "ggteam": "Escalation",
-        "onefa": "Replication",
-        "custom": "Custom",
-        "newmap": "New Map",
-        "snowball": "Snowball Fight",
-        "spikerush": "Spike Rush"
-      },
-      "FAILED": "Failed to fetch the party info."
-    },
     "member": {
       "NAME": "member",
       "DESCRIPTION": "Shows information about the players in a current match",
@@ -605,7 +582,51 @@
       },
       "COREGAME": {
         "TITLE": "**Members matched by {player}**\nMAP: {map}",
-        "RESPONSE": "{rank_emoji} **{name}** (Lv.{level})｜{agent_emoji} **{agent}**"
+        "RESPONSE": "{rank_emoji} **{name}** (Lv.{level})｜{agent_emoji} **{agent}**",
+        "UNKNOWN": "Unknown"
+      },
+      "PARTY": {
+        "TITLE": "{name}'s Party",
+        "RESPONSE": "Members: **{members}**\nQueue: **{queue}**\nAccessibility:** {access}**",
+        "ACCESS": {
+          "OPEN": "Open",
+          "CLOSED": "Closed"
+        },
+        "READY": "Ready",
+        "NO_READY": "In Game",
+        "OWNER": "👑 ",
+        "PLAYER": {
+          "TITLE": "{owner}**{name}**",
+          "RESPONSE": "{rank_emoji} **{rank}** (**{rr}** RR)｜Lv. **{level}**\n{title}",
+          "HEADER": "",
+          "FOOTER": "{ready}"
+        },
+        "CUSTOM": {
+          "TITLE": "{owner}**{name}**",
+          "RESPONSE": "{rank_emoji} **{rank}** (**{rr}** RR)｜Lv. **{level}**\n{title}",
+          "HEADER": "{membership}",
+          "FOOTER": "{ready}"
+        },
+        "MEMBERSHIP": {
+          "DEFAULT": "Player",
+          "COACH_A": "Coach A",
+          "COACH_B": "Coach B",
+          "TEAM_A": "Team A",
+          "TEAM_B": "Team B",
+          "SPECTATE": "Spectater"
+        },
+        "QUEUE":{
+          "unknown": "Unknown",
+          "unrated": "Unrated",
+          "competitive": "Competitive",
+          "deathmatch": "Deathmatch",
+          "ggteam": "Escalation",
+          "onefa": "Replication",
+          "custom": "Custom",
+          "newmap": "New Map",
+          "snowball": "Snowball Fight",
+          "spikerush": "Spike Rush"
+        }
       },
       "NOT_FOUND": "Player not found."
     },

@@ -296,7 +296,19 @@ class GetItems:
     
     def get_title_icon() -> str:
         return "https://valorantinfo.com/images/us/team-player-title_valorant_icon_33436.webp"
-    
+
+    def get_act_rank_border(actrank: int = 0) -> str:
+        if actrank == 0 or actrank == 1:
+            return "https://static.wikia.nocookie.net/valorant/images/2/2a/ActRank_lvl1.png"
+        elif actrank == 2:
+            return "https://static.wikia.nocookie.net/valorant/images/9/9c/ActRank_lvl2.png"
+        elif actrank == 3:
+            return "https://static.wikia.nocookie.net/valorant/images/7/7b/ActRank_lvl3.png"
+        elif actrank == 4:
+            return "https://static.wikia.nocookie.net/valorant/images/9/9f/ActRank_lvl4.png"
+        elif actrank == 5:
+            return "https://static.wikia.nocookie.net/valorant/images/b/b4/ActRank_lvl5.png"
+
     @classmethod
     def is_skin_owns(cls, entitlements: Dict, uuid: str) -> bool:
         return cls.is_owns(entitlements, uuid, "e7c63390-eda7-46e0-bb7a-a6abdacd2433")
@@ -488,6 +500,22 @@ class GetFormat:
         }
 
         return skin_source
+
+    def get_act_rank_border_level(wins: int = 0) -> int:
+        if wins < 9:
+            border = 0
+        elif wins >= 9 and wins < 25:
+            border = 1
+        elif wins >= 25 and wins < 50:
+            border = 2
+        elif wins >= 50 and wins < 75:
+            border = 3
+        elif wins >= 75 and wins < 100:
+            border = 4
+        elif wins >= 100:
+            border = 5 
+            
+        return border
 
     # ---------- UTILS FOR MISSION EMBED ---------- #
 

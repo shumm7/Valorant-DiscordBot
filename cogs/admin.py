@@ -183,6 +183,7 @@ class Admin(commands.Cog):
             file = load_file("resources/temp/cache.json", name)
 
             await interaction.response.send_message(embed=embed, file=file, ephemeral=True)
+            os.remove(f"resources/temp/cache.json")
         except Exception as e:
             print(e)
             raise ValorantBotError(response.get("ERROR"))
@@ -242,6 +243,7 @@ class Admin(commands.Cog):
             file = load_file("resources/temp/users.json", "user.json")
             
             await interaction.response.send_message(embeds=embeds[:10], file=file, ephemeral=True)
+            os.remove(f"resources/temp/users.json")
         except Exception as e:
             print(e)
             raise ValorantBotError(response.get("ERROR"))
@@ -263,7 +265,7 @@ class Admin(commands.Cog):
             e: discord.Emoji = GetEmoji.get(name, self.bot)
             if len(description)!=0:
                 description+="\n"
-            d = response.get("RESPONSE").format(name=e.name, emoji=e, date=format_relative(e.created_at), server=e.guild.name, id=e.id, user=e.user.mention)
+            d = response.get("RESPONSE").format(name=e.name, emoji=e, date=format_relative(e.created_at), server=e.guild.name, id=e.id)
 
             if len(d) + len(description) > 4096:
                 embed.description = description
@@ -289,6 +291,7 @@ class Admin(commands.Cog):
             file = load_file("resources/temp/emoji.json", "emoji.json")
             
             await interaction.response.send_message(embeds=embeds, file=file, ephemeral=True)
+            os.remove(f"resources/temp/emoji.json")
         except Exception as e:
             print(e)
             raise ValorantBotError(response.get("ERROR"))

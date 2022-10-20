@@ -128,10 +128,17 @@
         "username": "ユーザー名 (一時ログイン)",
         "password": "パスワード (一時ログイン)"
       },
-      "TITLE": "ランク",
-      "CURRENT_RANK": "現在のランク",
-      "CURRENT_RR": "ランクレーティング",
-      "RESPONSE": "{rankrating} RR",
+      "TITLE": "**{player} の現在のランク**",
+      "RANK": "ランク",
+      "ACT_RANK": "ACT ランク",
+      "CURRENT_RANK": {
+        "TITLE": "現在のランク",
+        "RESPONSE": "{rank}"
+      },
+      "CURRENT_RR": {
+        "TITLE": "ランクレーティング",
+        "RESPONSE": "{rankrating} RR"
+      },
       "TIER_MATCHMAKING": {
         "TITLE": "同時にマッチ可能なランク帯",
         "RESPONSE": "`{rank1} から {rank2}`"
@@ -143,6 +150,26 @@
       "LEADERBOARD": {
         "TITLE": "リーダーボード",
         "RESPONSE": "{leaderboard} 位"
+      },
+      "ACT_RANK_TIER": {
+        "TITLE": "ランク",
+        "RESPONSE": "{rank}"
+      },
+      "ACT_RANK_WINS": {
+        "TITLE": "総勝利数",
+        "RESPONSE": "{wins}"
+      },
+      "BORDER_LEVEL": {
+        "TITLE": "ボーダーレベル",
+        "RESPONSE": "{level}"
+      },
+      "WINS_NEEDED": {
+        "TITLE": "レベルアップに必要な勝利数",
+        "RESPONSE": "{wins}"
+      },
+      "WINS_BY_TIER": {
+        "TITLE": "各ランクでの勝利回数",
+        "RESPONSE": "`{rank}: {wins}`"
       }
     },
     "collection": {
@@ -553,56 +580,6 @@
       "NO_CODE": "クロスヘアプロファイルがありません。",
       "ERROR": "クロスヘアの取得に失敗しました。"
     },
-    "party": {
-      "NAME": "party",
-      "DESCRIPTION": "あなたの所属するパーティの情報を表示します",
-      "DESCRIBE": {
-        "username": "ユーザー名 (一時ログイン)",
-        "password": "パスワード (一時ログイン)"
-      },
-      "TITLE": "{name} の所属するパーティ",
-      "RESPONSE": "人数: **{members}**人\n選択中のキュー: **{queue}**\nパーティ:** {access}**",
-      "ACCESS": {
-        "OPEN": "公開",
-        "CLOSED": "非公開"
-      },
-      "READY": "準備完了",
-      "NO_READY": "ゲーム中",
-      "OWNER": "👑 ",
-      "PLAYER": {
-        "TITLE": "",
-        "RESPONSE": "{owner}**{name}** (Lv.{level})\n`{title}`",
-        "HEADER": "{rank} ({rr} RR)",
-        "FOOTER": "{ready}"
-      },
-      "CUSTOM": {
-        "TITLE": "",
-        "RESPONSE": "{membership}\n{owner}**{name}** (Lv.{level})\n`{title}`",
-        "HEADER": "{rank} ({rr} RR)",
-        "FOOTER": "{ready}"
-      },
-      "MEMBERSHIP": {
-        "DEFAULT": "プレイヤー",
-        "COACH_A": "コーチ (チームA)",
-        "COACH_B": "コーチ (チームB)",
-        "TEAM_A": "チームA",
-        "TEAM_B": "チームB",
-        "SPECTATE": "観戦者"
-      },
-      "QUEUE":{
-        "unknown": "不明",
-        "unrated": "アンレート",
-        "competitive": "コンペティティブ",
-        "deathmatch": "デスマッチ",
-        "ggteam": "エスカレーション",
-        "onefa": "レプリケーション",
-        "custom": "カスタム",
-        "newmap": "新マップ",
-        "snowball": "スノーボールファイト",
-        "spikerush": "スパイクラッシュ"
-      },
-      "FAILED": "パーティ情報の取得に失敗しました。"
-    },
     "member": {
       "NAME": "member",
       "DESCRIPTION": "マッチしているプレイヤーの情報を表示します。",
@@ -625,7 +602,51 @@
       },
       "COREGAME": {
         "TITLE": "**{player} がマッチ中のメンバー**\nマップ: {map}",
-        "RESPONSE": "{rank_emoji} **{name}** (Lv.{level})｜{agent_emoji} **{agent}**"
+        "RESPONSE": "{rank_emoji} **{name}** (Lv.{level})｜{agent_emoji} **{agent}**",
+        "UNKNOWN": "不明"
+      },
+      "PARTY": {
+        "TITLE": "{name} の所属するパーティ",
+        "RESPONSE": "人数: **{members}**人\n選択中のキュー: **{queue}**\nパーティ:** {access}**",
+        "ACCESS": {
+          "OPEN": "公開",
+          "CLOSED": "非公開"
+        },
+        "READY": "準備完了",
+        "NO_READY": "ゲーム中",
+        "OWNER": "👑 ",
+        "PLAYER": {
+          "TITLE": "{owner}**{name}**",
+          "RESPONSE": "{rank_emoji} **{rank}** (**{rr}** RR)｜Lv. **{level}**\n{title}",
+          "HEADER": "",
+          "FOOTER": "{ready}"
+        },
+        "CUSTOM": {
+          "TITLE": "{owner}**{name}**",
+          "RESPONSE": "{rank_emoji} **{rank}** (**{rr}** RR)｜Lv. **{level}**\n{title}",
+          "HEADER": "{membership}",
+          "FOOTER": "{ready}"
+        },
+        "MEMBERSHIP": {
+          "DEFAULT": "プレイヤー",
+          "COACH_A": "コーチ (チームA)",
+          "COACH_B": "コーチ (チームB)",
+          "TEAM_A": "チームA",
+          "TEAM_B": "チームB",
+          "SPECTATE": "観戦者"
+        },
+        "QUEUE":{
+          "unknown": "不明",
+          "unrated": "アンレート",
+          "competitive": "コンペティティブ",
+          "deathmatch": "デスマッチ",
+          "ggteam": "エスカレーション",
+          "onefa": "レプリケーション",
+          "custom": "カスタム",
+          "newmap": "新マップ",
+          "snowball": "スノーボールファイト",
+          "spikerush": "スパイクラッシュ"
+        }
       },
       "NOT_FOUND": "プレイヤーが見つかりませんでした。"
     },
