@@ -108,9 +108,13 @@
         "username": "Username (temporary login)",
         "password": "Password (temporary login)"
       },
-      "TITLE": "**{player}'s Ranks**",
+      "TITLE": "",
+      "RESPONSE": "**{player}'s Ranks**",
+      "HEADER": "",
+      "FOOTER": "{season}",
       "RANK": "Competitive Tier",
       "ACT_RANK": "Act Rank",
+      "SEASON": "{episode} // {act}",
       "CURRENT_RANK": {
         "TITLE": "Current Rank",
         "RESPONSE": "{rank}"
@@ -150,7 +154,8 @@
       "WINS_BY_TIER": {
         "TITLE": "Wins By Rank",
         "RESPONSE": "`{rank}: {wins}`"
-      }
+      },
+      "DROPDOWN_CHOICE_TITLE": "ACTを選択してください:"
     },
     "collection": {
       "NAME": "collection",
@@ -322,7 +327,8 @@
       "BUDDY": "Buddie",
       "POINT": "Point",
       "PLAYER_TITLE": "Title",
-      "SKIN": "Skin"
+      "SKIN": "Skin",
+      "CHARACTER": "Agent"
     },
     "bundle": {
       "NAME": "bundle",
@@ -394,6 +400,7 @@
       "POINT": "Point",
       "PLAYER_TITLE": "Title",
       "SKIN": "Skin",
+      "CHARACTER": "Agent",
       "DROPDOWN_CHOICE_TITLE": "Select the Agent",
       "NOT_FOUND": "No agents found that match your keyword entries."
     },

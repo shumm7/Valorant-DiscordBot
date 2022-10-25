@@ -642,6 +642,13 @@ class GetFormat:
             icon = data['buddies'][uuid]['icon']
             item_type = response.get('BUDDY', 'Buddie')
             return {"success": True, "data": {'type': item_type, 'name': name, 'icon': icon}}
+        
+        elif type== 'Character':
+            data = JSON.read('cache')
+            name = data['agents'][uuid]['names'][locale]
+            icon = data['agents'][uuid]['portrait']
+            item_type = response.get('CHARACTER', 'Character')
+            return {"success": True, "data": {'type': item_type, 'name': name, 'icon': icon}}
 
         return {"success": False, "error": f"Failed to get : {type}"}
 
@@ -703,10 +710,12 @@ class GetFormat:
     
     # ---------- UTILS FOR RANK EMBED ---------- #
 
-    def get_competitive_tier_name(tier: int) -> str:
+    def get_competitive_tier_name(tier: int, locale: str = None) -> str:
         """Get competitive tier name"""
         ranks = JSON.read('cache')
-        return ranks['competitive_tiers'][str(tier)]['names'][str(VLR_locale)]
+        if locale==None:
+            locale = str(VLR_locale)
+        return ranks['competitive_tiers'][str(tier)]['names'][locale]
     
     def get_competitive_tier_matching(tier: int) -> List[List]:
         """Get competitive tier matching"""

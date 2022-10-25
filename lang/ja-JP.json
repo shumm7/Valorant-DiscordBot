@@ -128,11 +128,15 @@
         "username": "ユーザー名 (一時ログイン)",
         "password": "パスワード (一時ログイン)"
       },
-      "TITLE": "**{player} の現在のランク**",
+      "TITLE": "",
+      "RESPONSE": "**{player} のランク**",
+      "HEADER": "",
+      "FOOTER": "{season}",
       "RANK": "ランク",
       "ACT_RANK": "ACT ランク",
+      "SEASON": "{episode} // {act}",
       "CURRENT_RANK": {
-        "TITLE": "現在のランク",
+        "TITLE": "ランク",
         "RESPONSE": "{rank}"
       },
       "CURRENT_RR": {
@@ -152,7 +156,7 @@
         "RESPONSE": "{leaderboard} 位"
       },
       "ACT_RANK_TIER": {
-        "TITLE": "ランク",
+        "TITLE": "ACTランク",
         "RESPONSE": "{rank}"
       },
       "ACT_RANK_WINS": {
@@ -170,7 +174,8 @@
       "WINS_BY_TIER": {
         "TITLE": "各ランクでの勝利回数",
         "RESPONSE": "`{rank}: {wins}`"
-      }
+      },
+      "DROPDOWN_CHOICE_TITLE": "ACTを選択してください:"
     },
     "collection": {
       "NAME": "collection",
@@ -342,7 +347,8 @@
       "BUDDY": "バディー",
       "POINT": "ポイント",
       "PLAYER_TITLE": "タイトル",
-      "SKIN": "スキン"
+      "SKIN": "スキン",
+      "CHARACTER": "エージェント"
     },
     "bundle": {
       "NAME": "bundle",
@@ -374,8 +380,6 @@
       "RESPONSE": "{description}",
       "HEADER": "{name} // {name_en_capital}",
       "FOOTER": "{own}",
-      "THUMBNAIL": "{icon}",
-      "IMAGE": "{portrait}",
       "KEYS": {
         "KEY1": "Q",
         "KEY2": "E",
@@ -414,6 +418,7 @@
       "POINT": "ポイント",
       "PLAYER_TITLE": "タイトル",
       "SKIN": "スキン",
+      "CHARACTER": "エージェント",
       "DROPDOWN_CHOICE_TITLE": "エージェントを選択",
       "NOT_FOUND": "入力されたキーワードと一致するエージェントが見つかりませんでした。"
     },

@@ -249,21 +249,36 @@ class ValorantCog(commands.Cog, name='Valorant'):
 
         # check if user is logged in
         is_private_message = True if username is not None or password is not None else False
-        
         await interaction.response.defer(ephemeral=is_private_message)
         
+        # language
         response = ResponseLanguage(interaction.command.name, interaction.locale)
+
+        # cache
+        cache = self.db.read_cache()
         
         # endpoint
         endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+
+        # seasons
+        entries = []
+        for season in cache["seasons"].values():
+            if season["parent_uuid"]!=None:
+                data = {
+                    "name": response.get("SEASON").format(
+                        episode = cache["seasons"][season["parent_uuid"]]["names"][str(VLR_locale)],
+                        act = season["names"][str(VLR_locale)]
+                    ),
+                    "uuid": season["uuid"]
+                }
+                entries.append(data)
         
         # data
         data = endpoint.fetch_player_mmr()
-        ret = GetEmbed.rank(endpoint.player, data, response, endpoint, self.bot)
-        
-        await interaction.followup.send(embeds=ret[0], file=ret[1], view=View.share_button(interaction, ret[0]) if is_private_message else MISSING)
+
+        view = View.BaseRank(interaction, entries, data, response, cache, endpoint, is_private_message)
+        await view.start()
         await self.check_update(interaction)
-        os.remove(f"resources/temp/rendered_border.png")
     
     @app_commands.command(description=clocal.get("collection", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("collection", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("collection", {}).get("DESCRIBE", {}).get("password", ""))
@@ -377,14 +392,8 @@ class ValorantCog(commands.Cog, name='Valorant'):
             else:
                 await interaction.followup.send(embeds=embeds, files=graph, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
 
-            try:
-                os.remove("resources/temp/" + filename[0])
-            except FileNotFoundError:
-                pass
-            try:
-                os.remove("resources/temp/" + filename[1])
-            except FileNotFoundError:
-                pass
+            if os.path.isfile(f"resources/temp/" + filename[0]): os.remove("resources/temp/" + filename[0])
+            if os.path.isfile(f"resources/temp/" + filename[1]): os.remove("resources/temp/" + filename[1])
             await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("mission", {}).get("DESCRIPTION", ""))
@@ -573,7 +582,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         find_agent = find_agent_en_US if len(find_agent_en_US) > 0 else find_agent_locale
 
         # agents view
-        view = View.BaseAgent(interaction, find_agent, entitlements, response, is_private_message)
+        view = View.BaseAgent(interaction, find_agent, entitlements, response, endpoint, is_private_message)
         await view.start()
         await self.check_update(interaction)
     
@@ -981,7 +990,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         embed.set_thumbnail(url=icon)
         await interaction.followup.send(embed=embed, file=file)
         await self.check_update(interaction)
-        os.remove(f"resources/temp/{filename}")
+        if os.path.isfile(f"resources/temp/{filename}"): os.remove(f"resources/temp/{filename}")
     
     @app_commands.command(description=clocal.get("member", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("member", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("member", {}).get("DESCRIBE", {}).get("password", ""))

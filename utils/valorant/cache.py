@@ -81,7 +81,6 @@ def fetch_agents() -> None:
         data['agents'] = json
         JSON.save('cache', data)
 
-
 def fetch_weapon() -> None:
     """ Fetch the weapon from valorant-api.com """
     
@@ -204,7 +203,7 @@ def fetch_skin() -> None:
     conv = JSON.read('conv')
 
     url = f'https://valorant-api.com/v1/weapons/skins?language=all'
-    print(f'[{datetime.datetime.now()}] Fetching weapons skin: {url}')
+    print(f'[{datetime.datetime.now()}] Fetching weapon skins: {url}')
 
     resp = requests.get(url)
     if resp.status_code == 200:
@@ -246,7 +245,6 @@ def fetch_skin() -> None:
         JSON.save('cache', data)
         JSON.save('conv', conv)
 
-
 def fetch_tier() -> None:
     """ Fetch the skin tier from valorant-api.com """
     data = JSON.read('cache')
@@ -260,12 +258,12 @@ def fetch_tier() -> None:
         for tier in resp.json()['data']:
             json[tier['uuid']] = {
                 'uuid': tier['uuid'],
-                'names': tier['devName'],
+                'name': tier['devName'],
                 'icon': tier['displayIcon'],
+                'rank': tier['rank']
             }
         data['tiers'] = json
         JSON.save('cache', data)
-
 
 def pre_fetch_price() -> None:
     """ Pre-fetch the price of all skins """
@@ -277,7 +275,6 @@ def pre_fetch_price() -> None:
     except Exception as e:
         print(e)
         print(f"[{datetime.datetime.now()}] Can't fetch price")
-
 
 def fetch_mission() -> None:
     """ Fetch the mission from valorant-api.com """
@@ -301,7 +298,6 @@ def fetch_mission() -> None:
             }
         data['missions'] = json
         JSON.save('cache', data)
-
 
 def fetch_playercard() -> None:
     """ Fetch the player card from valorant-api.com """
@@ -327,7 +323,6 @@ def fetch_playercard() -> None:
             }
         data['playercards'] = payload
         JSON.save('cache', data)
-
 
 def fetch_titles() -> None:
     """ Fetch the player titles from valorant-api.com """
@@ -370,7 +365,6 @@ def fetch_levelborders() -> None:
         data['levelborders'] = levelborder
         JSON.save('cache', data)
 
-
 def fetch_spray() -> None:
     """ Fetch the spray from valorant-api.com"""
     
@@ -393,7 +387,6 @@ def fetch_spray() -> None:
             }
         data['sprays'] = payload
         JSON.save('cache', data)
-
 
 def fetch_bundles() -> None:
     """ Fetch all bundles from valorant-api.com and https://docs.valtracker.gg/bundles"""
@@ -461,7 +454,6 @@ def fetch_bundles() -> None:
         data['bundles'] = bundles
         JSON.save('cache', data)
 
-
 def fetch_contracts() -> None:
     """ Fetch contracts from valorant-api.com """
     
@@ -502,30 +494,6 @@ def fetch_contracts() -> None:
         data['contracts'] = json
         JSON.save('cache', data)
 
-
-# def fetch_ranktiers(lang: str):
-#     """ Fetch rank tiers from from valorant-api.com """
-
-#     data = JSON.read('cache')
-#     session = requests.session()
-#     print('Fetching ranktiers !')
-#     resp = session.get(f'https://valorant-api.com/v1/competitivetiers?language={lang}')
-#     if resp.status_code == 200:
-#         json = {}
-#         for rank in resp.json()['data']:
-#             for i in rank['tiers']:
-#                 json[i['tier']] = {
-#                     'tier':i['tier'],
-#                     'names':i['tierName'],
-#                     'subname':i['divisionName'],
-#                     'icon':i['largeIcon'],
-#                     'rankup':i['rankTriangleUpIcon'],
-#                     'rankdown':i['rankTriangleDownIcon'],
-#                 }
-#         data['ranktiers'] = json
-#         JSON.save('cache', data)
-#     session.close()
-
 def fetch_currencies() -> None:
     """ Fetch currencies from valorant-api.com """
     
@@ -545,7 +513,6 @@ def fetch_currencies() -> None:
             }
         data['currencies'] = payload
         JSON.save('cache', data)
-
 
 def fetch_buddies() -> None:
     """ Fetch all buddies from valorant-api.com """
@@ -573,7 +540,6 @@ def fetch_buddies() -> None:
 
         JSON.save('cache', data)
         JSON.save('conv', conv)
-
 
 def fetch_price(data_price: Dict) -> None:
     """ Fetch the price of a skin """
@@ -699,6 +665,27 @@ def fetch_event() -> None:
         data['events'] = json
         JSON.save('cache', data)
 
+def fetch_season() -> None:
+    """ Fetch the seasons from valorant-api.com """
+    data = JSON.read('cache')
+    
+    url = 'https://valorant-api.com/v1/seasons?language=all'
+    print(f'[{datetime.datetime.now()}] Fetching seasons: {url}')
+    
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        json = {}
+        for info in resp.json()['data']:
+            json[info['uuid']] = {
+                'uuid': info['uuid'],
+                'names': info['displayName'],
+                'start': str(dateutil.parser.parse(info['startTime'])),
+                'end': str(dateutil.parser.parse(info['endTime'])),
+                'parent_uuid': info['parentUuid']
+            }
+        data['seasons'] = json
+        JSON.save('cache', data)
+
 
 # def fetch_skinchromas() -> None:
 #     """ Fetch skin chromas from valorant-api.com """
@@ -756,6 +743,7 @@ def get_cache(bot_version: str) -> None:
     fetch_rank()
     fetch_ceremony()
     fetch_event()
+    fetch_season()
     fetch_gamemode()
     # fetch_skinchromas() # next update
     

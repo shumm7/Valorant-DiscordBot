@@ -14,7 +14,6 @@ import dateutil.parser
 from tracemalloc import start
 from typing import Any, Dict, List, TYPE_CHECKING, Union
 from unittest import result
-from PIL import Image
 
 from utils.errors import (
     ValorantBotError
@@ -26,7 +25,7 @@ import matplotlib.pyplot as plt
 from .endpoint import API_ENDPOINT
 
 import utils.config as Config
-from .useful import (calculate_level_xp, format_relative, GetEmoji, GetFormat, GetItems, iso_to_time, format_timedelta, JSON, load_file)
+from .useful import (calculate_level_xp, format_relative, GetEmoji, GetFormat, iso_to_time, format_timedelta, JSON)
 from ..locale_v2 import ValorantTranslator
 
 VLR_locale = ValorantTranslator()
@@ -247,189 +246,6 @@ class GetEmbed:
         embed.set_footer(text=player)
         
         return embed
-    
-    # ---------- RANK EMBED ---------- #
-
-    @classmethod
-    def rank(cls, player: str, mmr: Dict, response: Dict, endpoint: API_ENDPOINT, bot: ValorantBot) -> List:
-        """Embed Rank"""
-        cache = JSON.read('cache')
-
-        # competitive tier
-        season_id = mmr['LatestCompetitiveUpdate']['SeasonID']
-        if season_id==None:
-            season_id = ""
-        if len(season_id) == 0:
-            season_id = endpoint.__get_live_season()
-
-        current_season = mmr.get("QueueSkills", {}).get('competitive', {}).get('SeasonalInfoBySeasonID', {})
-        if current_season==None: current_season = {}
-
-        tier = current_season.get(season_id, {}).get('CompetitiveTier', 0)
-        act_rank_tier = current_season.get(season_id, {}).get('Rank', 0)
-        rank_name = GetFormat.get_competitive_tier_name(tier)
-        act_rank_name = GetFormat.get_competitive_tier_name(act_rank_tier)
-        
-        # other value
-        rankrating = current_season.get(season_id, {}).get("RankedRating", 0) # rank rating 
-        wins = current_season.get(season_id, {}).get("NumberOfWinsWithPlacements", 0) # number of wins
-        wins_act_rank = current_season.get(season_id, {}).get("NumberOfWins", 0) # number of wins (act rank)
-        games = current_season.get(season_id, {}).get("NumberOfGames", 0) #number of games
-        leaderboard = current_season.get(season_id, {}).get("LeaderboardRank", 0)
-        wins_by_tier = current_season.get(season_id, {}).get("WinsByTier", 0)
-        border_level_need_wins = current_season.get(season_id, {}).get("TotalWinsNeededForRank", 0)
-        if leaderboard==0: leaderboard="-"
-
-        # win rate
-        n_games = games
-        if games==0:
-            n_games = 1
-        win_rate = round(float(wins)/float(n_games)* 100) 
-
-        # matchmaking
-        rank_tierlist = GetFormat.get_competitive_tier_matching(tier)
-        rank_tiermsg = ""
-        for val in rank_tierlist:
-            if len(rank_tiermsg)!=0:
-                rank_tiermsg += "\n"
-            rank_tiermsg += response.get('TIER_MATCHMAKING')['RESPONSE'].format(rank1=GetFormat.get_competitive_tier_name(val[0]), rank2=GetFormat.get_competitive_tier_name(val[1]))
-
-        # wins_by_tier
-        wins_by_tiermsg = ""
-        for rank,wins in wins_by_tier.items():
-            if len(wins_by_tiermsg)!=0:
-                wins_by_tiermsg += "\n"
-            wins_by_tiermsg += response.get('WINS_BY_TIER')['RESPONSE'].format(rank=GetFormat.get_competitive_tier_name(str(rank)), wins=wins)
-
-        # embeds
-        embeds = []
-
-        # main embed
-        embed = Embed(response.get("TITLE").format(player=player))
-        embeds.append(embed)
-
-        # rank embed
-        embed = Embed(title=response.get('RANK'), color=Config.GetColor("items"))
-        embed.add_field(name=response.get('CURRENT_RANK')["TITLE"], value=response.get('CURRENT_RANK')["RESPONSE"].format(rank=rank_name))
-        embed.add_field(name=response.get('CURRENT_RR')["TITLE"], value=response.get('CURRENT_RR')["RESPONSE"].format(rankrating=rankrating))
-        if len(rank_tiermsg)>0:
-            embed.add_field(name=response.get('TIER_MATCHMAKING')['TITLE'], value=rank_tiermsg, inline=False)
-        embed.add_field(name=response.get('WINS')["TITLE"], value=response.get('WINS')["RESPONSE"].format(wins=wins, games=games, win_rate=win_rate))
-        embed.add_field(name=response.get('LEADERBOARD')["TITLE"], value=response.get('LEADERBOARD')["RESPONSE"].format(leaderboard=leaderboard))
-
-        embed.set_thumbnail(url=cache["competitive_tiers"][str(tier)]["icon"])
-        embeds.append(embed)
-
-        # actrank embed
-        embed = Embed(title=response.get('ACT_RANK'), color=Config.GetColor("items"))
-        embed.add_field(name=response.get('ACT_RANK_TIER')["TITLE"], value=response.get('ACT_RANK_TIER')["RESPONSE"].format(rank=act_rank_name))
-        embed.add_field(name=response.get('BORDER_LEVEL')["TITLE"], value=response.get('BORDER_LEVEL')["RESPONSE"].format(level=GetFormat.get_act_rank_border_level(wins_act_rank)))
-        embed.add_field(name=response.get('WINS_BY_TIER')["TITLE"], value=wins_by_tiermsg, inline=False)
-        embed.add_field(name=response.get('ACT_RANK_WINS')["TITLE"], value=response.get('ACT_RANK_WINS')["RESPONSE"].format(wins=wins_act_rank))
-        embed.add_field(name=response.get('WINS_NEEDED')["TITLE"], value=response.get('WINS_NEEDED')["RESPONSE"].format(wins=border_level_need_wins))
-        embed.set_thumbnail(url=cache["competitive_tiers"][str(act_rank_tier)]["icon"])
-        embed.set_image(url="attachment://border.png")
-        embeds.append(embed)
-        
-        file = cls.act_rank(current_season.get(season_id, {}), cache, endpoint)
-        os.remove(f"resources/temp/triangle.png")
-        os.remove(f"resources/temp/triangle_down.png")
-        os.remove(f"resources/temp/border.png")
-        return embeds, file
-    
-    def act_rank(current_mmr: Dict, cache: Dict, endpoint: API_ENDPOINT) -> discord.File:
-        triangle_pos = [
-            {"angle": "up", "x": 0, "y": -116},
-            
-            {"angle": "up", "x": -23, "y": -76},
-            {"angle": "down", "x": 0, "y": -76},
-            {"angle": "up", "x": 23, "y": -76},
-            
-            {"angle": "up", "x": -46, "y": -36},
-            {"angle": "down", "x": -23, "y": -36},
-            {"angle": "up", "x": 0, "y": -36},
-            {"angle": "down", "x": 23, "y": -36},
-            {"angle": "up", "x": 46, "y": -36},
-
-            {"angle": "up", "x": -69, "y": 4},
-            {"angle": "down", "x": -46, "y": 4},
-            {"angle": "up", "x": -23, "y": 4},
-            {"angle": "down", "x": 0, "y": 4},
-            {"angle": "up", "x": 23, "y": 4},
-            {"angle": "down", "x": 46, "y": 4},
-            {"angle": "up", "x": 69, "y": 4},
-
-            {"angle": "up", "x": -92, "y": 44},
-            {"angle": "down", "x": -69, "y": 44},
-            {"angle": "up", "x": -46, "y": 44},
-            {"angle": "down", "x": -23, "y": 44},
-            {"angle": "up", "x": 0, "y": 44},
-            {"angle": "down", "x": 23, "y": 44},
-            {"angle": "up", "x": 46, "y": 44},
-            {"angle": "down", "x": 69, "y": 44},
-            {"angle": "up", "x": 92, "y": 44},
-            
-            {"angle": "up", "x": -115, "y": 84},
-            {"angle": "down", "x": -92, "y": 84},
-            {"angle": "up", "x": -69, "y": 84},
-            {"angle": "down", "x": -46, "y": 84},
-            {"angle": "up", "x": -23, "y": 84},
-            {"angle": "down", "x": 0, "y": 84},
-            {"angle": "up", "x": 23, "y": 84},
-            {"angle": "down", "x": 46, "y": 84},
-            {"angle": "up", "x": 69, "y": 84},
-            {"angle": "down", "x": 92, "y": 84},
-            {"angle": "up", "x": 115, "y": 84},
-            
-            {"angle": "up", "x": -138, "y": 124},
-            {"angle": "down", "x": -115, "y": 124},
-            {"angle": "up", "x": -92, "y": 124},
-            {"angle": "down", "x": -69, "y": 124},
-            {"angle": "up", "x": -46, "y": 124},
-            {"angle": "down", "x": -23, "y": 124},
-            {"angle": "up", "x": 0, "y": 124},
-            {"angle": "down", "x": 23, "y": 124},
-            {"angle": "up", "x": 46, "y": 124},
-            {"angle": "down", "x": 69, "y": 124},
-            {"angle": "up", "x": 92, "y": 124},
-            {"angle": "down", "x": 115, "y": 124},
-            {"angle": "up", "x": 138, "y": 124},
-        ]
-
-        wins = current_mmr.get("NumberOfWins", 0)
-        
-        border = GetFormat.get_act_rank_border_level(wins)
-        endpoint.download(GetItems.get_act_rank_border(border), "resources/temp/border.png")
-        base = Image.open("resources/temp/border.png")
-
-        wins_by_rank = [0] * len(cache.get("competitive_tiers", {}))
-        for rank, wins in current_mmr.get("WinsByTier", {}).items():
-            wins_by_rank[int(rank)] = wins
-        
-        max_tier = len(wins_by_rank) - 1
-        rendered_tier = 0
-        for i in range(max_tier):
-            rank = max_tier - i
-            wins = wins_by_rank[rank]
-
-            if wins > 0:
-                endpoint.download(cache.get("competitive_tiers", {}).get(str(rank), {}).get("triangle"), "resources/temp/triangle.png")
-                endpoint.download(cache.get("competitive_tiers", {}).get(str(rank), {}).get("triangle_down"), "resources/temp/triangle_down.png")
-
-                for j in range(wins):
-                    if rendered_tier>=49:
-                        break
-
-                    if triangle_pos[rendered_tier]["angle"]=="up":
-                        triangle = Image.open("resources/temp/triangle.png")
-                    else:
-                        triangle = Image.open("resources/temp/triangle_down.png")
-                    triangle = triangle.resize(size=(int(triangle.width * 0.35), int(triangle.height * 0.35)), resample=Image.ANTIALIAS)
-
-                    base.paste(triangle, (int(triangle_pos[rendered_tier]["x"] + 256 - triangle.width/2), int(triangle_pos[rendered_tier]["y"] + 256 - triangle.height/2)), triangle)
-                    rendered_tier += 1
-        base.save("resources/temp/rendered_border.png")
-        return load_file("resources/temp/rendered_border.png", "border.png")
 
     # ---------- MATCH DATA UTILS ----------- #
     def get_match_info(puuid: str, match_id: str, endpoint: API_ENDPOINT, response: Dict) -> Dict:

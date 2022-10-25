@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-import contextlib, math
+import contextlib, math, os
+import numpy as np
 from datetime import datetime, timedelta
+from re import A
 from typing import Awaitable, Dict, List, TYPE_CHECKING, Union
 from urllib import response
+from PIL import Image
+import matplotlib.colors
 
 # Standard
 import discord
 from discord import ButtonStyle, Interaction, TextStyle, ui
 from discord.utils import MISSING
+import utils.config as Config
 from utils.config import GetColor
 from utils.valorant import endpoint
 from utils.valorant.embed import Embed
@@ -16,7 +21,7 @@ from utils.valorant.embed import Embed
 from utils.valorant.endpoint import API_ENDPOINT
 from .resources import get_item_type
 # Local
-from .useful import GetFormat, format_relative, GetEmoji, GetItems, JSON
+from .useful import GetFormat, format_relative, GetEmoji, GetItems, JSON, load_file
 from ..errors import ValorantBotError
 from ..locale_v2 import ValorantTranslator
 
@@ -576,16 +581,18 @@ class BaseBundle(ui.View):
         await self.interaction.followup.send(embeds=self.embeds[0], view=self)
 
 class BaseAgent(ui.View):
-    def __init__(self, interaction: Interaction, entries: Dict, entitlements: Dict, response: Dict, is_private_message: bool) -> None:
+    def __init__(self, interaction: Interaction, entries: Dict, entitlements: Dict, response: Dict, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
         self.interaction: Interaction = interaction
         self.entries = entries
         self.response = response
         self.entitlements = entitlements
+        self.endpoint = endpoint
         self.is_private_message = is_private_message
         self.language = str(VLR_locale)
         self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
         self.current_page: int = 0
         self.embeds: List[discord.Embed] = []
+        self.file: discord.File = None
         self.page_format = {}
         super().__init__()
         self.clear_items()
@@ -604,11 +611,6 @@ class BaseAgent(ui.View):
             name_en_capital = agent["names"][default_language].upper(),
             role_en_capital = agent["role"]["names"][default_language].upper(),
 
-            icon = agent['icon'],
-            portrait = agent['portrait'],
-            bust_portrait = agent['bust_portrait'],
-            killfeed_portrait = agent["killfeed_portrait"],
-            background = agent["background"],
             own = own if GetItems.is_agent_owns(self.entitlements, agent["uuid"]) else dont_own,
 
             agent_emoji = GetEmoji.agent_by_bot(agent["uuid"], self.bot),
@@ -623,6 +625,7 @@ class BaseAgent(ui.View):
         for agent in self.entries:
             if agent["uuid"] == selected_agent:
                 color, subcolor = agent['color'][0], agent['color'][1]
+                self.build_file(agent)
                 
                 embed = discord.Embed(
                     title=self.agent_format(response.get("TITLE", ""), agent),
@@ -631,8 +634,8 @@ class BaseAgent(ui.View):
                 )
                 embed.set_author(name=self.agent_format(response.get("HEADER", ""), agent))
                 embed.set_footer(text=self.agent_format(response.get("FOOTER", ""), agent))
-                embed.set_thumbnail(url=self.agent_format(response.get("THUMBNAIL", ""), agent))
-                embed.set_image(url=self.agent_format(response.get("IMAGE", ""), agent))
+                embed.set_thumbnail(url=agent['icon'])
+                embed.set_image(url="attachment://agent.png")
 
                 embeds.append(embed)
                 
@@ -648,18 +651,68 @@ class BaseAgent(ui.View):
 
         self.embeds = embeds
 
-    
+    def build_file(self, agent: Dict) -> discord.File:
+        # agent image
+        self.endpoint.download(agent['portrait'], "resources/temp/agent_portrait.png")
+        self.endpoint.download(agent["background"], "resources/temp/agent_background.png")
+
+        # background
+        color1 = tuple(int(c*255) for c in matplotlib.colors.to_rgb("#" + hex(agent['color'][0])[2:].upper()))
+        color2 = tuple(int(c*255) for c in matplotlib.colors.to_rgb("#" + hex(agent['color'][1])[2:].upper()))
+
+        def get_gradient_2d(start, stop, width, height, is_horizontal):
+            if is_horizontal:
+                return np.tile(np.linspace(start, stop, width), (height, 1))
+            else:
+                return np.tile(np.linspace(start, stop, height), (width, 1)).T
+
+        def get_gradient_3d(width, height, start_list, stop_list, is_horizontal_list):
+            result = np.zeros((height, width, len(start_list)), dtype=np.float)
+
+            for i, (start, stop, is_horizontal) in enumerate(zip(start_list, stop_list, is_horizontal_list)):
+                result[:, :, i] = get_gradient_2d(start, stop, width, height, is_horizontal)
+
+            return result
+        array = get_gradient_3d(1920, 1080, color1, color2, (True, True, True))
+        background = Image.fromarray(np.uint8(array))
+
+        # text
+        text = Image.open("resources/temp/agent_background.png")
+        text = text.resize((int(text.width * 1.65), int(text.height * 1.65)))
+        mask = text.copy()
+        text.putalpha(40)
+        watermark = Image.new('RGBA',text.size,(255,255,255,0))
+        watermark.paste(text,(0,0),mask)
+        background.paste(watermark, (int(-background.width*3/8 + watermark.width/2), int(-watermark.height/2 + background.height/2)), watermark)
+
+        # agent
+        portrait = Image.open("resources/temp/agent_portrait.png")
+        ratio = background.height / portrait.height
+        portrait = portrait.resize((int(portrait.width*ratio), int(portrait.height*ratio)))
+        background.paste(portrait, (int(-portrait.width/2 + background.width/2), 0), portrait)
+
+        background.save("resources/temp/agent_image.png")
+        self.file = load_file("resources/temp/agent_image.png", "agent.png")
+
     def build_select(self) -> None:
         """ Builds the select bundle """
         for index, agent in enumerate(sorted(self.entries, key=lambda c: c['names']['en-US']), start=1):
             self.select_agent.add_option(label=agent['names'][self.language], value=agent["uuid"])
     
+    def remove_cache(self) -> None:
+        if os.path.isfile(f"resources/temp/agent_background.png"): os.remove(f"resources/temp/agent_background.png")
+        if os.path.isfile(f"resources/temp/agent_portrait.png"): os.remove(f"resources/temp/agent_portrait.png")
+        if os.path.isfile(f"resources/temp/agent_image.png"): os.remove(f"resources/temp/agent_image.png")
+
     @ui.select(placeholder='Select an agent:')
     async def select_agent(self, interaction: Interaction, select: ui.Select):
-        self.clear_items()
-        self.build_embeds(select.values[0], self.response)
-        embeds = self.embeds
-        await interaction.response.edit_message(embeds=embeds, view=self)
+        #self.clear_items()
+        try:
+            self.build_embeds(select.values[0], self.response)
+            self.remove_cache()
+            await interaction.response.edit_message(embeds=self.embeds, view=self, attachments=[self.file])
+        except Exception as e:
+            print(e)
     
     async def interaction_check(self, interaction: Interaction) -> bool:
         if interaction.user == self.interaction.user:
@@ -672,8 +725,8 @@ class BaseAgent(ui.View):
         
         if len(self.entries) == 1:
             self.build_embeds(self.entries[0]["uuid"], self.response)
-            embeds = self.embeds
-            return await self.interaction.followup.send(embeds=embeds, view=self, ephemeral=self.is_private_message)
+            self.remove_cache()
+            return await self.interaction.followup.send(embeds=self.embeds, view=self, file=self.file, ephemeral=self.is_private_message)
         elif len(self.entries) != 0:
             self.add_item(self.select_agent)
             placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
@@ -1554,7 +1607,6 @@ class BaseTitle(ui.View):
         not_found = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found)
 
-
 class BaseContract(ui.View):
     def __init__(self, interaction: Interaction, entries: Dict, contracts: Dict, response: Dict, player: str, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
         self.interaction: Interaction = interaction
@@ -1707,6 +1759,265 @@ class BaseContract(ui.View):
         not_found_agent = self.response.get('NOT_FOUND')
         raise ValorantBotError(not_found_agent)
  
+class BaseRank(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, data: Dict, response: Dict, cache: Dict, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.cache = cache
+        self.language = str(VLR_locale)
+        self.data = data
+        self.endpoint = endpoint
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.current_page: int = 0
+        self.embeds: List[discord.Embed] = []
+        self.file: discord.File = None
+        self.page_format = {}
+        self.is_private_message = is_private_message
+
+        super().__init__()
+        self.clear_items()
+    
+
+    def build_embeds(self, season_id: str) -> List:
+        """Embed Rank"""
+        cache = self.cache
+        response = self.response
+        player = self.endpoint.player
+
+        # season name
+        season_name: str = ""
+        for entry in self.entries:
+            if entry["uuid"]==season_id:
+                season_name = entry["name"]
+
+        # season
+        current_season = self.data.get("QueueSkills", {}).get('competitive', {}).get('SeasonalInfoBySeasonID', {})
+        if current_season==None: current_season = {}
+
+        tier = current_season.get(season_id, {}).get('CompetitiveTier', 0)
+        act_rank_tier = current_season.get(season_id, {}).get('Rank', 0)
+        rank_name = GetFormat.get_competitive_tier_name(tier, self.language)
+        act_rank_name = GetFormat.get_competitive_tier_name(act_rank_tier, self.language)
+        
+        # other value
+        rankrating = current_season.get(season_id, {}).get("RankedRating", 0) # rank rating 
+        wins_rank = current_season.get(season_id, {}).get("NumberOfWinsWithPlacements", 0) # number of wins
+        wins_act_rank = current_season.get(season_id, {}).get("NumberOfWins", 0) # number of wins (act rank)
+        games = current_season.get(season_id, {}).get("NumberOfGames", 0) #number of games
+        leaderboard = current_season.get(season_id, {}).get("LeaderboardRank", 0)
+        wins_by_tier = current_season.get(season_id, {}).get("WinsByTier", {})
+        if leaderboard==0: leaderboard="-"
+
+        # win rate
+        n_games = games
+        if games==0:
+            n_games = 1
+        win_rate = round(float(wins_rank)/float(n_games)* 100) 
+
+        # matchmaking
+        rank_tierlist = GetFormat.get_competitive_tier_matching(tier)
+        rank_tiermsg = ""
+        for val in rank_tierlist:
+            if len(rank_tiermsg)!=0:
+                rank_tiermsg += "\n"
+            rank_tiermsg += response.get('TIER_MATCHMAKING')['RESPONSE'].format(rank1=GetFormat.get_competitive_tier_name(val[0], self.language), rank2=GetFormat.get_competitive_tier_name(val[1], self.language))
+
+        # wins_by_tier
+        wins_by_tiermsg = ""
+        for rank,wins in wins_by_tier.items():
+            if len(wins_by_tiermsg)!=0:
+                wins_by_tiermsg += "\n"
+            wins_by_tiermsg += response.get('WINS_BY_TIER')['RESPONSE'].format(rank=GetFormat.get_competitive_tier_name(str(rank), self.language), wins=wins)
+        
+        # wins needed
+        if wins_act_rank<9:
+            border_level_need_wins = 9 - wins_act_rank
+        elif wins_act_rank>=9 and wins_act_rank<25:
+            border_level_need_wins = 25 - wins_act_rank
+        elif wins_act_rank>=25 and wins_act_rank<50:
+            border_level_need_wins = 50 - wins_act_rank
+        elif wins_act_rank>=50 and wins_act_rank<75:
+            border_level_need_wins = 75 - wins_act_rank
+        elif wins_act_rank>=75 and wins_act_rank<100:
+            border_level_need_wins = 100 - wins_act_rank
+        elif wins_act_rank>=100:
+            border_level_need_wins = 0
+
+        # embeds
+        embeds = []
+
+        # main embed
+        def main_format(format: str):
+            return format.format(
+                player=player,
+                season=season_name
+            )
+        embed = Embed(title=main_format(response.get("TITLE")), description=main_format(response.get("RESPONSE")))
+        embed.set_author(name=main_format(response.get("HEADER")))
+        embed.set_footer(text=main_format(response.get("FOOTER")))
+        embeds.append(embed)
+
+        # rank embed
+        embed = Embed(title=response.get('RANK'), color=Config.GetColor("items"))
+        embed.add_field(name=response.get('CURRENT_RANK')["TITLE"], value=response.get('CURRENT_RANK')["RESPONSE"].format(rank=rank_name))
+        embed.add_field(name=response.get('CURRENT_RR')["TITLE"], value=response.get('CURRENT_RR')["RESPONSE"].format(rankrating=rankrating))
+        if len(rank_tiermsg)>0:
+            embed.add_field(name=response.get('TIER_MATCHMAKING')['TITLE'], value=rank_tiermsg, inline=False)
+        embed.add_field(name=response.get('WINS')["TITLE"], value=response.get('WINS')["RESPONSE"].format(wins=wins_rank, games=games, win_rate=win_rate))
+        embed.add_field(name=response.get('LEADERBOARD')["TITLE"], value=response.get('LEADERBOARD')["RESPONSE"].format(leaderboard=leaderboard))
+
+        embed.set_thumbnail(url=cache["competitive_tiers"][str(tier)]["icon"])
+        embeds.append(embed)
+
+        # actrank embed
+        embed = Embed(title=response.get('ACT_RANK'), color=Config.GetColor("items"))
+        embed.add_field(name=response.get('ACT_RANK_TIER')["TITLE"], value=response.get('ACT_RANK_TIER')["RESPONSE"].format(rank=act_rank_name))
+        embed.add_field(name=response.get('BORDER_LEVEL')["TITLE"], value=response.get('BORDER_LEVEL')["RESPONSE"].format(level=GetFormat.get_act_rank_border_level(wins_act_rank)))
+        if len(wins_by_tiermsg)>0:
+            embed.add_field(name=response.get('WINS_BY_TIER')["TITLE"], value=wins_by_tiermsg, inline=False)
+        embed.add_field(name=response.get('ACT_RANK_WINS')["TITLE"], value=response.get('ACT_RANK_WINS')["RESPONSE"].format(wins=wins_act_rank))
+        embed.add_field(name=response.get('WINS_NEEDED')["TITLE"], value=response.get('WINS_NEEDED')["RESPONSE"].format(wins=border_level_need_wins))
+        embed.set_thumbnail(url=cache["competitive_tiers"][str(act_rank_tier)]["icon"])
+        embed.set_image(url="attachment://border.png")
+        embeds.append(embed)
+        
+        file = self.build_file(current_season.get(season_id, {}))
+        if os.path.isfile(f"resources/temp/triangle.png"): os.remove(f"resources/temp/triangle.png")
+        if os.path.isfile(f"resources/temp/triangle_down.png"): os.remove(f"resources/temp/triangle_down.png")
+        if os.path.isfile(f"resources/temp/border.png"): os.remove(f"resources/temp/border.png")
+        
+        self.embeds = embeds
+        self.file = file
+
+    def build_file(self, current_mmr: Dict) -> discord.File:
+        triangle_pos = [
+            {"angle": "up", "x": 0, "y": -116},
+            
+            {"angle": "up", "x": -23, "y": -76},
+            {"angle": "down", "x": 0, "y": -76},
+            {"angle": "up", "x": 23, "y": -76},
+            
+            {"angle": "up", "x": -46, "y": -36},
+            {"angle": "down", "x": -23, "y": -36},
+            {"angle": "up", "x": 0, "y": -36},
+            {"angle": "down", "x": 23, "y": -36},
+            {"angle": "up", "x": 46, "y": -36},
+
+            {"angle": "up", "x": -69, "y": 4},
+            {"angle": "down", "x": -46, "y": 4},
+            {"angle": "up", "x": -23, "y": 4},
+            {"angle": "down", "x": 0, "y": 4},
+            {"angle": "up", "x": 23, "y": 4},
+            {"angle": "down", "x": 46, "y": 4},
+            {"angle": "up", "x": 69, "y": 4},
+
+            {"angle": "up", "x": -92, "y": 44},
+            {"angle": "down", "x": -69, "y": 44},
+            {"angle": "up", "x": -46, "y": 44},
+            {"angle": "down", "x": -23, "y": 44},
+            {"angle": "up", "x": 0, "y": 44},
+            {"angle": "down", "x": 23, "y": 44},
+            {"angle": "up", "x": 46, "y": 44},
+            {"angle": "down", "x": 69, "y": 44},
+            {"angle": "up", "x": 92, "y": 44},
+            
+            {"angle": "up", "x": -115, "y": 84},
+            {"angle": "down", "x": -92, "y": 84},
+            {"angle": "up", "x": -69, "y": 84},
+            {"angle": "down", "x": -46, "y": 84},
+            {"angle": "up", "x": -23, "y": 84},
+            {"angle": "down", "x": 0, "y": 84},
+            {"angle": "up", "x": 23, "y": 84},
+            {"angle": "down", "x": 46, "y": 84},
+            {"angle": "up", "x": 69, "y": 84},
+            {"angle": "down", "x": 92, "y": 84},
+            {"angle": "up", "x": 115, "y": 84},
+            
+            {"angle": "up", "x": -138, "y": 124},
+            {"angle": "down", "x": -115, "y": 124},
+            {"angle": "up", "x": -92, "y": 124},
+            {"angle": "down", "x": -69, "y": 124},
+            {"angle": "up", "x": -46, "y": 124},
+            {"angle": "down", "x": -23, "y": 124},
+            {"angle": "up", "x": 0, "y": 124},
+            {"angle": "down", "x": 23, "y": 124},
+            {"angle": "up", "x": 46, "y": 124},
+            {"angle": "down", "x": 69, "y": 124},
+            {"angle": "up", "x": 92, "y": 124},
+            {"angle": "down", "x": 115, "y": 124},
+            {"angle": "up", "x": 138, "y": 124},
+        ]
+
+        wins = current_mmr.get("NumberOfWins", 0)
+        
+        border = GetFormat.get_act_rank_border_level(wins)
+        self.endpoint.download(GetItems.get_act_rank_border(border), "resources/temp/border.png")
+        base = Image.open("resources/temp/border.png")
+
+        wins_by_rank = [0] * len(self.cache.get("competitive_tiers", {}))
+        for rank, wins in current_mmr.get("WinsByTier", {}).items():
+            wins_by_rank[int(rank)] = wins
+        
+        max_tier = len(wins_by_rank) - 1
+        rendered_tier = 0
+        for i in range(max_tier):
+            rank = max_tier - i
+            wins = wins_by_rank[rank]
+
+            if wins > 0:
+                self.endpoint.download(self.cache.get("competitive_tiers", {}).get(str(rank), {}).get("triangle"), "resources/temp/triangle.png")
+                self.endpoint.download(self.cache.get("competitive_tiers", {}).get(str(rank), {}).get("triangle_down"), "resources/temp/triangle_down.png")
+
+                for j in range(wins):
+                    if rendered_tier>=49:
+                        break
+
+                    if triangle_pos[rendered_tier]["angle"]=="up":
+                        triangle = Image.open("resources/temp/triangle.png")
+                    else:
+                        triangle = Image.open("resources/temp/triangle_down.png")
+                    triangle = triangle.resize(size=(int(triangle.width * 0.35), int(triangle.height * 0.35)), resample=Image.ANTIALIAS)
+
+                    base.paste(triangle, (int(triangle_pos[rendered_tier]["x"] + 256 - triangle.width/2), int(triangle_pos[rendered_tier]["y"] + 256 - triangle.height/2)), triangle)
+                    rendered_tier += 1
+        base.save("resources/temp/rendered_border.png")
+        return load_file("resources/temp/rendered_border.png", "border.png")
+
+    def build_select(self) -> None:
+        """ Builds the select season """
+        for entry in self.entries:
+            self.select_season.add_option(label=entry['name'], value=entry["uuid"])
+    
+    @ui.select(placeholder='Select a season:')
+    async def select_season(self, interaction: Interaction, select: ui.Select):
+        try:
+            self.build_embeds(select.values[0])
+            await interaction.response.edit_message(embeds=self.embeds, view=self, attachments=[self.file])
+        except Exception as e:
+            print(e)
+    
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the rank view """
+
+        current_season = self.data['LatestCompetitiveUpdate']['SeasonID']
+        if current_season==None:
+            current_season = ""
+        if len(current_season) == 0:
+            current_season = self.endpoint.__get_live_season()
+
+        self.add_item(self.select_season)
+        self.select_season.placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+        self.build_embeds(current_season)
+        self.build_select()
+        return await self.interaction.followup.send(embeds=self.embeds, file=self.file, view=self, ephemeral=self.is_private_message)
+
 
 class SelectionFeaturedBundleView(ui.View):
     def __init__(self, bundles: Dict, other_view: Union[ui.View, BaseBundle] = None):

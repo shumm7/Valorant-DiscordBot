@@ -112,5 +112,22 @@
             "INLINE": false
         },
         "THUMBNAIL": null
+    },
+    "fork-1.6.1": {
+        "HEADER": "Changelog // 1.6.1",
+        "FIELD1": {
+            "TITLE": "/rank コマンド",
+            "RESPONSE": "ACTランクの表示に対応！\n過去のシーズンのランクも確認できます"
+        },
+        "FIELD2": {
+            "TITLE": "/agent コマンド",
+            "RESPONSE": "画像が刷新されました"
+        },
+        "FIELD3": {
+            "TITLE": "不具合修正",
+            "RESPONSE": "`/contract` でキャラクターを表示できない不具合を修正\n`/agent` で再度別のエージェントを選択できるように変更",
+            "INLINE": false
+        },
+        "THUMBNAIL": null
     }
 }

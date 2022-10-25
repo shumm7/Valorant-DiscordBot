@@ -183,7 +183,7 @@ class Admin(commands.Cog):
             file = load_file("resources/temp/cache.json", name)
 
             await interaction.response.send_message(embed=embed, file=file, ephemeral=True)
-            os.remove(f"resources/temp/cache.json")
+            if os.path.isfile(f"resources/temp/cache.json"): os.remove(f"resources/temp/cache.json")
         except Exception as e:
             print(e)
             raise ValorantBotError(response.get("ERROR"))
@@ -243,7 +243,7 @@ class Admin(commands.Cog):
             file = load_file("resources/temp/users.json", "user.json")
             
             await interaction.response.send_message(embeds=embeds[:10], file=file, ephemeral=True)
-            os.remove(f"resources/temp/users.json")
+            if os.path.isfile(f"resources/temp/users.json"): os.remove(f"resources/temp/users.json")
         except Exception as e:
             print(e)
             raise ValorantBotError(response.get("ERROR"))
@@ -291,7 +291,7 @@ class Admin(commands.Cog):
             file = load_file("resources/temp/emoji.json", "emoji.json")
             
             await interaction.response.send_message(embeds=embeds, file=file, ephemeral=True)
-            os.remove(f"resources/temp/emoji.json")
+            if os.path.isfile(f"resources/temp/emoji.json"): os.remove(f"resources/temp/emoji.json")
         except Exception as e:
             print(e)
             raise ValorantBotError(response.get("ERROR"))
