@@ -280,6 +280,43 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await view.start()
         await self.check_update(interaction)
     
+    @app_commands.command(description=clocal.get("leaderboard", {}).get("DESCRIPTION", ""))
+    @app_commands.describe(username=clocal.get("leaderboard", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("leaderboard", {}).get("DESCRIBE", {}).get("password", ""))
+    # @dynamic_cooldown(cooldown_5s)
+    async def leaderboard(self, interaction: Interaction, username: str = None, password: str = None) -> None:
+        print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
+
+        # check if user is logged in
+        is_private_message = True if username is not None or password is not None else False
+        await interaction.response.defer(ephemeral=is_private_message)
+        
+        # language
+        response = ResponseLanguage(interaction.command.name, interaction.locale)
+
+        # cache
+        cache = self.db.read_cache()
+
+        # endpoint
+        endpoint = await self.get_endpoint(interaction.user.id, interaction.locale, username, password)
+
+        # seasons
+        entries = []
+        for season in cache["seasons"].values():
+            if season["parent_uuid"]!=None:
+                data = {
+                    "name": response.get("SEASON").format(
+                        episode = cache["seasons"][season["parent_uuid"]]["names"][str(VLR_locale)],
+                        act = season["names"][str(VLR_locale)]
+                    ),
+                    "uuid": season["uuid"]
+                }
+                entries.append(data)
+
+        view = View.BaseLeaderboard(interaction, entries, response, cache, endpoint, is_private_message)
+        await view.start()
+        await self.check_update(interaction)
+
+
     @app_commands.command(description=clocal.get("collection", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("collection", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("collection", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from datetime import datetime, timezone, timedelta
+from turtle import title
 import dateutil.parser
 import json
 import os
@@ -254,6 +255,20 @@ class GetItems:
             name = data['tiers'][uuid]['name']
         except KeyError:
             raise ValorantBotError('Some skin data is missing, plz use `/debug cache`')
+        return name
+    
+    def get_title_name(title_uuid: str, locale: str, is_block: bool = False) -> Optional[str]:
+        if locale == None:
+            locale = str(VLR_locale)
+
+        try:
+            cache = JSON.read('cache')
+            name = cache["titles"][title_uuid]["text"][locale] if cache["titles"][title_uuid]["text"]!=None else ""
+
+            if is_block and len(name)>0:
+                name = f"`{name}`"
+        except KeyError:
+            raise ValorantBotError('This title was not found.')
         return name
 
     def get_contract(uuid: str) -> Dict[str, Any]:

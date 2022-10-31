@@ -177,6 +177,27 @@
       },
       "DROPDOWN_CHOICE_TITLE": "ACTを選択してください:"
     },
+    "leaderboard": {
+      "NAME": "leaderboard",
+      "DESCRIPTION": "現ACTのリーダーボードを表示します",
+      "DESCRIBE": {
+        "username": "ユーザー名 (一時ログイン)",
+        "password": "パスワード (一時ログイン)"
+      },
+      "TITLE": "リーダーボード (#{start} ～ #{end})",
+      "RESPONSE": "",
+      "HEADER": "",
+      "FOOTER": "",
+      "PLAYER": {
+        "TITLE": "",
+        "RESPONSE": "`#{leaderboard}` {rank_emoji}**{player}**｜**{rr}** RR｜**{wins}** 勝利",
+        "HEADER": "",
+        "FOOTER": "{season}"
+      },
+      "SEASON": "{episode} // {act}",
+      "ANONYMOUS": "秘密エージェント",
+      "DROPDOWN_CHOICE_TITLE": "ACTを選択してください:"
+    },
     "collection": {
       "NAME": "collection",
       "DESCRIPTION": "あなたのアカウントのコレクションを表示します",

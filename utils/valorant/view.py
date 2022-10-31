@@ -1058,7 +1058,7 @@ class BaseCollection(ui.View):
         # Title
         title_embed = discord.Embed(
             title=cache["titles"][item["PlayerTitleID"]]["names"][self.language] if cache["titles"][item["PlayerTitleID"]]["text"]!=None else self.response.get("ITEMS", {})["UNEQUIPPED"],
-            description= "`" + cache["titles"][item["PlayerTitleID"]]["text"][self.language]+ "`" if cache["titles"][item["PlayerTitleID"]]["text"]!=None else "",
+            description= GetItems.get_title_name(item["PlayerTitleID"], self.language, True),
             color = GetColor("items")
         ).set_author(name = self.response.get("ITEMS", {})["PLAYER_TITLE"]).set_thumbnail(url=GetItems.get_title_icon())
         embeds.append(title_embed)
@@ -2016,7 +2016,173 @@ class BaseRank(ui.View):
         self.select_season.placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
         self.build_embeds(current_season)
         self.build_select()
+        placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+        self.select_season.placeholder = placeholder
+
         return await self.interaction.followup.send(embeds=self.embeds, file=self.file, view=self, ephemeral=self.is_private_message)
+
+class BaseLeaderboard(ui.View):
+    def __init__(self, interaction: Interaction, entries: Dict, response: Dict, cache: Dict, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
+        self.interaction: Interaction = interaction
+        self.entries = entries
+        self.response = response
+        self.cache = cache
+        self.language = str(VLR_locale)
+        self.index: int = 1
+        self.season: str = None
+        self.data: Dict = {}
+        self.endpoint = endpoint
+        self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+        self.embeds: List[discord.Embed] = []
+        self.file: discord.File = None
+        self.embed_amount = 15
+        self.page_format = {}
+        self.is_private_message = is_private_message
+
+        super().__init__()
+        self.clear_items()
+    
+    def fill_items(self, force=False) -> None:
+        self.clear_items()
+        if len(self.embeds) > 1 or force:
+            self.add_item(self.select_season)
+            self.add_item(self.back_button)
+            self.add_item(self.next_button)
+
+    def build_embeds(self) -> List:
+        """Embed Rank"""
+        season_id = self.season
+        cache = self.cache
+        response = self.response
+        data = self.data
+        embeds = []
+
+        each_player = False
+
+        # season name
+        season_name: str = ""
+        for entry in self.entries:
+            if entry["uuid"]==season_id:
+                season_name = entry["name"]
+
+        # main embed
+        def main_format(format: str) -> str:
+            return format.format(season=season_name, player=self.endpoint.player, start=self.index, end=self.index+self.embed_amount-1)
+
+        embed = Embed(
+            title=main_format(response.get("TITLE", "")),
+            description=main_format(response.get("RESPONSE", ""))
+        )
+        embed.set_author(name=main_format(response.get("HEADER", "")))
+        embed.set_footer(text=main_format(response.get("FOOTER", "")))
+        embeds.append(embed)
+
+        # player embed
+        description = ""
+        for leader in data.get("Players", []):
+            def player_format(format: str) -> str:
+                    return format.format(
+                        season = season_name,
+                        player = leader.get("gameName") + "#" + leader.get("tagLine") if not leader.get("IsAnonymized") else response.get("ANONYMOUS"),
+                        puuid = leader.get("puuid"),
+                        rr = leader.get("rankedRating"),
+                        leaderboard = leader.get("leaderboardRank"),
+                        wins = leader.get("numberOfWins"),
+                        rank = cache["competitive_tiers"][str(leader.get("competitiveTier"))]["names"][self.language],
+                        rank_emoji = GetEmoji.competitive_tier_by_bot(leader.get("competitiveTier"), self.bot),
+                        title = GetItems.get_title_name(leader.get("TitleID"), self.language, True)
+                    )
+
+            if each_player:
+                embed = Embed(
+                    title=player_format(response.get("PLAYER", {}).get("TITLE", "")),
+                    description=player_format(response.get("PLAYER", {}).get("RESPONSE", "")),
+                    color = GetColor("items")
+                )
+                embed.set_author(name=player_format(response.get("PLAYER", {}).get("HEADER", "")))
+                embed.set_footer(text=player_format(response.get("PLAYER", {}).get("FOOTER", "")))
+                embed.set_thumbnail(url=cache["playercards"][leader.get("PlayerCardID")]["icon"]["small"])
+                embeds.append(embed)
+            else:
+                if len(description)!=0:
+                    description += "\n"
+                description += player_format(response.get("PLAYER", {}).get("RESPONSE", ""))
+
+        if not each_player:
+            embed = Embed(title=main_format(response.get("PLAYER", {}).get("TITLE")), description=description, color=GetColor("items"))
+            embed.set_author(name=main_format(response.get("PLAYER", {}).get("HEADER", "")))
+            embed.set_footer(text=main_format(response.get("PLAYER", {}).get("FOOTER", "")))
+            embeds.append(embed)
+        
+        self.embeds = embeds
+
+    def build_select(self) -> None:
+        """ Builds the select season """
+        for entry in self.entries:
+            self.select_season.add_option(label=entry['name'], value=entry["uuid"])
+    
+    def update_button(self) -> None:
+        """ Updates the button """
+        self.next_button.disabled = self.data == None
+        self.back_button.disabled = self.index <= self.embed_amount
+    
+    @ui.select(placeholder='Select a season:')
+    async def select_season(self, interaction: Interaction, select: ui.Select):
+        try:
+            self.season = select.values[0]
+            self.index = 1
+            self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
+            self.build_embeds()
+            embeds = self.embeds
+            await interaction.response.edit_message(embeds=embeds, view=self)
+        except Exception as e:
+            print(e)
+
+    @ui.button(label='Back')
+    async def back_button(self, interaction: Interaction, button: ui.Button):
+        self.index -= self.embed_amount
+        self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
+        self.build_embeds()
+        self.update_button()
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=self)
+
+    @ui.button(label='Next')
+    async def next_button(self, interaction: Interaction, button: ui.Button):
+        self.index += self.embed_amount
+        self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
+        self.build_embeds()
+        self.update_button()
+        embeds = self.embeds
+        await interaction.response.edit_message(embeds=embeds, view=self)
+
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user == self.interaction.user:
+            return True
+        await interaction.response.send_message('This menus cannot be controlled by you, sorry!', ephemeral=True)
+        return False
+    
+    async def start(self) -> Awaitable[None]:
+        """ Starts the rank view """
+
+        mmr = self.endpoint.fetch_player_mmr(self.endpoint.puuid)
+        self.season = mmr['LatestCompetitiveUpdate']['SeasonID']
+        if self.season==None:
+            self.season = ""
+        if len(self.season) == 0:
+            self.season = self.endpoint.__get_live_season()
+
+        self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
+        self.build_embeds()
+        self.build_select()
+
+        placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
+        self.select_season.placeholder = placeholder
+
+        self.fill_items()
+        self.update_button()
+        embeds = self.embeds
+        return await self.interaction.followup.send(embeds=embeds, view=self, ephemeral=self.is_private_message)
 
 
 class SelectionFeaturedBundleView(ui.View):

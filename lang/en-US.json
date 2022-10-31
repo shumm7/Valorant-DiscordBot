@@ -155,7 +155,28 @@
         "TITLE": "Wins By Rank",
         "RESPONSE": "`{rank}: {wins}`"
       },
-      "DROPDOWN_CHOICE_TITLE": "ACTを選択してください:"
+      "DROPDOWN_CHOICE_TITLE": "Select a season:"
+    },
+    "leaderboard": {
+      "NAME": "leaderboard",
+      "DESCRIPTION": "View the current season leaderboard.",
+      "DESCRIBE": {
+        "username": "Username (temporary login)",
+        "password": "Password (temporary login)"
+      },
+      "TITLE": "Leader Board (#{start} ～ #{end})",
+      "RESPONSE": "",
+      "HEADER": "",
+      "FOOTER": "",
+      "PLAYER": {
+        "TITLE": "",
+        "RESPONSE": "`#{leaderboard}` {rank_emoji}**{player}**｜**{rr}** RR｜**{wins}** WINS",
+        "HEADER": "",
+        "FOOTER": "{season}"
+      },
+      "SEASON": "{episode} // {act}",
+      "ANONYMOUS": "Secret Agent",
+      "DROPDOWN_CHOICE_TITLE": "Select a season:"
     },
     "collection": {
       "NAME": "collection",

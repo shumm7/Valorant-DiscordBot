@@ -252,6 +252,14 @@ class API_ENDPOINT:
         data = self.fetch(endpoint=f'/match-details/v1/matches/{match_id}', url='pd', not_found_error=not_found_error)
         return data
     
+    def fetch_leaderboard(self, season: str = None, start_index: int = 0, size: int = 10, not_found_error: bool = True) -> Mapping[str, Any]:
+        """
+        Get the history of match
+        MMR_FetchLeaderboard
+        """
+        data = self.fetch(endpoint=f'/mmr/v1/leaderboards/affinity/{self.region}/queue/competitive/season/{season}?startIndex={start_index}&size={size}', url='pd', not_found_error=not_found_error)
+        return data
+    
     def fetch_name_by_puuid(self, puuid: str = None) -> Mapping[str, Any]:
         """
         Name_service
