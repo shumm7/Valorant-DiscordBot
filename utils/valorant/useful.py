@@ -4,14 +4,15 @@ import contextlib
 from datetime import datetime, timezone, timedelta
 from turtle import title
 import dateutil.parser
-import json
-import os
-import io
+import json, os, io, concurrent.futures
+from PIL import Image, ImageDraw, ImageFont
+import matplotlib.colors, matplotlib.font_manager as fm
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import uuid
 
 import discord
 
+import utils.config as Config
 from .resources import get_item_type, tiers as tiers_resources
 from ..errors import ValorantBotError
 from ..locale_v2 import ValorantTranslator
@@ -532,6 +533,525 @@ class GetFormat:
             
         return border
 
+    # ---------- UTILS FOR MATCH EMBED ---------- #
+
+    def get_match_info(puuid: str, match_id: str, endpoint, response: Dict, locale: str = None) -> Dict:
+        # cache
+        import threading
+        cache = JSON.read("cache")
+
+        # match info
+        match_detail = endpoint.fetch_match_details(match_id)
+        if match_detail==None:
+            raise ValorantBotError(response.get("NOT_FOUND"))
+        match_info = {}
+
+        # detail
+        is_played = False
+        players = {}
+        rounds = []
+        teams = {}
+
+        if locale == None:
+            locale = str(VLR_locale)
+
+        def set_match_detail():
+            info = match_detail["matchInfo"]
+            start_time, duration = format_relative(datetime.fromtimestamp(info["gameStartMillis"]/1000, timezone.utc)), format_timedelta(timedelta(milliseconds=info["gameLengthMillis"]))
+            mapid = GetFormat.get_mapuuid_from_mapid(info["mapId"])
+            match_id, map = info["matchId"], cache["maps"][mapid]["names"][locale]
+            season_id = info["seasonId"]
+            
+            # season
+            if cache["seasons"][season_id]["parent_uuid"]!=None:
+                season = cache["seasons"][cache["seasons"][season_id]["parent_uuid"]]["names"][locale] + " // "+ cache["seasons"][season_id]["names"][locale]
+            else:
+                season = cache["seasons"][season_id]["names"][locale]
+
+            match_info["time"] = start_time
+            match_info["duration"] = duration
+            match_info["map"] = map
+            match_info["map_id"] = mapid
+            match_info["match_id"] = match_id
+            match_info["season_id"] = season_id
+
+            # queue
+            queue = ""
+            gamemode_icon = ""
+            queue_id = info["queueID"]
+            if queue_id in ["unrated", "competitive", "deathmatch", "ggteam", "onefa", "custom", "newmap", "snowball", "spikerush"]:
+                queue = response["QUEUE"][queue_id]
+                if queue_id=="deathmatch":
+                    gamemode_icon = cache["gamemodes"]["a8790ec5-4237-f2f0-e93b-08a8e89865b2"]["icon"]
+                elif queue_id=="ggteam":
+                    gamemode_icon = cache["gamemodes"]["a4ed6518-4741-6dcb-35bd-f884aecdc859"]["icon"]
+                elif queue_id=="onefa":
+                    gamemode_icon = cache["gamemodes"]["4744698a-4513-dc96-9c22-a9aa437e4a58"]["icon"]
+                elif queue_id=="spikerush":
+                    gamemode_icon = cache["gamemodes"]["e921d1e6-416b-c31f-1291-74930c330b7b"]["icon"]
+                elif queue_id=="snowball":
+                    gamemode_icon = cache["gamemodes"]["57038d6d-49b1-3a74-c5ef-3395d9f23a97"]["icon"]
+                else:
+                    gamemode_icon = cache["gamemodes"]["96bd3920-4f36-d026-2b28-c683eb0bcac5"]["icon"]
+
+            else:
+                queue_id = "unknown"
+                queue = response["QUEUE"]["unknown"]
+                gamemode_icon = cache["gamemodes"]["96bd3920-4f36-d026-2b28-c683eb0bcac5"]["icon"]
+            
+            match_info["queue"] = queue_id
+            match_info["queue"] = queue
+            match_info["gamemode_icon"] = gamemode_icon
+        
+        # player
+        def set_players():    
+            raw_players = match_detail.get("players", [])
+            penalties = match_detail["matchInfo"].get("partyRRPenalties", {})
+            for p in raw_players:
+                rank_tier = p["competitiveTier"] if p["competitiveTier"]!=0 else endpoint.get_player_tier_rank(puuid=p["subject"])
+                player = {
+                    "puuid": p["subject"],
+                    "name": "{name}#{tagline}".format(name=p["gameName"], tagline=p["tagLine"]),
+                    "level": p["accountLevel"],
+                    "rank": GetFormat.get_competitive_tier_name(rank_tier, locale),
+                    "rank_id": rank_tier,
+
+                    "kills": p["stats"]["kills"],
+                    "deaths": p["stats"]["deaths"],
+                    "assists": p["stats"]["assists"],
+                    "played_round": p["stats"]["roundsPlayed"],
+                    "score": p["stats"]["score"],
+
+                    "kd": GetFormat.get_kdrate(p["stats"]["kills"], p["stats"]["deaths"]),
+                    "kda": GetFormat.get_kdarate(p["stats"]["kills"], p["stats"]["deaths"], p["stats"]["assists"]),
+                    "acs": round(float(p["stats"]["score"])/20.0),
+
+                    "team": p["teamId"],
+                    "party": p["partyId"],
+                    "agent_id": p["characterId"],
+                    "player_card": p["playerCard"],
+                    "player_title": p["playerTitle"],
+                    
+                    "agent": cache["agents"][p["characterId"]]["names"][locale],
+                    "role": cache["agents"][p["characterId"]]["role"]["names"][locale],
+
+                    "firstblood": 0,
+                    "firstdeath": 0,
+                    "multikills": 0,
+
+                    "deathmatch": 0
+                }
+
+                if p["subject"]==puuid:
+                    is_played = True
+                
+                # penalty
+                player["penalty"] = penalties.get(p["partyId"], 0)
+
+                # abilities
+                if p["stats"].get("abilityCasts", None)!=None:
+                    ability = p["stats"]["abilityCasts"]
+                    player["ability"] = [ability["ability1Casts"], ability["ability2Casts"], ability["grenadeCasts"], ability["ultimateCasts"]],
+                
+                # damage
+                if p.get("roundDamage")!=None:
+                    for d in p.get("roundDamage"):
+                        if player.get("damage", None)==None:
+                            player["damage"] = {}
+                        if player["damage"].get(str(d["round"]), None)==None:
+                            player["damage"][str(d["round"])] = 0
+                        player["damage"][str(d["round"])] += d["damage"]
+                else:
+                    if player.get("damage")==None:
+                        player["damage"] = {}
+                    for i in range(len(match_detail["roundResults"])):
+                        player["damage"][str(i)] = 0
+
+                players[p["subject"]] = player
+
+            match_info["is_played"] = is_played
+
+        # round
+        def set_round():
+            raw_rounds = match_detail["roundResults"]
+            for r in raw_rounds:
+                _round = {
+                    "planter": r.get("bombPlanter", ""),
+                    "defuser": r.get("bombDefuser", ""),
+                    "plant_time": round(float(r["plantRoundTime"])/1000.0, 1),
+                    "defuse_time": round(float(r["defuseRoundTime"])/1000.0, 1),
+                    "plant_site": r["plantSite"],
+
+                    "result": r["roundResultCode"],
+                    "number": r["roundNum"] + 1,
+                    "win": r["winningTeam"],
+                    "economy": {}
+                }
+
+                ceremony_id = GetFormat.get_uuid_from_ceremony_id(r["roundCeremony"])
+                if ceremony_id==None or len(ceremony_id)==0:
+                    _round["ceremony"] = ""
+                else:
+                    _round["ceremony"] = cache["ceremonies"][ceremony_id]["names"][locale]
+
+                # economy
+                if r.get("playerEconomies")!=None:
+                    for e in r.get("playerEconomies"):
+                        if _round.get("economy").get("players", None)==None:
+                            _round["economy"]["players"] = {}
+                        _round["economy"]["players"][e["subject"]] = {
+                            "loadout": e["loadoutValue"],
+                            "remain": e["remaining"],
+                            "spent": e["spent"],
+                            "weapon": e["weapon"],
+                            "armor": e["armor"]
+                        }
+
+                # stats
+                for stats in r.get("playerStats", []):
+                    teamid = players[stats["subject"]]["team"]
+
+                    # economy
+                    if _round["economy"].get(teamid, None)==None:
+                        _round["economy"][teamid] = {
+                            "loadout": stats["economy"]["loadoutValue"],
+                            "remain": stats["economy"]["remaining"],
+                            "spent": stats["economy"]["spent"]
+                        }
+                    else:
+                        _round["economy"][teamid]["loadout"] += stats["economy"]["loadoutValue"]
+                        _round["economy"][teamid]["remain"] += stats["economy"]["remaining"]
+                        _round["economy"][teamid]["spent"] += stats["economy"]["spent"]
+                    
+                    # stats
+                    if _round.get("stats", None)==None:
+                        _round["stats"] = {}
+                    _round["stats"][stats["subject"]] = {
+                        "kills": len(stats["kills"]),
+                        "score": stats["score"],
+                        "headshots": 0,
+                        "legshots": 0,
+                        "bodyshots": 0,
+                        "damage": 0
+                    }
+
+                    for d in stats.get("damage", []):
+                        _round["stats"][stats["subject"]]["headshots"] += d.get("headshots", 0)
+                        _round["stats"][stats["subject"]]["bodyshots"] += d.get("bodyshots", 0)
+                        _round["stats"][stats["subject"]]["legshots"] += d.get("legshots", 0)
+                        _round["stats"][stats["subject"]]["damage"] += d.get("damage", 0)
+                    
+                    # multikills (3kills+)
+                    if len(stats["kills"])>=3:
+                        players[stats["subject"]]["multikills"] += 1
+
+                rounds.append(_round)
+        
+        # eco rating
+        def calculate_eco_rating():
+            for t_puuid,p in players.items():
+                damage = 0
+                spent = 0
+                headshots = 0
+                bodyshots = 0
+                legshots = 0
+                eco_rating = 0
+
+                for i in range(len(rounds)):
+                    if rounds[i]["economy"].get("players")!=None:
+                        if rounds[i]["economy"]["players"].get(t_puuid, {}).get("spent", None)==None:
+                            spent += 0
+                        else:
+                            spent += rounds[i]["economy"]["players"][t_puuid]["spent"]
+
+                        damage += rounds[i]["stats"][t_puuid]["damage"]
+                        headshots += rounds[i]["stats"][t_puuid]["headshots"]
+                        bodyshots += rounds[i]["stats"][t_puuid]["bodyshots"]
+                        legshots += rounds[i]["stats"][t_puuid]["legshots"]
+
+                        if spent == 0:
+                            eco_rating = round(damage*1000/1)
+                        else:
+                            eco_rating = round(damage*1000/spent)
+
+                    players[t_puuid]["eco_rating"] = eco_rating
+                    players[t_puuid]["total_damage"] = damage
+                    players[t_puuid]["adr"] = round(damage / len(rounds), 1)
+                    players[t_puuid]["headshots"] = headshots
+                    players[t_puuid]["bodyshots"] = bodyshots
+                    players[t_puuid]["legshots"] = legshots
+                    players[t_puuid]["shots"] = headshots + bodyshots + legshots
+                    if (headshots + bodyshots + legshots)==0:
+                        players[t_puuid]["hsrate"] = 0.0
+                        players[t_puuid]["bsrate"] = 0.0
+                        players[t_puuid]["lsrate"] = 0.0
+                    else:
+                        players[t_puuid]["hsrate"] = round(headshots / (headshots + bodyshots + legshots) * 100, 1)
+                        players[t_puuid]["bsrate"] = round(bodyshots / (headshots + bodyshots + legshots) * 100, 1)
+                        players[t_puuid]["lsrate"] = round(legshots / (headshots + bodyshots + legshots) * 100, 1)
+        
+        # kills
+        def set_kill_list():
+            raw_killlist = match_detail["kills"]
+            roundtemp = -1
+            for k in raw_killlist:
+                if players[k["killer"]].get("kill_list", None) == None:
+                    players[k["killer"]]["kill_list"] = {}
+                if players[k["victim"]].get("killed_list", None) == None:
+                    players[k["victim"]]["killed_list"] = {}
+                
+                # kill
+                if players[k["killer"]]["kill_list"].get(k["victim"], None)==None:
+                    players[k["killer"]]["kill_list"][k["victim"]] = 1
+                else:
+                    players[k["killer"]]["kill_list"][k["victim"]] += 1
+                
+                # killed by
+                if players[k["victim"]]["killed_list"].get(k["killer"], None)==None:
+                    players[k["victim"]]["killed_list"][k["killer"]] = 1
+                else:
+                    players[k["victim"]]["killed_list"][k["killer"]] += 1
+                
+                # assist to
+                for a in k["assistants"]:
+                    if players[a].get("assist_list", None)==None:
+                        players[a]["assist_list"] = {}
+                    
+                    if players[a]["assist_list"].get(k["victim"], None)==None:
+                        players[a]["assist_list"][k["victim"]] = 1
+                    else:
+                        players[a]["assist_list"][k["victim"]] += 1
+                
+                # firstblood / firstdeath
+                if roundtemp!=k["round"]:
+                    players[k["victim"]]["firstdeath"] += 1
+                    players[k["killer"]]["firstblood"] += 1
+                    roundtemp=k["round"]
+
+
+        # teams
+        def set_teams():
+            for t in match_detail["teams"]:
+                teams[t["teamId"]] = {
+                    "win": t["won"],
+                    "id": t["teamId"],
+                    "point": t["numPoints"],
+                    "rounds": t["roundsPlayed"]
+                }
+            
+            for p in players.values():
+                if teams.get(p["team"]).get("players", None)==None:
+                    teams[p["team"]]["players"] = []
+                
+                teams[p["team"]]["players"].append(p["puuid"])
+            
+            for key in teams.keys():
+                temp_list = {}
+                for p in teams[key]["players"]:
+                    temp_list[p] = players[p]["score"]
+                temp_list2 = sorted(temp_list.items(), key=lambda i: i[1], reverse=True)
+
+                teams[key]["players"] = []
+                for value in temp_list2:
+                    teams[key]["players"].append(value[0])
+        
+        # points and results
+        def calculate_points_and_results():
+            is_played = match_info["is_played"]
+            # points
+            point_v = [0,0]
+            teamA, teamB = "", ""
+            if len(teams)==2:
+                if is_played:
+                    for t in teams.values():
+                        if t["id"]==teams[players[puuid]["team"]]["id"]:
+                            point_v[0] = t["point"]
+                            teamA = t["id"]
+                        else:
+                            point_v[1] = t["point"]
+                            teamB = t["id"]
+                else:
+                    count = 0
+                    for t in teams.values():
+                        if count==0: teamA = t["id"]
+                        else: teamB = t["id"]
+
+                        point_v[count] = t["point"]
+                        count += 1
+            else:
+                if is_played:
+                    pp = ["", ""]
+                    for t in teams.values():
+                        if t["point"]>point_v[0]:
+                            pp[1] = pp[0]
+                            point_v[1] = point_v[0]
+
+                            pp[0] = t["id"]
+                            point_v[0] = t["point"]
+                    
+                    if pp[0]!=puuid:
+                        point_v[1] = teams[puuid]["point"]
+                else:
+                    for t in teams.values():
+                        if t["point"]>point_v[0]:
+                            point_v[1] = point_v[0]
+                            point_v[0] = t["point"]
+                    
+
+            point = f"{point_v[0]}-{point_v[1]}"
+            match_info["point"] = point
+            match_info["teamA"] = teamA
+            match_info["teamB"] = teamB
+
+            # results
+            temp_result = 0
+            queue_id = match_detail["matchInfo"]["queueID"]
+            if queue_id!="deathmatch":
+                if is_played and point_v[0]>point_v[1]:
+                    temp_result = 1
+                    results = response.get("RESULT", {}).get("WIN", "")
+                    color=Config.GetColor("win")
+                elif is_played and point_v[1]>point_v[0]:
+                    temp_result = -1
+                    results = response.get("RESULT", {}).get("LOSE", "")
+                    color=Config.GetColor("lose")
+                elif point_v[1]==point_v[0]:
+                    results = response.get("RESULT", {}).get("DRAW", "")
+                    color=Config.GetColor("draw")
+                elif (not is_played) and point_v[1]!=point_v[0]:
+                    temp_result = 1
+                    results = response.get("RESULT", {}).get("WIN", "")
+                    color=Config.GetColor("win")
+            else:
+                if is_played and point_v[0]==40 and teams[puuid]["point"]==40:
+                    temp_result = 1
+                    results = response.get("RESULT", {}).get("WIN", "")
+                    color=Config.GetColor("win")
+                elif is_played and point_v[0]==40 and teams[puuid]["point"]<40:
+                    temp_result = -1
+                    results = response.get("RESULT", {}).get("LOSE", "")
+                    color=Config.GetColor("lose")
+                elif point_v[0]<=40:
+                    results = response.get("RESULT", {}).get("DRAW", "")
+                    color=Config.GetColor("draw")
+                else:
+                    temp_result = 1
+                    results = response.get("RESULT", {}).get("WIN", "")
+                    color=Config.GetColor("win")
+            match_info["color"] = color
+            match_info["results"] = results
+
+            # player result
+            for t in teams.values():
+                for p in t["players"]:
+                    if len(teams)==2:
+                        if t["win"]:
+                            players[p]["results"] = response.get("RESULT", {}).get("WIN", "")
+                            players[p]["results_num"] = 1
+                        else:
+                            players[p]["results"] = response.get("RESULT", {}).get("LOSE", "")
+                            players[p]["results_num"] = -1
+                    else:
+                        if temp_result==0:
+                            players[p]["results"] = response.get("RESULT", {}).get("DRAW", "")
+                            players[p]["results_num"] = 0
+                        else:
+                            if t["win"]:
+                                players[p]["results"] = response.get("RESULT", {}).get("WIN", "")
+                                players[p]["results_num"] = 1
+                            else:
+                                players[p]["results"] = response.get("RESULT", {}).get("LOSE", "")
+                                players[p]["results_num"] = -1
+
+            # deathmatch prize
+            temp_list = {}
+            for key in players.keys():
+                temp_list[key] = players[key]["kills"]
+
+            temp_list2 = sorted(temp_list.items(), key=lambda i: i[1], reverse=True)
+
+            sorted_players = []
+            for value in temp_list2:
+                sorted_players.append(value[0])
+                
+            message = ""
+            i = 1
+            prev_player = ""
+            for t_puuid in sorted_players:
+                if i!=1:
+                    if players[t_puuid]["kills"]==players[prev_player]["kills"]:
+                        players[t_puuid]["deathmatch"] = players[prev_player]["deathmatch"]
+                    else:
+                        players[t_puuid]["deathmatch"] = i
+                else:
+                    players[t_puuid]["deathmatch"] = i
+
+                prev_player = t_puuid
+                i = i + 1
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            executor.submit(set_match_detail)
+            executor.submit(set_players)
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            executor.submit(set_round)
+            executor.submit(set_teams)
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            executor.submit(calculate_eco_rating)
+            executor.submit(calculate_points_and_results)
+            executor.submit(set_kill_list)
+
+        res = {"match_info": match_info, "players": players, "rounds": rounds, "teams": teams}
+        return res
+
+    def format_match_playerdata(format: str, players: Dict, puuid: str, match_id: str, bot: ValorantBot):
+        if format==None:
+            return None
+        cache = JSON.read("cache")
+        return format.format(
+            tracker=GetFormat.get_trackergg_link(match_id),
+
+            puuid=puuid,
+            name=players[puuid]["name"],
+            username=players[puuid]["name"].split("#", 1)[0],
+            tagline=players[puuid]["name"].split("#", 1)[1],
+            rank=players[puuid]["rank"],
+            rank_emoji=GetEmoji.competitive_tier_by_bot(players[puuid]["rank_id"], bot),
+            level=players[puuid]["level"],
+            agent=players[puuid]["agent"],
+            agent_en=cache["agents"][players[puuid]["agent_id"]]["names"]["en-US"],
+            agent_en_capital=cache["agents"][players[puuid]["agent_id"]]["names"]["en-US"].upper(),
+            agent_emoji=GetEmoji.agent_by_bot(players[puuid]["agent_id"], bot),
+            role=players[puuid]["role"],
+            role_en=cache["agents"][players[puuid]["agent_id"]]["role"]["names"]["en-US"],
+            role_en_capital=cache["agents"][players[puuid]["agent_id"]]["role"]["names"]["en-US"].upper(),
+            role_emoji=GetEmoji.role_by_bot(players[puuid]["agent_id"], bot),
+            kills=players[puuid]["kills"],
+            deaths=players[puuid]["deaths"],
+            assists=players[puuid]["assists"],
+            kd=players[puuid]["kd"],
+            kda=players[puuid]["kda"],
+            acs=players[puuid]["acs"],
+
+            eco_rating=players[puuid]["eco_rating"],
+            damage=players[puuid]["damage"],
+            adr=players[puuid]["adr"],
+            
+            headshots=players[puuid]["headshots"],
+            bodyshots=players[puuid]["bodyshots"],
+            legshots=players[puuid]["legshots"],
+            hsrate=players[puuid]["hsrate"],
+            bsrate=players[puuid]["bsrate"],
+            lsrate=players[puuid]["lsrate"],
+
+            firstblood=players[puuid]["firstblood"],
+            firstdeath=players[puuid]["firstdeath"],
+            multikills=players[puuid]["multikills"],
+            deathmatch=players[puuid]["deathmatch"]
+        )
+
+
     # ---------- UTILS FOR MISSION EMBED ---------- #
 
     def mission_format(data: Dict) -> Dict[str, Any]:
@@ -933,3 +1453,61 @@ class GetFormat:
             return dict(data=dict(tier=tier, tiers=tiers, act=act, xp=xp, reward=item_name, type=item_type, icon=item_icon, end=event_end, original_type=item_reward["reward"]['type'], cost = cost))
 
         raise ValorantBotError(f"Failed to get battlepass info")
+
+class GetImage:
+    def paste_centered(dest: Image, source: Image, coordinate: tuple) -> Image:
+        img = dest
+        img.paste(source, (int(dest.width/2-source.width/2+coordinate[0]), int(dest.height/2-source.height/2+coordinate[1])), source)
+        return img
+
+    def convert_color(color: int) -> tuple:
+        n = hex(color)[2:]
+        if len(n)<6:
+            n = "0" * (6 -len(n)) + n
+        return tuple(int(c*255) for c in matplotlib.colors.to_rgb("#" + n.upper()))
+    
+    def convert_hex(color: int) -> str:
+        n = hex(color)[2:]
+        if len(n)<6:
+            n = "0" * (6 -len(n)) + n
+        return n
+    
+    def draw_text(img: Image, text: str, coordinate: Tuple, font, color: str = "#000000") -> Image:
+        draw = ImageDraw.Draw(img)
+        draw.text((int(img.width/2 + coordinate[0]), int(img.height/2 + coordinate[1])), text, color, font=font, anchor='mm')
+    
+    def load_font():
+        print(f"[{datetime.now()}] Loading fonts data.")
+        fonts = fm.findSystemFonts()
+        fonts_additional = fm.findSystemFonts(f"resources/font/")
+        fonts.extend(fonts_additional)
+        _all_fonts = set()
+        _dejav = set()
+
+        list = {}
+
+        for font in fonts:
+            for i in range(10):
+                try:
+                    ttf = ImageFont.truetype(font=font, index=i)
+                except IOError as e:
+                    break
+                    
+                dn, _, bn = font.rpartition(os.sep)
+        
+                if (bn.upper(), i) in _dejav:
+                    continue
+                _dejav.add((bn.upper(), i))
+                family, style = ttf.getname()
+
+                if list.get(family, None) == None:
+                    list[family] = {}
+                
+                list[family][style] = {"family": family, "style": style, "path": font}
+        
+        JSON.save("fonts", list)
+
+    def find_font(family: str, style: str = "Regular") -> str:
+        fonts = JSON.read("fonts")
+        return fonts.get(family, {}).get(style, {}).get("path", None)
+

@@ -2,12 +2,16 @@ from __future__ import annotations
 from operator import itemgetter
 
 import re
-import io, os
+import io, os, asyncio, concurrent.futures
 import json
+from pathlib import Path
+import numpy as np
 import math, random
 import contextlib
 import requests
 from bs4 import BeautifulSoup
+from matplotlib import font_manager as fm
+from PIL import Image, ImageFont, ImageDraw, ImageFilter
 from datetime import datetime, timedelta, timezone
 from urllib import request
 import dateutil.parser
@@ -20,12 +24,15 @@ from utils.errors import (
 )
 
 import discord
+from discord.utils import MISSING
+from discord import app_commands, Interaction, ui, File
 import matplotlib.pyplot as plt
 
 from .endpoint import API_ENDPOINT
 
 import utils.config as Config
-from .useful import (calculate_level_xp, format_relative, GetEmoji, GetFormat, iso_to_time, format_timedelta, JSON)
+from utils.valorant import view as View
+from .useful import (calculate_level_xp, format_relative, GetEmoji, GetFormat, GetImage, iso_to_time, format_timedelta, JSON)
 from ..locale_v2 import ValorantTranslator
 
 VLR_locale = ValorantTranslator()
@@ -247,825 +254,623 @@ class GetEmbed:
         
         return embed
 
-    # ---------- MATCH DATA UTILS ----------- #
-    def get_match_info(puuid: str, match_id: str, endpoint: API_ENDPOINT, response: Dict) -> Dict:
-        # cache
-        cache = JSON.read("cache")
-
-        # match info
-        match_detail = endpoint.fetch_match_details(match_id)
-        if match_detail==None:
-            raise ValorantBotError("マッチが見つかりませんでした")
-
-        info = match_detail["matchInfo"]
-        start_time, duration = format_relative(datetime.fromtimestamp(info["gameStartMillis"]/1000, timezone.utc)), format_timedelta(timedelta(milliseconds=info["gameLengthMillis"]))
-        mapid = GetFormat.get_mapuuid_from_mapid(info["mapId"])
-        match_id, map = info["matchId"], cache["maps"][mapid]["names"][str(VLR_locale)]
-        season_id = info["seasonId"]
-        penalties = info.get("partyRRPenalties", {})
-        is_played = False
-
-        match_info = {
-            "time": start_time,
-            "duration": duration,
-            "map_id": mapid,
-            "map": map,
-
-            "match_id": match_id,
-            "season_id": season_id
-        }
-
-        # queue
-        queue = ""
-        gamemode_icon = ""
-        queue_id = info["queueID"]
-        if queue_id in ["unrated", "competitive", "deathmatch", "ggteam", "onefa", "custom", "newmap", "snowball", "spikerush"]:
-            queue = response["QUEUE"][queue_id]
-            if queue_id=="deathmatch":
-                gamemode_icon = cache["gamemodes"]["a8790ec5-4237-f2f0-e93b-08a8e89865b2"]["icon"]
-            elif queue_id=="ggteam":
-                gamemode_icon = cache["gamemodes"]["a4ed6518-4741-6dcb-35bd-f884aecdc859"]["icon"]
-            elif queue_id=="onefa":
-                gamemode_icon = cache["gamemodes"]["4744698a-4513-dc96-9c22-a9aa437e4a58"]["icon"]
-            elif queue_id=="spikerush":
-                gamemode_icon = cache["gamemodes"]["e921d1e6-416b-c31f-1291-74930c330b7b"]["icon"]
-            elif queue_id=="snowball":
-                gamemode_icon = cache["gamemodes"]["57038d6d-49b1-3a74-c5ef-3395d9f23a97"]["icon"]
-            else:
-                gamemode_icon = cache["gamemodes"]["96bd3920-4f36-d026-2b28-c683eb0bcac5"]["icon"]
-
-        else:
-            queue_id = "unknown"
-            queue = response["QUEUE"]["unknown"]
-            gamemode_icon = cache["gamemodes"]["96bd3920-4f36-d026-2b28-c683eb0bcac5"]["icon"]
-        
-        match_info["queue"] = queue_id
-        match_info["queue"] = queue
-        match_info["gamemode_icon"] = gamemode_icon
-        
-        # player
-        raw_players = match_detail.get("players", [])
-        players = {}
-        for p in raw_players:
-            rank_tier = p["competitiveTier"] if p["competitiveTier"]!=0 else endpoint.get_player_tier_rank(puuid=p["subject"])
-            player = {
-                "puuid": p["subject"],
-                "name": "{name}#{tagline}".format(name=p["gameName"], tagline=p["tagLine"]),
-                "level": p["accountLevel"],
-                "rank": GetFormat.get_competitive_tier_name(rank_tier),
-                "rank_id": rank_tier,
-
-                "kills": p["stats"]["kills"],
-                "deaths": p["stats"]["deaths"],
-                "assists": p["stats"]["assists"],
-                "played_round": p["stats"]["roundsPlayed"],
-                "score": p["stats"]["score"],
-
-                "kd": GetFormat.get_kdrate(p["stats"]["kills"], p["stats"]["deaths"]),
-                "kda": GetFormat.get_kdarate(p["stats"]["kills"], p["stats"]["deaths"], p["stats"]["assists"]),
-                "acs": round(float(p["stats"]["score"])/20.0),
-
-                "team": p["teamId"],
-                "party": p["partyId"],
-                "agent_id": p["characterId"],
-                "player_card": p["playerCard"],
-                "player_title": p["playerTitle"],
-                
-                "agent": cache["agents"][p["characterId"]]["names"][str(VLR_locale)],
-                "role": cache["agents"][p["characterId"]]["role"]["names"][str(VLR_locale)],
-
-                "firstblood": 0,
-                "firstdeath": 0,
-                "multikills": 0,
-
-                "deathmatch": 0
-            }
-
-            if p["subject"]==puuid:
-                is_played = True
-            
-            # penalty
-            player["penalty"] = penalties.get(p["partyId"], 0)
-
-            # abilities
-            if p["stats"].get("abilityCasts", None)!=None:
-                ability = p["stats"]["abilityCasts"]
-                player["ability"] = [ability["ability1Casts"], ability["ability2Casts"], ability["grenadeCasts"], ability["ultimateCasts"]],
-            
-            # damage
-            if p.get("roundDamage")!=None:
-                for d in p.get("roundDamage"):
-                    if player.get("damage", None)==None:
-                        player["damage"] = {}
-                    if player["damage"].get(str(d["round"]), None)==None:
-                        player["damage"][str(d["round"])] = 0
-                    player["damage"][str(d["round"])] += d["damage"]
-            else:
-                if player.get("damage")==None:
-                    player["damage"] = {}
-                for i in range(len(match_detail["roundResults"])):
-                    player["damage"][str(i)] = 0
-
-            players[p["subject"]] = player
-
-        match_info["is_played"] = is_played
-
-        # round
-        raw_rounds = match_detail["roundResults"]
-        rounds = []
-        for r in raw_rounds:
-            _round = {
-                "planter": r.get("bombPlanter", ""),
-                "defuser": r.get("bombDefuser", ""),
-                "plant_time": round(float(r["plantRoundTime"])/1000.0, 1),
-                "defuse_time": round(float(r["defuseRoundTime"])/1000.0, 1),
-                "plant_site": r["plantSite"],
-
-                "result": r["roundResultCode"],
-                "number": r["roundNum"] + 1,
-                "win": r["winningTeam"],
-                "economy": {}
-            }
-
-            ceremony_id = GetFormat.get_uuid_from_ceremony_id(r["roundCeremony"])
-            if ceremony_id==None or len(ceremony_id)==0:
-                _round["ceremony"] = ""
-            else:
-                _round["ceremony"] = cache["ceremonies"][ceremony_id]["names"][str(VLR_locale)]
-
-            # economy
-            if r.get("playerEconomies")!=None:
-                for e in r.get("playerEconomies"):
-                    if _round.get("economy").get("players", None)==None:
-                        _round["economy"]["players"] = {}
-                    _round["economy"]["players"][e["subject"]] = {
-                        "loadout": e["loadoutValue"],
-                        "remain": e["remaining"],
-                        "spent": e["spent"],
-                        "weapon": e["weapon"],
-                        "armor": e["armor"]
-                    }
-
-            # stats
-            for stats in r.get("playerStats", []):
-                teamid = players[stats["subject"]]["team"]
-
-                # economy
-                if _round["economy"].get(teamid, None)==None:
-                    _round["economy"][teamid] = {
-                        "loadout": stats["economy"]["loadoutValue"],
-                        "remain": stats["economy"]["remaining"],
-                        "spent": stats["economy"]["spent"]
-                    }
-                else:
-                    _round["economy"][teamid]["loadout"] += stats["economy"]["loadoutValue"]
-                    _round["economy"][teamid]["remain"] += stats["economy"]["remaining"]
-                    _round["economy"][teamid]["spent"] += stats["economy"]["spent"]
-                
-                # stats
-                if _round.get("stats", None)==None:
-                    _round["stats"] = {}
-                _round["stats"][stats["subject"]] = {
-                    "kills": len(stats["kills"]),
-                    "score": stats["score"],
-                    "headshots": 0,
-                    "legshots": 0,
-                    "bodyshots": 0,
-                    "damage": 0
-                }
-
-                for d in stats.get("damage", []):
-                    _round["stats"][stats["subject"]]["headshots"] += d.get("headshots", 0)
-                    _round["stats"][stats["subject"]]["bodyshots"] += d.get("bodyshots", 0)
-                    _round["stats"][stats["subject"]]["legshots"] += d.get("legshots", 0)
-                    _round["stats"][stats["subject"]]["damage"] += d.get("damage", 0)
-                
-                # multikills (3kills+)
-                if len(stats["kills"])>=3:
-                    players[stats["subject"]]["multikills"] += 1
-
-            rounds.append(_round)
-        
-        # eco rating
-        for t_puuid,p in players.items():
-            damage = 0
-            spent = 0
-            headshots = 0
-            bodyshots = 0
-            legshots = 0
-            eco_rating = 0
-
-            for i in range(len(rounds)):
-                if rounds[i]["economy"].get("players")!=None:
-                    if rounds[i]["economy"]["players"].get(t_puuid, {}).get("spent", None)==None:
-                        spent += 0
-                    else:
-                        spent += rounds[i]["economy"]["players"][t_puuid]["spent"]
-
-                    damage += rounds[i]["stats"][t_puuid]["damage"]
-                    headshots += rounds[i]["stats"][t_puuid]["headshots"]
-                    bodyshots += rounds[i]["stats"][t_puuid]["bodyshots"]
-                    legshots += rounds[i]["stats"][t_puuid]["legshots"]
-
-                    if spent == 0:
-                        eco_rating = round(damage*1000/1)
-                    else:
-                        eco_rating = round(damage*1000/spent)
-
-                players[t_puuid]["eco_rating"] = eco_rating
-                players[t_puuid]["total_damage"] = damage
-                players[t_puuid]["adr"] = round(damage / len(rounds), 1)
-                players[t_puuid]["headshots"] = headshots
-                players[t_puuid]["bodyshots"] = bodyshots
-                players[t_puuid]["legshots"] = legshots
-                players[t_puuid]["shots"] = headshots + bodyshots + legshots
-                if (headshots + bodyshots + legshots)==0:
-                    players[t_puuid]["hsrate"] = 0.0
-                    players[t_puuid]["bsrate"] = 0.0
-                    players[t_puuid]["lsrate"] = 0.0
-                else:
-                    players[t_puuid]["hsrate"] = round(headshots / (headshots + bodyshots + legshots) * 100, 1)
-                    players[t_puuid]["bsrate"] = round(bodyshots / (headshots + bodyshots + legshots) * 100, 1)
-                    players[t_puuid]["lsrate"] = round(legshots / (headshots + bodyshots + legshots) * 100, 1)
-        
-        # kills
-        raw_killlist = match_detail["kills"]
-        roundtemp = -1
-        for k in raw_killlist:
-            if players[k["killer"]].get("kill_list", None) == None:
-                players[k["killer"]]["kill_list"] = {}
-            if players[k["victim"]].get("killed_list", None) == None:
-                players[k["victim"]]["killed_list"] = {}
-            
-            # kill
-            if players[k["killer"]]["kill_list"].get(k["victim"], None)==None:
-                players[k["killer"]]["kill_list"][k["victim"]] = 1
-            else:
-                players[k["killer"]]["kill_list"][k["victim"]] += 1
-            
-            # killed by
-            if players[k["victim"]]["killed_list"].get(k["killer"], None)==None:
-                players[k["victim"]]["killed_list"][k["killer"]] = 1
-            else:
-                players[k["victim"]]["killed_list"][k["killer"]] += 1
-            
-            # assist to
-            for a in k["assistants"]:
-                if players[a].get("assist_list", None)==None:
-                    players[a]["assist_list"] = {}
-                
-                if players[a]["assist_list"].get(k["victim"], None)==None:
-                    players[a]["assist_list"][k["victim"]] = 1
-                else:
-                    players[a]["assist_list"][k["victim"]] += 1
-            
-            # firstblood / firstdeath
-            if roundtemp!=k["round"]:
-                players[k["victim"]]["firstdeath"] += 1
-                players[k["killer"]]["firstblood"] += 1
-                roundtemp=k["round"]
-
-
-        # teams
-        teams = {}
-        for t in match_detail["teams"]:
-            teams[t["teamId"]] = {
-                "win": t["won"],
-                "id": t["teamId"],
-                "point": t["numPoints"],
-                "rounds": t["roundsPlayed"]
-            }
-        
-        for p in players.values():
-            if teams.get(p["team"]).get("players", None)==None:
-                teams[p["team"]]["players"] = []
-            
-            teams[p["team"]]["players"].append(p["puuid"])
-        
-        for key in teams.keys():
-            temp_list = {}
-            for p in teams[key]["players"]:
-                temp_list[p] = players[p]["score"]
-            temp_list2 = sorted(temp_list.items(), key=lambda i: i[1], reverse=True)
-
-            teams[key]["players"] = []
-            for value in temp_list2:
-                teams[key]["players"].append(value[0])
-        
-        # points
-        point_v = [0,0]
-        teamA, teamB = "", ""
-        if len(teams)==2:
-            if is_played:
-                for t in teams.values():
-                    if t["id"]==teams[players[puuid]["team"]]["id"]:
-                        point_v[0] = t["point"]
-                        teamA = t["id"]
-                    else:
-                        point_v[1] = t["point"]
-                        teamB = t["id"]
-            else:
-                count = 0
-                for t in teams.values():
-                    if count==0: teamA = t["id"]
-                    else: teamB = t["id"]
-
-                    point_v[count] = t["point"]
-                    count += 1
-        else:
-            if is_played:
-                pp = ["", ""]
-                for t in teams.values():
-                    if t["point"]>point_v[0]:
-                        pp[1] = pp[0]
-                        point_v[1] = point_v[0]
-
-                        pp[0] = t["id"]
-                        point_v[0] = t["point"]
-                
-                if pp[0]!=puuid:
-                    point_v[1] = teams[puuid]["point"]
-            else:
-                for t in teams.values():
-                    if t["point"]>point_v[0]:
-                        point_v[1] = point_v[0]
-                        point_v[0] = t["point"]
-                
-
-        point = f"{point_v[0]}-{point_v[1]}"
-        match_info["point"] = point
-        match_info["teamA"] = teamA
-        match_info["teamB"] = teamB
-
-        # results
-        temp_result = 0
-        if queue_id!="deathmatch":
-            if is_played and point_v[0]>point_v[1]:
-                temp_result = 1
-                results = response.get("RESULT", {}).get("WIN", "")
-                color=Config.GetColor("win")
-            elif is_played and point_v[1]>point_v[0]:
-                temp_result = -1
-                results = response.get("RESULT", {}).get("LOSE", "")
-                color=Config.GetColor("lose")
-            elif point_v[1]==point_v[0]:
-                results = response.get("RESULT", {}).get("DRAW", "")
-                color=Config.GetColor("draw")
-            elif (not is_played) and point_v[1]!=point_v[0]:
-                temp_result = 1
-                results = response.get("RESULT", {}).get("WIN", "")
-                color=Config.GetColor("win")
-        else:
-            if is_played and point_v[0]==40 and teams[puuid]["point"]==40:
-                temp_result = 1
-                results = response.get("RESULT", {}).get("WIN", "")
-                color=Config.GetColor("win")
-            elif is_played and point_v[0]==40 and teams[puuid]["point"]<40:
-                temp_result = -1
-                results = response.get("RESULT", {}).get("LOSE", "")
-                color=Config.GetColor("lose")
-            elif point_v[0]<=40:
-                results = response.get("RESULT", {}).get("DRAW", "")
-                color=Config.GetColor("draw")
-            else:
-                temp_result = 1
-                results = response.get("RESULT", {}).get("WIN", "")
-                color=Config.GetColor("win")
-        match_info["color"] = color
-        match_info["results"] = results
-
-        # player result
-        for t in teams.values():
-            for p in t["players"]:
-                if len(teams)==2:
-                    if t["win"]:
-                        players[p]["results"] = response.get("RESULT", {}).get("WIN", "")
-                        players[p]["results_num"] = 1
-                    else:
-                        players[p]["results"] = response.get("RESULT", {}).get("LOSE", "")
-                        players[p]["results_num"] = -1
-                else:
-                    if temp_result==0:
-                        players[p]["results"] = response.get("RESULT", {}).get("DRAW", "")
-                        players[p]["results_num"] = 0
-                    else:
-                        if t["win"]:
-                            players[p]["results"] = response.get("RESULT", {}).get("WIN", "")
-                            players[p]["results_num"] = 1
-                        else:
-                            players[p]["results"] = response.get("RESULT", {}).get("LOSE", "")
-                            players[p]["results_num"] = -1
-
-        # deathmatch prize
-        temp_list = {}
-        for key in players.keys():
-            temp_list[key] = players[key]["kills"]
-
-        temp_list2 = sorted(temp_list.items(), key=lambda i: i[1], reverse=True)
-
-        sorted_players = []
-        for value in temp_list2:
-            sorted_players.append(value[0])
-            
-        message = ""
-        i = 1
-        prev_player = ""
-        for t_puuid in sorted_players:
-            if i!=1:
-                if players[t_puuid]["kills"]==players[prev_player]["kills"]:
-                    players[t_puuid]["deathmatch"] = players[prev_player]["deathmatch"]
-                else:
-                    players[t_puuid]["deathmatch"] = i
-            else:
-                players[t_puuid]["deathmatch"] = i
-
-            prev_player = t_puuid
-            i = i + 1
-
-        return {"match_info": match_info, "players": players, "rounds": rounds, "teams": teams}
-
-    def format_match_playerdata(format: str, players: Dict, puuid: str, match_id: str, bot: ValorantBot):
-        if format==None:
-            return None
-        return format.format(
-            tracker=GetFormat.get_trackergg_link(match_id),
-
-            puuid=puuid,
-            name=players[puuid]["name"],
-            rank=players[puuid]["rank"],
-            rank_emoji=GetEmoji.competitive_tier_by_bot(players[puuid]["rank_id"], bot),
-            level=players[puuid]["level"],
-            agent=players[puuid]["agent"],
-            agent_emoji=GetEmoji.agent_by_bot(players[puuid]["agent_id"], bot),
-            role=players[puuid]["role"],
-            role_emoji=GetEmoji.role_by_bot(players[puuid]["agent_id"], bot),
-            kills=players[puuid]["kills"],
-            deaths=players[puuid]["deaths"],
-            assists=players[puuid]["assists"],
-            kd=players[puuid]["kd"],
-            kda=players[puuid]["kda"],
-            acs=players[puuid]["acs"],
-
-            eco_rating=players[puuid]["eco_rating"],
-            damage=players[puuid]["damage"],
-            adr=players[puuid]["adr"],
-            
-            headshots=players[puuid]["headshots"],
-            bodyshots=players[puuid]["bodyshots"],
-            legshots=players[puuid]["legshots"],
-            hsrate=players[puuid]["hsrate"],
-            bsrate=players[puuid]["bsrate"],
-            lsrate=players[puuid]["lsrate"],
-
-            firstblood=players[puuid]["firstblood"],
-            firstdeath=players[puuid]["firstdeath"],
-            multikills=players[puuid]["multikills"],
-            deathmatch=players[puuid]["deathmatch"]
-        )
-
     # ---------- MATCH DETAILS EMBED ---------- #
-    def __match_graph(rounds: Dict, teamA: str, teamB: str, filename: str) -> discord.File:
+    class MatchEmbed():
+        def __init__(self, interaction: Interaction, match_id: str, response: Dict, endpoint: API_ENDPOINT, filename: List[str], is_private_message: bool) -> None:
+            self.interaction: Interaction = interaction
+            self.player: str = endpoint.player
+            self.puuid: str = endpoint.puuid
+            self.match_id: str = match_id
+            self.language: str = str(VLR_locale)
+            self.response: Dict = response
+            self.endpoint: API_ENDPOINT = endpoint
+            self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
+            self.cache = JSON.read('cache')
+            self.color: str
+            self.is_private_message: bool = is_private_message
+            self.match_info: Dict
 
-        # create graph
-        plt.figure(figsize=(15, 3), dpi=300)
-        plt.style.use("dark_background")
-        ax = plt.axes()
+            self.files: List[List[discord.File]] = []
+            self.filename = filename
+            self.temp_embeds: Dict = {}
+            self.temp_files: Dict = {}
+            self.embeds: List[List[discord.Embed]] = []
 
-        # add a lines
-        y = [-30000, -20000, -10000, 0, 10000, 20000, 30000]
-        x, y_m = [], []
-        for r in rounds:
-            x.append(r["number"])
-            money = (r["economy"][teamA]["remain"]-r["economy"][teamB]["remain"]) + (r["economy"][teamA]["loadout"]-r["economy"][teamB]["loadout"])
-            y_m.append(money)
+        def build_graph(self, filename: str) -> discord.File:
+            rounds = self.match_info["rounds"]
+            teamA = self.match_info["match_info"]["teamA"]
+            teamB = self.match_info["match_info"]["teamB"]
 
-            if r["win"]==teamA:
-                ax.axvspan(r["number"]-0.5, r["number"]+0.5, color="#3cb371", alpha=0.1)
-            else:
-                ax.axvspan(r["number"]-0.5, r["number"]+0.5, color="#ff0000", alpha=0.1)
-        
-        # grid
-        ax.grid(which = "major", axis = "y", alpha = 0.3, linestyle = "--", linewidth = 1)
-        ax.grid(which = "major", axis = "y", alpha = 0.3, linestyle = "--", linewidth = 1)
-        ax.axhline(y=0, color='white',linestyle='-', alpha=0.5, linewidth = 1)
+            f = Config.LoadConfig().get("commands", {}).get("match", {}).get("font", {}).get("graph-regular")
+            font_regular = GetImage.find_font(f[0], f[1])
 
-        # draw point and line
-        plt.plot(x, y_m, label="Economy", color="white")
+            # create graph
+            plt.figure(figsize=(15, 3), dpi=300)
+            plt.style.use("dark_background")
+            ax = plt.axes()
 
-        for i in range(len(x)):
-            if y_m[i] >= 0:
-                plt.plot(x[i], y_m[i], marker='.', markersize=15, color="#3cb371")
-            else:
-                plt.plot(x[i], y_m[i], marker='.', markersize=15, color="#ff0000")
-        
+            # add a lines
+            y = [-30000, -20000, -10000, 0, 10000, 20000, 30000]
+            x, y_m = [], []
+            for r in rounds:
+                x.append(r["number"])
+                money = (r["economy"][teamA]["remain"]-r["economy"][teamB]["remain"]) + (r["economy"][teamA]["loadout"]-r["economy"][teamB]["loadout"])
+                y_m.append(money)
 
-        plt.xticks(x)
-        plt.yticks(y)
-        plt.savefig(f"resources/temp/{filename}", bbox_inches='tight', transparent=True)
-        plt.close()
-
-        with open(f"resources/temp/{filename}", "rb") as f:
-            file = io.BytesIO(f.read())
-        image = discord.File(file, filename=filename)
-
-        return image
-
-    def __match_heatmap(players: Dict, teams: Dict, teamA: str, teamB: str, filename: str) -> discord.File:
-        font: str = Config.LoadConfig().get("font")
-
-        # create graph
-        plt.figure(figsize=(15, 15), dpi=300)
-        plt.style.use("dark_background")
-        
-        # get value
-        array_detail = [[{"a": 0, "b": 0} for i in range(5)] for j in range(5)]
-        array_data = [[0]*5  for i in range(5)]
-
-        y = 0
-        for kp in teams[teamA]["players"]:
-            for name,times in players[kp].get("kill_list", {}).items():
-                if name in teams[teamB]["players"]:
-                    x = teams[teamB]["players"].index(name)
-                    array_data[y][x] += times
-                    array_detail[y][x]["a"] = times
-
-            for name,times in players[kp].get("killed_list", {}).items():
-                if name in teams[teamB]["players"]:
-                    x = teams[teamB]["players"].index(name)
-                    array_data[y][x] -= times
-                    array_detail[y][x]["b"] = times
-            y = y + 1
-
-        # draw heatmap
-        fig, ax = plt.subplots()
-        im = ax.imshow(array_data, aspect='equal', cmap='RdYlGn', vmin=-10, vmax=10)
-        # fig.colorbar(im, ax=ax)
-
-        # add text
-        x,y=0,0
-        for x in range(5):
-            for y in range(5):
-                ax.text(
-                    x,
-                    y,
-                    "{value}".format(value=array_data[y][x]),
-                    verticalalignment="center",
-                    horizontalalignment="center",
-                    color="Black",
-                    fontsize=13,
-                    alpha=0.5,
-                    fontname=font
-                )
-                ax.text(
-                    x,
-                    y+0.2,
-                    "{a} - {b}".format(a=array_detail[y][x]["a"], b=array_detail[y][x]["b"]),
-                    verticalalignment="center",
-                    horizontalalignment="center",
-                    color="Black",
-                    fontsize=8,
-                    alpha=0.5,
-                    fontname=font
-                )
-        
-        # ticks
-        cache = JSON.read("cache")
-
-        ls = []
-        for player in teams[teamA]["players"]:
-            n = players[player]["name"].split("#")
-            agent = players[player]["agent"]
-            ls.append(f"{n[0]}\n#{n[1]}\n({agent})")
-        plt.yticks(range(5), ls, fontname=font, fontsize=8)
-
-        ls = []
-        for player in teams[teamB]["players"]:
-            n = players[player]["name"].split("#")
-            agent = players[player]["agent"]
-            ls.append(f"{n[0]}\n#{n[1]}\n({agent})")
-        plt.xticks(range(5), ls, fontname=font, fontsize=8, rotation=45, horizontalalignment="right")
-
-        # save image
-        plt.savefig(f"resources/temp/{filename}", bbox_inches='tight', transparent=True)
-        plt.close()
-
-        with open(f"resources/temp/{filename}", "rb") as f:
-            file = io.BytesIO(f.read())
-        image = discord.File(file, filename=filename)
-
-        return image
-
-
-    def __match_embed_players(cls, cache: Dict, response: Dict, teams: Dict, players: Dict, teamA: Dict, teamB: Dict, color: str, match_id, filename: str, bot: ValorantBot) -> discord.Embed:
-        # player result post
-        embed_players = Embed(title=response.get("PLAYER", {}).get("TITLE"), color=color)
-
-        def make_team_msg(team_name: str, title_format: str, message_format: str, team: str) -> List:
-            message = ""
-            for p in teams[team_name]["players"]:
-                if len(message)!=0:
-                    message+="\n"
-                message += cls.format_match_playerdata(message_format, players, p, match_id, bot)
-                if teams[team_name]["win"]:
-                    _result = response["RESULT"]["WIN"]
+                if r["win"]==teamA:
+                    ax.axvspan(r["number"]-0.5, r["number"]+0.5, color="#3cb371", alpha=0.1)
                 else:
-                    _result = response["RESULT"]["LOSE"]
-            title = title_format.format(
-                result=_result,
-                point=teams[team_name]["point"],
-                team = team
-            )
-            return [title, message]
-        
-        
-        if len(teams)==2: # default
-            ret = make_team_msg(teamA, response.get("PLAYERS", {}).get("RESPONSE"), response.get("PLAYERS", {}).get("DETAIL"), response.get("TEAM_A"))
-            embed_players.add_field(name=ret[0], value=ret[1], inline=False)
+                    ax.axvspan(r["number"]-0.5, r["number"]+0.5, color="#ff0000", alpha=0.1)
 
-            ret = make_team_msg(teamB, response.get("PLAYERS", {}).get("RESPONSE"), response.get("PLAYERS", {}).get("DETAIL"), response.get("TEAM_B"))
-            embed_players.add_field(name=ret[0], value=ret[1], inline=False)
-            embed_players.set_image(url=f"attachment://{filename}")
+            # grid
+            ax.grid(which = "major", axis = "y", alpha = 0.3, linestyle = "--", linewidth = 1)
+            ax.grid(which = "major", axis = "y", alpha = 0.3, linestyle = "--", linewidth = 1)
+            ax.axhline(y=0, color='white',linestyle='-', alpha=0.5, linewidth = 1)
 
-            graph = cls.__match_heatmap(players, teams, teamA, teamB, filename)
-            return [embed_players, graph]
+            # draw point and line
+            plt.plot(x, y_m, label="Economy", color="white")
+
+            for i in range(len(x)):
+                if y_m[i] >= 0:
+                    plt.plot(x[i], y_m[i], marker='.', markersize=15, color="#3cb371")
+                else:
+                    plt.plot(x[i], y_m[i], marker='.', markersize=15, color="#ff0000")
             
-        else: # deathmatch 
-            temp_list = {}
-            for key in players.keys():
-                temp_list[key] = players[key]["kills"]
 
-            temp_list2 = sorted(temp_list.items(), key=lambda i: i[1], reverse=True)
+            # ticks
+            plt.xticks(x)
+            plt.yticks(y)
+            prop = fm.FontProperties(fname=font_regular)
+            for label in ax.get_xticklabels():
+                label.set_fontproperties(prop)
 
-            sorted_players = []
-            for value in temp_list2:
-                sorted_players.append(value[0])
+            for label in ax.get_yticklabels():
+                label.set_fontproperties(prop)
+            
+            plt.savefig(f"resources/temp/{filename}", bbox_inches='tight', transparent=True)
+            plt.close()
+
+            with open(f"resources/temp/{filename}", "rb") as f:
+                file = io.BytesIO(f.read())
+            image = discord.File(file, filename=filename)
+
+            self.temp_files["graph"] = image
+
+        def build_heatmap(self, filename: str) -> discord.File:
+            players = self.match_info["players"]
+            teams = self.match_info["teams"]
+            teamA = self.match_info["match_info"]["teamA"]
+            teamB = self.match_info["match_info"]["teamB"]
+
+            f = Config.LoadConfig().get("commands", {}).get("match", {}).get("font", {}).get("heatmap-bold")
+            font_bold = GetImage.find_font(f[0], f[1])
+            f = Config.LoadConfig().get("commands", {}).get("match", {}).get("font", {}).get("heatmap-regular")
+            font_regular = GetImage.find_font(f[0], f[1])
+
+            # create graph
+            plt.figure(figsize=(15, 15), dpi=300)
+            plt.style.use("dark_background")
+            
+            # get value
+            array_detail = [[{"a": 0, "b": 0} for i in range(5)] for j in range(5)]
+            array_data = [[0]*5  for i in range(5)]
+
+            y = 0
+            for kp in teams[teamA]["players"]:
+                for name,times in players[kp].get("kill_list", {}).items():
+                    if name in teams[teamB]["players"]:
+                        x = teams[teamB]["players"].index(name)
+                        array_data[y][x] += times
+                        array_detail[y][x]["a"] = times
+
+                for name,times in players[kp].get("killed_list", {}).items():
+                    if name in teams[teamB]["players"]:
+                        x = teams[teamB]["players"].index(name)
+                        array_data[y][x] -= times
+                        array_detail[y][x]["b"] = times
+                y = y + 1
+
+            # draw heatmap
+            fig, ax = plt.subplots()
+            im = ax.imshow(array_data, aspect='equal', cmap='RdYlGn', vmin=-10, vmax=10)
+            # fig.colorbar(im, ax=ax)
+
+            # add text
+            x,y=0,0
+            for x in range(5):
+                for y in range(5):
+                    ax.text(
+                        x,
+                        y,
+                        "{value}".format(value=array_data[y][x]),
+                        verticalalignment="center",
+                        horizontalalignment="center",
+                        color="Black",
+                        fontsize=13,
+                        alpha=0.5,
+                        font=Path(font_bold)
+                    )
+                    ax.text(
+                        x,
+                        y+0.2,
+                        "{a} - {b}".format(a=array_detail[y][x]["a"], b=array_detail[y][x]["b"]),
+                        verticalalignment="center",
+                        horizontalalignment="center",
+                        color="Black",
+                        fontsize=8,
+                        alpha=0.5,
+                        font=Path(font_regular)
+                    )
+            
+            # ticks
+            cache = JSON.read("cache")
+
+            ls = []
+            for player in teams[teamA]["players"]:
+                n = players[player]["name"].split("#")
+                agent = players[player]["agent"]
+                ls.append(f"{n[0]}\n#{n[1]}\n({agent})")
+            plt.yticks(range(5), ls, font=Path(font_regular), fontsize=8)
+
+            ls = []
+            for player in teams[teamB]["players"]:
+                n = players[player]["name"].split("#")
+                agent = players[player]["agent"]
+                ls.append(f"{n[0]}\n#{n[1]}\n({agent})")
+            plt.xticks(range(5), ls, font=Path(font_regular), fontsize=8, rotation=45, horizontalalignment="right")
+
+            # save image
+            plt.savefig(f"resources/temp/{filename}", bbox_inches='tight', transparent=True)
+            plt.close()
+
+            with open(f"resources/temp/{filename}", "rb") as f:
+                file = io.BytesIO(f.read())
+            image = discord.File(file, filename=filename)
+
+            self.temp_files["heatmap"] = image
+
+        def build_stats(self, team_color: str, filename: str) -> discord.File:
+            teams = self.match_info["teams"]
+            players = self.match_info["players"]
+            team = self.match_info["match_info"][team_color]
+
+            size = (1920, 1080)
+            cache = self.cache
+            config = Config.LoadConfig()
+            colors = config.get("commands", {}).get("match", {}).get("color", {})
+
+            layer = [None, None]
+
+            f = config.get("commands", {}).get("match", {}).get("font", {}).get("stats-title")
+            font_impact = GetImage.find_font(f[0], f[1])
+            f = config.get("commands", {}).get("match", {}).get("font", {}).get("stats-regular")
+            font_regular = GetImage.find_font(f[0], f[1])
+            f = config.get("commands", {}).get("match", {}).get("font", {}).get("stats-bold")
+            font_bold = GetImage.find_font(f[0], f[1])
+            f = config.get("commands", {}).get("match", {}).get("font", {}).get("stats-player")
+            font_player = GetImage.find_font(f[0], f[1])
+
+            def make_gradient(img: Image) -> Image:
+                gradient = Image.new('L', (1, 256))
+                for i in range(256):
+                    gradient.putpixel((0, 255 - i), 256 - i)
+
+                img.putalpha(gradient.resize(img.size))
+                return img
+
+            # result
+            res: bool = False
+            enemy_team: str
+            for t in teams.values():
+                res = res or t["win"]
+                if t["id"]!=team:
+                    enemy_team = t["id"]
+            
+            if res:
+                score_color = ["#" + GetImage.convert_hex(colors.get("victory-text")), "#" + GetImage.convert_hex(colors.get("defeat-text"))]
+                if teams[team]["win"]:
+                    result_str = self.response.get("TEAM_STATS", {}).get("VICTORY")
+                    result_color = "#" + GetImage.convert_hex(colors.get("victory-text"))
+                    winner_score = teams[team]["point"]
+                    loser_score = teams[enemy_team]["point"]
+                else:
+                    result_str = self.response.get("TEAM_STATS", {}).get("DEFEAT")
+                    result_color = "#" + GetImage.convert_hex(colors.get("defeat-text"))
+                    winner_score = teams[enemy_team]["point"]
+                    loser_score = teams[team]["point"]
+            else:
+                score_color = ["#" + GetImage.convert_hex(colors.get("draw-text")), "#" + GetImage.convert_hex(colors.get("draw-text"))]
+                result_str = self.response.get("TEAM_STATS", {}).get("DRAW")
+                result_color = "#" + GetImage.convert_hex(colors.get("draw-text"))
+                winner_score = teams[team]["point"]
+                loser_score = teams[enemy_team]["point"]
+
+            def make_base():
+                # background
+                base = Image.open("resources/stats_backscreen.png")
+
+                # result text
+                font = ImageFont.truetype(font_impact, 520)
                 
+                text_canvas = Image.new("RGB", size, result_color)
+                text_canvas.putalpha(0)
+                GetImage.draw_text(text_canvas, result_str, (0, -300), font, result_color)
+                text_canvas = text_canvas.filter(ImageFilter.GaussianBlur(12))
+                base.paste(text_canvas, (0,0), text_canvas)
+
+                GetImage.draw_text(base, result_str, (0, -300), font, result_color)
+
+                # score text
+                font = ImageFont.truetype(font_impact, 120)
+                GetImage.draw_text(base, str(winner_score), (-750, -433), font, score_color[0])
+                GetImage.draw_text(base, str(loser_score), (750, -433), font, score_color[1])
+                layer[0] = base
+
+            def make_player_stats():
+                base = Image.new("RGBA", size, (0,0,0,0))
+
+                # players
+                coordinate = [{"x": -600, "y": 0, "scale": 0.35}, {"x": 600, "y": 0, "scale": 0.35}, {"x": -300, "y": 0, "scale": 0.45}, {"x": 300, "y": 0, "scale": 0.45}, {"x": 0, "y": -70, "scale": 0.5}]
+                coordinate_stats = [{"x": -620, "y": 80}, {"x": 620, "y": 80}, {"x": -310, "y": 80}, {"x": 310, "y": 80}, {"x": 0, "y": 80}]
+                i: int = 0
+
+                for puuid in reversed(teams[team]["players"]):
+                    player = players[puuid]
+
+                    # portrait
+                    agent = cache["agents"][player["agent_id"]]
+                    self.endpoint.download(agent['portrait'], f"resources/temp/{team_color}_agent_portrait.png")
+                    portrait = Image.open(f"resources/temp/{team_color}_agent_portrait.png")
+                    portrait = portrait.resize((int(portrait.width * coordinate[i]["scale"]), int(portrait.height * coordinate[i]["scale"])))
+                    base = GetImage.paste_centered(base, portrait, (coordinate[i]["x"], coordinate[i]["y"]))
+
+                    # stats base
+                    stats_base = Image.new('RGB', (300, 270), GetImage.convert_color(colors.get("base")))
+                    stats_base.putalpha(int(255 * 0.8))
+                    base = GetImage.paste_centered(base, stats_base, (coordinate_stats[i]["x"], coordinate_stats[i]["y"]))
+
+                    stats_lux = Image.new('RGB', (300, 1), GetImage.convert_color(colors.get("text")))
+                    stats_lux.putalpha(int(255 * 0.8))
+                    base = GetImage.paste_centered(base, stats_lux, (coordinate_stats[i]["x"], coordinate_stats[i]["y"]-135))
+
+                    stats_lux = Image.new('RGB', (8, 8), GetImage.convert_color(colors.get("text")))
+                    stats_lux.putalpha(255)
+                    stats_lux = stats_lux.rotate(45, expand=True)
+                    base = GetImage.paste_centered(base, stats_lux, (coordinate_stats[i]["x"], coordinate_stats[i]["y"]-135))
+
+                    if i==len(teams[team]["players"])-1:
+                        stats_base = Image.new('RGB', (300, 135), GetImage.convert_color(colors.get("point")))
+                        stats_base = make_gradient(stats_base)
+                        base = GetImage.paste_centered(base, stats_base, (coordinate_stats[i]["x"], coordinate_stats[i]["y"] + stats_base.height/2))
+
+                        # mvp square
+                        stats_base = Image.new('RGB', (160, 60), GetImage.convert_color(colors.get("text")))
+                        stats_base.putalpha(255)
+                        base = GetImage.paste_centered(base, stats_base, (coordinate_stats[i]["x"], coordinate_stats[i]["y"] - 145))
+
+                        font = ImageFont.truetype(font_impact, 50)
+                        GetImage.draw_text(base, self.response.get("TEAM_STATS", {}).get("MVP"), (coordinate_stats[i]["x"], coordinate_stats[i]["y"] - 145), font, "#" + GetImage.convert_hex(colors.get("base")))
+
+                    # agent name
+                    font = ImageFont.truetype(font_regular, 20)
+                    GetImage.draw_text(base, GetFormat.format_match_playerdata(self.response.get("TEAM_STATS", {}).get("AGENT"), players, puuid, self.match_id, self.bot), (coordinate_stats[i]["x"], coordinate_stats[i]["y"] - 96), font, "#" + GetImage.convert_hex(colors.get("text-base")))
+
+                    # rank icon
+                    self.endpoint.download(cache["competitive_tiers"][str(player["rank_id"])]["icon"], f"resources/temp/{team_color}_rank_icon.png")
+                    rank = Image.open(f"resources/temp/{team_color}_rank_icon.png")
+                    rank = rank.crop(rank.getbbox())
+                    rank = rank.resize((int(rank.width * 30 / rank.height), int(rank.height * 30 / rank.height)))
+                    base = GetImage.paste_centered(base, rank, (coordinate_stats[i]["x"] - 120, coordinate_stats[i]["y"] - 110))
+
+                    # player name
+                    font = ImageFont.truetype(font_player, 34)
+                    draw = ImageDraw.Draw(base)
+                    txw, txh = draw.textsize(GetFormat.format_match_playerdata(self.response.get("TEAM_STATS", {}).get("NAME"), players, puuid, self.match_id, self.bot), font=font)
+                    if txw > 300 - 20:
+                        font = ImageFont.truetype(font_player, int(34 * (300 - 20) / txw))
+                    GetImage.draw_text(base, GetFormat.format_match_playerdata(self.response.get("TEAM_STATS", {}).get("NAME"), players, puuid, self.match_id, self.bot), (coordinate_stats[i]["x"], coordinate_stats[i]["y"] - 60), font, "#" + GetImage.convert_hex(colors.get("text")))
+                    
+                    # line
+                    stats_lux = Image.new('RGB', (300 - 40, 1), GetImage.convert_color(colors.get("text")))
+                    stats_lux.putalpha(int(255 * 0.8))
+                    base = GetImage.paste_centered(base, stats_lux, (coordinate_stats[i]["x"], coordinate_stats[i]["y"]-20))
+
+                    # stats 1
+                    font = ImageFont.truetype(font_bold, 30)
+                    GetImage.draw_text(base, GetFormat.format_match_playerdata(self.response.get("TEAM_STATS", {}).get("RESPONSE_1"), players, puuid, self.match_id, self.bot), (coordinate_stats[i]["x"], coordinate_stats[i]["y"] +15), font, "#" + GetImage.convert_hex(colors.get("text")))
+                    GetImage.draw_text(base, GetFormat.format_match_playerdata(self.response.get("TEAM_STATS", {}).get("RESPONSE_2"), players, puuid, self.match_id, self.bot), (coordinate_stats[i]["x"], coordinate_stats[i]["y"] +80), font, "#" + GetImage.convert_hex(colors.get("text")))
+                    
+                    font = ImageFont.truetype(font_regular, 20)
+                    GetImage.draw_text(base, GetFormat.format_match_playerdata(self.response.get("TEAM_STATS", {}).get("TITLE_1"), players, puuid, self.match_id, self.bot), (coordinate_stats[i]["x"], coordinate_stats[i]["y"] +45), font, "#" + GetImage.convert_hex(colors.get("text-base")))
+                    GetImage.draw_text(base, GetFormat.format_match_playerdata(self.response.get("TEAM_STATS", {}).get("TITLE_2"), players, puuid, self.match_id, self.bot), (coordinate_stats[i]["x"], coordinate_stats[i]["y"] +110), font, "#" + GetImage.convert_hex(colors.get("text-base")))
+                    
+                    i += 1
+                    n = player["name"]
+                layer[1] = base
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                executor.submit(make_base)
+                executor.submit(make_player_stats)
+
+            base = GetImage.paste_centered(layer[0], layer[1], (0,0))
+            base.save(f"resources/temp/{filename}")
+
+            with open(f"resources/temp/{filename}", "rb") as f:
+                file = io.BytesIO(f.read())
+            image = discord.File(file, filename=filename)
+
+            if os.path.isfile(f"resources/temp/{team_color}_rank_icon.png"): os.remove(f"resources/temp/{team_color}_rank_icon.png")
+            if os.path.isfile(f"resources/temp/{team_color}_agent_portrait.png"): os.remove(f"resources/temp/{team_color}_agent_portrait.png")
+
+            self.temp_files["stats_" + team_color] = image
+
+        def embed_main(self) -> None:
+            cache = self.cache
+            match_info = self.match_info
+            response = self.response
+            puuid = self.puuid
+            match_id = self.match_id
+            bot = self.bot
+
+            # first embed post
+            description = ""
+            if match_info["match_info"]["is_played"]:
+                description = GetFormat.format_match_playerdata(response.get("RESPONSE"), match_info["players"], puuid, match_id, bot)
+            else:
+                description = ""
+
+            title = response.get("TITLE", "").format(
+                match_id=match_info["match_info"]["match_id"],
+                map=match_info["match_info"]["map"],
+                time=match_info["match_info"]["time"],
+                point=match_info["match_info"]["point"],
+                result=match_info["match_info"]["results"],
+                tracker=GetFormat.get_trackergg_link(match_info["match_info"]["match_id"]),
+                queue=match_info["match_info"]["queue"],
+                duration=match_info["match_info"]["duration"]
+            )
+            header = response.get("HEADER").format(
+                match_id=match_info["match_info"]["match_id"],
+                map=match_info["match_info"]["map"],
+                time=match_info["match_info"]["time"],
+                point=match_info["match_info"]["point"],
+                result=match_info["match_info"]["results"],
+                tracker=GetFormat.get_trackergg_link(match_info["match_info"]["match_id"]),
+                queue=match_info["match_info"]["queue"],
+                duration=match_info["match_info"]["duration"]
+            )
+            footer=response.get("FOOTER").format(
+                match_id=match_info["match_info"]["match_id"],
+                map=match_info["match_info"]["map"],
+                time=match_info["match_info"]["time"],
+                point=match_info["match_info"]["point"],
+                result=match_info["match_info"]["results"],
+                tracker=GetFormat.get_trackergg_link(match_info["match_info"]["match_id"]),
+                queue=match_info["match_info"]["queue"],
+                duration=match_info["match_info"]["duration"]
+            )
+
+            embed_main = Embed(title=title, description=description, color=match_info["match_info"]["color"])
+            embed_main.set_author(name=header, icon_url=match_info["match_info"]["gamemode_icon"])
+            embed_main.set_footer(text=footer)
+            embed_main.set_thumbnail(url=cache["maps"][match_info["match_info"]["map_id"]]["icon"])
+            embed_main.set_image(url=cache["maps"][match_info["match_info"]["map_id"]]["listview_icon"])
+
+            self.temp_embeds["main"] = embed_main
+
+        def embed_players(self, filename: str) -> None:
+            teams = self.match_info["teams"]
+            players = self.match_info["players"]
+            teamA = self.match_info["match_info"]["teamA"]
+            teamB = self.match_info["match_info"]["teamB"]
+
+            # player result post
+            response = self.response
+            embed_players = Embed(title=response.get("PLAYER", {}).get("TITLE"), color=self.color)
+
+            def make_team_msg(team_name: str, title_format: str, message_format: str, team: str) -> List:
+                message = ""
+                for p in teams[team_name]["players"]:
+                    if len(message)!=0:
+                        message+="\n"
+                    message += GetFormat.format_match_playerdata(message_format, players, p, self.match_id, self.bot)
+                    if teams[team_name]["win"]:
+                        _result = response["RESULT"]["WIN"]
+                    else:
+                        _result = response["RESULT"]["LOSE"]
+                title = title_format.format(
+                    result=_result,
+                    point=teams[team_name]["point"],
+                    team = team
+                )
+                return [title, message]
+            
+            
+            if len(teams)==2: # default
+                ret = make_team_msg(teamA, response.get("PLAYERS", {}).get("RESPONSE"), response.get("PLAYERS", {}).get("DETAIL"), response.get("TEAM_A"))
+                embed_players.add_field(name=ret[0], value=ret[1], inline=False)
+
+                ret = make_team_msg(teamB, response.get("PLAYERS", {}).get("RESPONSE"), response.get("PLAYERS", {}).get("DETAIL"), response.get("TEAM_B"))
+                embed_players.add_field(name=ret[0], value=ret[1], inline=False)
+                embed_players.set_image(url=f"attachment://{filename}")
+                
+            else: # deathmatch 
+                temp_list = {}
+                for key in players.keys():
+                    temp_list[key] = players[key]["kills"]
+
+                temp_list2 = sorted(temp_list.items(), key=lambda i: i[1], reverse=True)
+
+                sorted_players = []
+                for value in temp_list2:
+                    sorted_players.append(value[0])
+                    
+                message = ""
+                for t_puuid in sorted_players:
+                    if len(message)!=0:
+                        message+="\n"
+                    message += GetFormat.format_match_playerdata(response.get("PLAYERS", {}).get("DETAIL_DEATHMATCH"), players, t_puuid, self.match_id, self.bot)
+                embed_players.description = message
+
+            self.temp_embeds["players"] = embed_players
+
+        def embed_team(self, title: str, team_color: str, filename: str = None) -> discord.Embed:
+            embed_team = Embed(title=title, color=self.color)
+            teams = self.match_info["teams"]
+            players = self.match_info["players"]
+            team = self.match_info["match_info"][team_color]
+
+            for p in teams[team]["players"]:
+                n = GetFormat.format_match_playerdata(self.response.get("STATS",{}).get("TITLE"), players, p, self.match_id, self.bot)
+                v = GetFormat.format_match_playerdata(self.response.get("STATS",{}).get("RESPONSE"), players, p, self.match_id, self.bot)
+                embed_team.add_field(name=n, value=v)
+            
+            if filename!=None:
+                embed_team.set_image(url=f"attachment://{filename}")
+            
+            self.temp_embeds["team_" + team_color] = embed_team
+
+        def embed_economy(self, filename: str) -> List[discord.Embed]:
+            rounds = self.match_info["rounds"]
+            teamA = self.match_info["match_info"]["teamA"]
+            teamB = self.match_info["match_info"]["teamB"]
+
+            response = self.response
+            bot = self.bot
+
+            message_format = response.get("ECONOMY", {}).get("RESPONSE")
+            message_team_format = response.get("ECONOMY", {}).get("RESPONSE_TEAM")
+
             message = ""
-            for t_puuid in sorted_players:
-                p = players[t_puuid]
+            message_teamA = ""
+            message_teamB = ""
+            for r in rounds:
                 if len(message)!=0:
                     message+="\n"
-                message += cls.format_match_playerdata(response.get("PLAYERS", {}).get("DETAIL_DEATHMATCH"), players, t_puuid, match_id, bot)
-            embed_players.description = message
-            return [embed_players, None]
+                if len(message_teamA)!=0:
+                    message_teamA+="\n"
+                if len(message_teamB)!=0:
+                    message_teamB+="\n"
+                
+                if r["win"]==teamA:
+                    result_teamA = response["RESULT"]["WIN"]
+                    result_teamB = response["RESULT"]["LOSE"]
+                    result_emoji_teamA = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
+                    result_emoji_teamB = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamB, bot)
+                    result_emoji = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
+                else:
+                    result_teamA = response["RESULT"]["LOSE"]
+                    result_teamB = response["RESULT"]["WIN"]
+                    result_emoji_teamA = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
+                    result_emoji_teamB = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamB, bot)
+                    result_emoji = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
 
-    def __match_embed_team_stats(cls, title: str, cache: Dict, response: Dict, teams: Dict, players: Dict, team: str, color: str, match_id: str, bot: ValorantBot) -> discord.Embed:
-        embed_team = Embed(title=title, color=color)
+                start_teamA = r["economy"][teamA]["spent"] + r["economy"][teamA]["remain"]
+                start_teamB = r["economy"][teamB]["spent"] + r["economy"][teamB]["remain"]
+                start = start_teamA - start_teamB
 
-        for p in teams[team]["players"]:
-            n = cls.format_match_playerdata(response.get("STATS",{}).get("TITLE"), players, p, match_id, bot)
-            v = cls.format_match_playerdata(response.get("STATS",{}).get("RESPONSE"), players, p, match_id, bot)
-            embed_team.add_field(name=n, value=v)
+                loadout = r["economy"][teamA]["loadout"] - r["economy"][teamB]["loadout"]
+                spent = r["economy"][teamA]["spent"] - r["economy"][teamB]["spent"]
+                remain = r["economy"][teamA]["remain"] - r["economy"][teamB]["remain"]
+
+                total_teamA = r["economy"][teamA]["loadout"] + r["economy"][teamA]["remain"]
+                total_teamB = r["economy"][teamB]["loadout"] + r["economy"][teamB]["remain"]
+                total = loadout + remain
+
+                message += message_format.format(
+                    number=r["number"], align_number=str(r["number"]).ljust(2),
+                    ceremony=r["ceremony"],
+                    result_emoji=result_emoji,
+                    loadout=loadout, align_loadout=str(loadout).rjust(6),
+                    start=start, align_start=str(start).rjust(6),
+                    spent=spent, align_spent=str(spent).rjust(6),
+                    remain=remain, align_remain=str(remain).rjust(6),
+                    total=total, align_total=str(total).rjust(6)
+                )
+                message_teamA += message_team_format.format(
+                    number=r["number"], align_number=str(r["number"]).ljust(2),
+                    ceremony=r["ceremony"],
+                    result=result_teamA, result_emoji=result_emoji_teamA,
+                    loadout=r["economy"][teamA]["loadout"], align_loadout=str(r["economy"][teamA]["loadout"]).rjust(6),
+                    start=start_teamA, align_start=str(start_teamA).rjust(6),
+                    spent=r["economy"][teamA]["spent"], align_spent=str(r["economy"][teamA]["spent"]).rjust(6),
+                    remain=r["economy"][teamA]["remain"], align_remain=str(r["economy"][teamA]["remain"]).rjust(6),
+                    total=total_teamA, align_total=str(total_teamA).rjust(6)
+                )
+                message_teamB += message_team_format.format(
+                    number=r["number"], align_number=str(r["number"]).ljust(2),
+                    ceremony=r["ceremony"],
+                    result=result_teamB, result_emoji=result_emoji_teamB,
+                    loadout=r["economy"][teamB]["loadout"], align_loadout=str(r["economy"][teamB]["loadout"]).rjust(6),
+                    start=start_teamB, align_start=str(start_teamB).rjust(6),
+                    spent=r["economy"][teamB]["spent"], align_spent=str(r["economy"][teamB]["spent"]).rjust(6),
+                    remain=r["economy"][teamB]["remain"], align_remain=str(r["economy"][teamB]["remain"]).rjust(6),
+                    total=total_teamB, align_total=str(total_teamB).rjust(6)
+                )
+
+            description = response.get("ECONOMY", {}).get("TITLE_TEAM_DIFF") + f"\n{message}"
+            description_team = response.get("ECONOMY", {}).get("TITLE_TEAM_A") + f"\n{message_teamA}" + "\n\n" + response.get("ECONOMY", {}).get("TITLE_TEAM_B") + f"\n{message_teamB}"
+
+            embed_economy = Embed(title=response.get("ECONOMY", {}).get("TITLE"), description=description, color=self.color)
+            embed_economy_team = Embed(description=description_team, color=self.color).set_image(url=f"attachment://{filename}")
+            self.temp_embeds["economy"] = [embed_economy, embed_economy_team]
         
-        return embed_team
 
-    def __match_embed_economy(cls, cache: Dict, response: Dict, teams: Dict, rounds: Dict, teamA: str, teamB: dict, color: str, filename: str, bot: ValorantBot) -> List:
-        graph = cls.__match_graph(rounds, teamA, teamB, filename)
+        def build_embeds(self):
+            """Embed Match"""
+            cache = self.cache
+            puuid = self.puuid
+            match_id = self.match_id
+            response = self.response
+            endpoint = self.endpoint
+            filename = self.filename
+            bot = self.bot
 
-        message_format = response.get("ECONOMY", {}).get("RESPONSE")
-        message_team_format = response.get("ECONOMY", {}).get("RESPONSE_TEAM")
+            # match info
+            self.match_info = GetFormat.get_match_info(puuid, match_id, endpoint, response, self.language)
+            endpoint._debug_output_json(self.match_info)
+            match_info = self.match_info
+            self.color = match_info["match_info"]["color"]
 
-        message = ""
-        message_teamA = ""
-        message_teamB = ""
-        for r in rounds:
-            if len(message)!=0:
-                message+="\n"
-            if len(message_teamA)!=0:
-                message_teamA+="\n"
-            if len(message_teamB)!=0:
-                message_teamB+="\n"
-            
-            if r["win"]==teamA:
-                result_teamA = response["RESULT"]["WIN"]
-                result_teamB = response["RESULT"]["LOSE"]
-                result_emoji_teamA = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
-                result_emoji_teamB = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamB, bot)
-                result_emoji = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
+            # embed
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                    executor.submit(self.embed_main)
+                    executor.submit(self.embed_players, filename[1])
+
+            if len(match_info["teams"])==2: # default
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    executor.submit(self.build_stats, "teamA", "teamA_" + filename[2])
+                    executor.submit(self.build_stats, "teamB", "teamB_" + filename[2])
+                    executor.submit(self.embed_team, response.get("TEAM_A"), "teamA", "teamA_" + filename[2])
+                    executor.submit(self.embed_team, response.get("TEAM_B"), "teamB", "teamB_" + filename[2])
+                    executor.submit(self.embed_economy, filename[0])
+
+                
+                self.build_graph(filename[0])
+                self.build_heatmap(filename[1])
+                self.embeds = [[self.temp_embeds["main"], self.temp_embeds["players"]], [self.temp_embeds["team_teamA"], self.temp_embeds["team_teamB"]], self.temp_embeds["economy"]]
+                self.files = [[self.temp_files["heatmap"]], [self.temp_files["stats_teamA"], self.temp_files["stats_teamB"]], [self.temp_files["graph"]]]
             else:
-                result_teamA = response["RESULT"]["LOSE"]
-                result_teamB = response["RESULT"]["WIN"]
-                result_emoji_teamA = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
-                result_emoji_teamB = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamB, bot)
-                result_emoji = GetEmoji.roundresult_by_bot(r["result"], r["win"]==teamA, bot)
+                self.embeds = [[self.temp_embeds["main"], self.temp_embeds["players"]]]
+                self.files = [[]]
 
-            start_teamA = r["economy"][teamA]["spent"] + r["economy"][teamA]["remain"]
-            start_teamB = r["economy"][teamB]["spent"] + r["economy"][teamB]["remain"]
-            start = start_teamA - start_teamB
+        async def start(self):      
+            self.build_embeds()
 
-            loadout = r["economy"][teamA]["loadout"] - r["economy"][teamB]["loadout"]
-            spent = r["economy"][teamA]["spent"] - r["economy"][teamB]["spent"]
-            remain = r["economy"][teamA]["remain"] - r["economy"][teamB]["remain"]
-
-            total_teamA = r["economy"][teamA]["loadout"] + r["economy"][teamA]["remain"]
-            total_teamB = r["economy"][teamB]["loadout"] + r["economy"][teamB]["remain"]
-            total = loadout + remain
-
-            message += message_format.format(
-                number=r["number"], align_number=str(r["number"]).ljust(2),
-                ceremony=r["ceremony"],
-                result_emoji=result_emoji,
-                loadout=loadout, align_loadout=str(loadout).rjust(6),
-                start=start, align_start=str(start).rjust(6),
-                spent=spent, align_spent=str(spent).rjust(6),
-                remain=remain, align_remain=str(remain).rjust(6),
-                total=total, align_total=str(total).rjust(6)
-            )
-            message_teamA += message_team_format.format(
-                number=r["number"], align_number=str(r["number"]).ljust(2),
-                ceremony=r["ceremony"],
-                result=result_teamA, result_emoji=result_emoji_teamA,
-                loadout=r["economy"][teamA]["loadout"], align_loadout=str(r["economy"][teamA]["loadout"]).rjust(6),
-                start=start_teamA, align_start=str(start_teamA).rjust(6),
-                spent=r["economy"][teamA]["spent"], align_spent=str(r["economy"][teamA]["spent"]).rjust(6),
-                remain=r["economy"][teamA]["remain"], align_remain=str(r["economy"][teamA]["remain"]).rjust(6),
-                total=total_teamA, align_total=str(total_teamA).rjust(6)
-            )
-            message_teamB += message_team_format.format(
-                number=r["number"], align_number=str(r["number"]).ljust(2),
-                ceremony=r["ceremony"],
-                result=result_teamB, result_emoji=result_emoji_teamB,
-                loadout=r["economy"][teamB]["loadout"], align_loadout=str(r["economy"][teamB]["loadout"]).rjust(6),
-                start=start_teamB, align_start=str(start_teamB).rjust(6),
-                spent=r["economy"][teamB]["spent"], align_spent=str(r["economy"][teamB]["spent"]).rjust(6),
-                remain=r["economy"][teamB]["remain"], align_remain=str(r["economy"][teamB]["remain"]).rjust(6),
-                total=total_teamB, align_total=str(total_teamB).rjust(6)
-            )
-
-        description = response.get("ECONOMY", {}).get("TITLE_TEAM_DIFF") + f"\n{message}"
-        description_team = response.get("ECONOMY", {}).get("TITLE_TEAM_A") + f"\n{message_teamA}" + "\n\n" + response.get("ECONOMY", {}).get("TITLE_TEAM_B") + f"\n{message_teamB}"
-
-        embed_economy = Embed(title=response.get("ECONOMY", {}).get("TITLE"), description=description, color=color)
-        embed_economy_team = Embed(description=description_team, color=color).set_image(url=f"attachment://{filename}")
-        return [[embed_economy, embed_economy_team], graph]
-    
-    @classmethod
-    def match(cls, player: str, puuid: str, match_id: str, response: Dict, endpoint: API_ENDPOINT, filename: List[str], bot: ValorantBot):
-        """Embed Match"""
-        cache = JSON.read('cache')
-
-        # match info
-        match_info = cls.get_match_info(puuid, match_id, endpoint, response)
-
-        # embed
-        # first embed post
-        description = ""
-        if match_info["match_info"]["is_played"]:
-            description = cls.format_match_playerdata(response.get("RESPONSE"), match_info["players"], puuid, match_id, bot)
-        else:
-            description = ""
-
-        title = response.get("TITLE", "").format(
-            match_id=match_info["match_info"]["match_id"],
-            map=match_info["match_info"]["map"],
-            time=match_info["match_info"]["time"],
-            point=match_info["match_info"]["point"],
-            result=match_info["match_info"]["results"],
-            tracker=GetFormat.get_trackergg_link(match_info["match_info"]["match_id"]),
-            queue=match_info["match_info"]["queue"],
-            duration=match_info["match_info"]["duration"]
-        )
-        header = response.get("HEADER").format(
-            match_id=match_info["match_info"]["match_id"],
-            map=match_info["match_info"]["map"],
-            time=match_info["match_info"]["time"],
-            point=match_info["match_info"]["point"],
-            result=match_info["match_info"]["results"],
-            tracker=GetFormat.get_trackergg_link(match_info["match_info"]["match_id"]),
-            queue=match_info["match_info"]["queue"],
-            duration=match_info["match_info"]["duration"]
-        )
-        footer=response.get("FOOTER").format(
-            match_id=match_info["match_info"]["match_id"],
-            map=match_info["match_info"]["map"],
-            time=match_info["match_info"]["time"],
-            point=match_info["match_info"]["point"],
-            result=match_info["match_info"]["results"],
-            tracker=GetFormat.get_trackergg_link(match_info["match_info"]["match_id"]),
-            queue=match_info["match_info"]["queue"],
-            duration=match_info["match_info"]["duration"]
-        )
-
-        embed_main = Embed(title=title, description=description, color=match_info["match_info"]["color"])
-        embed_main.set_author(name=header, icon_url=match_info["match_info"]["gamemode_icon"])
-        embed_main.set_footer(text=footer)
-        embed_main.set_thumbnail(url=cache["maps"][match_info["match_info"]["map_id"]]["icon"])
-        embed_main.set_image(url=cache["maps"][match_info["match_info"]["map_id"]]["listview_icon"])
-        
-        embed_players = cls.__match_embed_players(cls, cache, response, match_info["teams"], match_info["players"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], match_info["match_info"]["match_id"], filename[1], bot)
-        if len(match_info["teams"])==2: # default
-            embed_teamA = cls.__match_embed_team_stats(cls, response.get("TEAM_A"), cache, response, match_info["teams"], match_info["players"], match_info["match_info"]["teamA"], match_info["match_info"]["color"], match_id, bot)
-            embed_teamB = cls.__match_embed_team_stats(cls, response.get("TEAM_B"), cache, response, match_info["teams"], match_info["players"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], match_id, bot)
-            embed_economy = cls.__match_embed_economy(cls, cache, response, match_info["teams"], match_info["rounds"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], match_info["match_info"]["color"], filename[0], bot)
-
-            cls.__match_heatmap(match_info["players"], match_info["teams"], match_info["match_info"]["teamA"], match_info["match_info"]["teamB"], filename[1])
-            return [[embed_main, embed_players[0], embed_teamA, embed_teamB, embed_economy[0][0], embed_economy[0][1]], [embed_players[1], embed_economy[1]]]
-        else:
-            return [[embed_main, embed_players[0]], None]
+            embeds = self.embeds
+            for i in range(len(embeds)):
+                await self.interaction.followup.send(embeds=embeds[i], files=self.files[i], view=View.share_button(self.interaction, embeds[i]) if self.is_private_message else MISSING)
+            
+            for filename in self.filename:
+                if os.path.isfile(f"resources/temp/" + filename): os.remove("resources/temp/" + filename)
+            
+            if os.path.isfile(f"resources/temp/" + "teamA_" + self.filename[2]): os.remove("resources/temp/" + "teamA_" + self.filename[2])
+            if os.path.isfile(f"resources/temp/" + "teamB_" + self.filename[2]): os.remove("resources/temp/" + "teamB_" + self.filename[2])
 
     # ---------- MATCH HISTORY EMBED ---------- #
     
-    def __career_embed(cls, match_id: str, match_data: Dict, response: Dict, endpoint, puuid: str, bot: ValorantBot) -> discord.Embed:
+    def __career_embed(cls, match_id: str, match_data: Dict, response: Dict, endpoint, puuid: str, locale: str, bot: ValorantBot) -> discord.Embed:
         """Generate Embed Career"""
         cache = JSON.read('cache')
         
@@ -1077,7 +882,7 @@ class GetEmbed:
         after_rank = match_data.get("TierAfterUpdate", 0)
 
         # data
-        match_detail = cls.get_match_info(puuid, match_id, endpoint, response)
+        match_detail = GetFormat.get_match_info(puuid, match_id, endpoint, response, )
 
         def match_format(format: str):
             players = match_detail["players"]
@@ -1101,7 +906,7 @@ class GetEmbed:
                 kda=players[puuid]["kda"],
                 acs=players[puuid]["acs"],
 
-                eco_rating=players[puuid]["eco_rating"],
+                eco_rating=players[puuid].get("eco_rating", 0),
                 damage=players[puuid]["damage"],
                 adr=players[puuid]["adr"],
                 
@@ -1172,6 +977,7 @@ class GetEmbed:
         
         # language
         msg_response = response.get('STATS')
+        locale = str(VLR_locale)
         
         # data
         if history==None:
@@ -1183,7 +989,7 @@ class GetEmbed:
         embeds = []
         i = 0
         for match in matches:
-            ret = cls.__career_embed(cls, match["MatchID"], matches[i], response, endpoint, puuid, bot)
+            ret = cls.__career_embed(cls, match["MatchID"], matches[i], response, endpoint, puuid, locale, bot)
             if ret!=None:
                 embeds.append(ret[0])
                 all_match_stats.append(ret[1])
@@ -1761,7 +1567,7 @@ class GetEmbed:
                     for d in data:
                         match_id = d["MatchID"]
 
-                        match_info = cls.get_match_info(p_puuid, match_id, endpoint, response)
+                        match_info = GetFormat.get_match_info(p_puuid, match_id, endpoint, response)
 
                         player_data = match_info["players"].get(p_puuid)
                         if player_data==None:

@@ -181,22 +181,34 @@
       "NAME": "leaderboard",
       "DESCRIPTION": "現ACTのリーダーボードを表示します",
       "DESCRIBE": {
+        "tier": "ランク",
+        "page": "ページ",
         "username": "ユーザー名 (一時ログイン)",
         "password": "パスワード (一時ログイン)"
       },
       "TITLE": "リーダーボード (#{start} ～ #{end})",
-      "RESPONSE": "",
-      "HEADER": "",
+      "RESPONSE": "{rank_emoji} **{rank}** (最小値: {min_rr} RR)",
+      "HEADER": "ページ: {page} / {max_page}",
       "FOOTER": "",
       "PLAYER": {
         "TITLE": "",
         "RESPONSE": "`#{leaderboard}` {rank_emoji}**{player}**｜**{rr}** RR｜**{wins}** 勝利",
         "HEADER": "",
-        "FOOTER": "{season}"
+        "FOOTER": "{season}",
+        "DELIM": "`       {rank} (最小 RR: {min_rr})       `"
+      },
+      "TOP_PLAYER": {
+        "TITLE": "`#{leaderboard}` {player}",
+        "RESPONSE": "{rank_emoji} **{rank}** (**{rr}** RR)\n**{wins}** 勝利\n{title}",
+        "HEADER": "",
+        "FOOTER": ""
       },
       "SEASON": "{episode} // {act}",
       "ANONYMOUS": "秘密エージェント",
-      "DROPDOWN_CHOICE_TITLE": "ACTを選択してください:"
+      "DROPDOWN_CHOICE_TITLE": {
+        "SEASON": "ACTを選択してください:",
+        "RANK": "ランクを選択してください:"
+      }
     },
     "collection": {
       "NAME": "collection",
@@ -261,7 +273,8 @@
         "TITLE": "ランクレーティング",
         "RESPONSE": "**{result}** {earned_rr} RR\n{before_rank_emoji}`{before_rank} ({before_rr} RR)` > {after_rank_emoji}`{after_rank} ({after_rr} RR)`"
       },
-      "FAILED": "マッチ数は{limit}個までにしてください。"
+      "FAILED": "マッチ数は{limit}個までにしてください。",
+      "NOT_FOUND": "マッチが見つかりませんでした。"
     },
     "match":{
       "NAME": "match",
@@ -277,12 +290,25 @@
       "FOOTER": "🆔{match_id}",
       "TEAM_A": "チームA",
       "TEAM_B": "チームB",
+      "NOT_FOUND": "マッチが見つかりませんでした。",
       "PLAYERS":{
         "TITLE": "プレイヤー",
         "RESPONSE": "{team} ({result}): {point}",
         "DETAIL": "{rank_emoji}｜{agent_emoji} {role_emoji} `{name}`｜`{kills}/{deaths}/{assists}`",
         "DETAIL_DEATHMATCH": "{agent_emoji} {rank_emoji} `#{deathmatch} {name}`｜`{kills}/{deaths}/{assists}`",
         "DEATHMATCH": "対戦結果"
+      },
+      "TEAM_STATS": {
+        "VICTORY": "VICTORY",
+        "DEFEAT": "DEFEAT",
+        "DRAW": "DRAW",
+        "MVP": "MVP",
+        "AGENT": "{agent}",
+        "NAME": "{username}",
+        "TITLE_1": "KDA",
+        "TITLE_2": "ACS / KD%",
+        "RESPONSE_1": "{kills} / {deaths} / {assists}",
+        "RESPONSE_2": "{acs} - {kd}"
       },
       "STATS": {
         "TITLE": "{rank_emoji} {name}",
@@ -693,7 +719,8 @@
       "TEAM_A": "アタッカー",
       "TEAM_B": "ディフェンダー",
       "NO_MEMBER": "なし",
-      "FAILED": "パーティ情報の取得に失敗しました。"
+      "FAILED": "パーティ情報の取得に失敗しました。",
+      "NOT_FOUND": "マッチが見つかりませんでした。"
     },
     "article": {
       "NAME": "article",

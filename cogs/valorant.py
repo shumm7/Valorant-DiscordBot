@@ -22,7 +22,7 @@ from utils.valorant.embed import Embed, GetEmbed
 from utils.valorant.endpoint import API_ENDPOINT
 from utils.valorant.local import ResponseLanguage, LocalErrorResponse
 from utils.valorant.resources import setup_emoji
-from utils.valorant.useful import JSON, GetItems
+from utils.valorant.useful import JSON, GetItems, GetImage
 from utils.locale_v2 import ValorantTranslator
 import utils.config as Config
 
@@ -40,6 +40,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         self.bot: ValorantBot = bot
         self.endpoint: API_ENDPOINT = None
         self.db: DATABASE = None
+        self.config = Config.LoadConfig()
+        if self.config.get("reset-fonts-when-restart") or not os.path.exists("data/fonts.json"):
+            GetImage.load_font()
         self.reload_cache.start()
     
     def cog_unload(self) -> None:
@@ -48,11 +51,10 @@ class ValorantCog(commands.Cog, name='Valorant'):
     def funtion_reload_cache(self, force=False) -> None:
         """ Reload the cache """
         with contextlib.suppress(Exception):
-            config = Config.LoadConfig()
             cache = self.db.read_cache()
             valorant_version = Cache.get_valorant_version()
             bot_version = self.bot.bot_version
-            if valorant_version != cache['valorant_version'] or (bot_version != cache["bot_version"] and config.get("reset-cache-when-updated", False)) or force:
+            if valorant_version != cache['valorant_version'] or (bot_version != cache["bot_version"] and self.config.get("reset-cache-when-updated", False)) or force:
                 Cache.get_cache(bot_version)
                 cache = self.db.read_cache()
                 cache['bot_version'] = bot_version
@@ -281,9 +283,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("leaderboard", {}).get("DESCRIPTION", ""))
-    @app_commands.describe(username=clocal.get("leaderboard", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("leaderboard", {}).get("DESCRIBE", {}).get("password", ""))
+    @app_commands.describe(page=clocal.get("leaderboard", {}).get("DESCRIBE", {}).get("page", ""), username=clocal.get("leaderboard", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("leaderboard", {}).get("DESCRIBE", {}).get("password", ""))
     # @dynamic_cooldown(cooldown_5s)
-    async def leaderboard(self, interaction: Interaction, username: str = None, password: str = None) -> None:
+    async def leaderboard(self, interaction: Interaction, page: int = 1, username: str = None, password: str = None) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         # check if user is logged in
@@ -312,7 +314,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 }
                 entries.append(data)
 
-        view = View.BaseLeaderboard(interaction, entries, response, cache, endpoint, is_private_message)
+        view = View.BaseLeaderboard(interaction, entries, page, response, cache, endpoint, is_private_message)
         await view.start()
         await self.check_update(interaction)
 
@@ -346,7 +348,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         # limit of argument "matches"
-        match_limit = 8
+        match_limit = 9
         
         # check if user is logged in
         is_private_message = True if username is not None or password is not None else False
@@ -415,23 +417,11 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 match_id = data[0]["MatchID"]
 
         date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
-        filename = [f"loadout_graph_{date}.png", f"duels_heatmap_{date}.png"]
-        ret = GetEmbed.match(endpoint.player, endpoint.puuid, match_id, response, endpoint, filename, self.bot)
-        embeds, graph = ret[0], ret[1]
+        filename = [f"loadout_graph_{date}.png", f"duels_heatmap_{date}.png", f"stats_{date}.png"]
+        view = GetEmbed.MatchEmbed(interaction, match_id, response, endpoint, filename, is_private_message)
+        await view.start()
+        await self.check_update(interaction)
 
-        if graph==None:
-            await interaction.followup.send(embeds=embeds, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
-        else:
-            if len(embeds)>2:
-                await interaction.followup.send(embeds=embeds[:2], file=graph[0], view=View.share_button(interaction, embeds[:2]) if is_private_message else MISSING)
-                await interaction.followup.send(embeds=embeds[2:4], view=View.share_button(interaction, embeds[2:4]) if is_private_message else MISSING)
-                await interaction.followup.send(embeds=embeds[4:], file=graph[1], view=View.share_button(interaction, embeds[4:]) if is_private_message else MISSING)
-            else:
-                await interaction.followup.send(embeds=embeds, files=graph, view=View.share_button(interaction, embeds) if is_private_message else MISSING)
-
-            if os.path.isfile(f"resources/temp/" + filename[0]): os.remove("resources/temp/" + filename[0])
-            if os.path.isfile(f"resources/temp/" + filename[1]): os.remove("resources/temp/" + filename[1])
-            await self.check_update(interaction)
     
     @app_commands.command(description=clocal.get("mission", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("mission", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("mission", {}).get("DESCRIBE", {}).get("password", ""))
@@ -1181,7 +1171,7 @@ class ValorantCog(commands.Cog, name='Valorant'):
     @app_commands.describe(action=clocal.get("debug", {}).get("DESCRIBE", {}).get("action", ""))
     @app_commands.guild_only()
     @owner_only()
-    async def debug(self, interaction: Interaction, action: Literal['Reload Skin Price', 'Reload Emoji', 'Reload Cache', 'Reset Emoji', 'Reset Cache']) -> None:
+    async def debug(self, interaction: Interaction, action: Literal['Reload Skin Price', 'Reload Emoji', 'Reload Cache', 'Reset Emoji', 'Reset Cache', 'Reset Fonts Data']) -> None:
         print(f"[{datetime.datetime.now()}] {interaction.user.name} issued a command /{interaction.command.name}.")
 
         await interaction.response.defer(ephemeral=True)
@@ -1217,6 +1207,11 @@ class ValorantCog(commands.Cog, name='Valorant'):
         elif action == 'Reset Cache':
             from utils.valorant.cache import get_cache
             get_cache(self.bot.bot_version)
+            success = response.get('SUCCESS')
+            await interaction.followup.send(embed=Embed(success.format(action=action)))
+        
+        elif action == 'Reset Fonts Data':
+            GetImage.load_font()
             success = response.get('SUCCESS')
             await interaction.followup.send(embed=Embed(success.format(action=action)))
         

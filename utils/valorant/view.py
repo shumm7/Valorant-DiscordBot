@@ -21,7 +21,7 @@ from utils.valorant.embed import Embed
 from utils.valorant.endpoint import API_ENDPOINT
 from .resources import get_item_type
 # Local
-from .useful import GetFormat, format_relative, GetEmoji, GetItems, JSON, load_file
+from .useful import GetFormat, format_relative, GetEmoji, GetItems, GetImage, JSON, load_file
 from ..errors import ValorantBotError
 from ..locale_v2 import ValorantTranslator
 
@@ -657,8 +657,8 @@ class BaseAgent(ui.View):
         self.endpoint.download(agent["background"], "resources/temp/agent_background.png")
 
         # background
-        color1 = tuple(int(c*255) for c in matplotlib.colors.to_rgb("#" + hex(agent['color'][0])[2:].upper()))
-        color2 = tuple(int(c*255) for c in matplotlib.colors.to_rgb("#" + hex(agent['color'][1])[2:].upper()))
+        color1 = GetImage.convert_color(agent['color'][0])
+        color2 = GetImage.convert_color(agent['color'][1])
 
         def get_gradient_2d(start, stop, width, height, is_horizontal):
             if is_horizontal:
@@ -682,7 +682,7 @@ class BaseAgent(ui.View):
         mask = text.copy()
         text.putalpha(40)
         watermark = Image.new('RGBA',text.size,(255,255,255,0))
-        watermark.paste(text,(0,0),mask)
+        watermark.paste(text, (0,0), mask)
         background.paste(watermark, (int(-background.width*3/8 + watermark.width/2), int(-watermark.height/2 + background.height/2)), watermark)
 
         # agent
@@ -1979,7 +1979,7 @@ class BaseRank(ui.View):
                         triangle = Image.open("resources/temp/triangle_down.png")
                     triangle = triangle.resize(size=(int(triangle.width * 0.35), int(triangle.height * 0.35)), resample=Image.ANTIALIAS)
 
-                    base.paste(triangle, (int(triangle_pos[rendered_tier]["x"] + 256 - triangle.width/2), int(triangle_pos[rendered_tier]["y"] + 256 - triangle.height/2)), triangle)
+                    base.paste(triangle, (int(triangle_pos[rendered_tier]["x"] + base.width/2 - triangle.width/2), int(triangle_pos[rendered_tier]["y"] + base.height/2 - triangle.height/2)), triangle)
                     rendered_tier += 1
         base.save("resources/temp/rendered_border.png")
         return load_file("resources/temp/rendered_border.png", "border.png")
@@ -2013,7 +2013,6 @@ class BaseRank(ui.View):
             current_season = self.endpoint.__get_live_season()
 
         self.add_item(self.select_season)
-        self.select_season.placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
         self.build_embeds(current_season)
         self.build_select()
         placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
@@ -2022,32 +2021,70 @@ class BaseRank(ui.View):
         return await self.interaction.followup.send(embeds=self.embeds, file=self.file, view=self, ephemeral=self.is_private_message)
 
 class BaseLeaderboard(ui.View):
-    def __init__(self, interaction: Interaction, entries: Dict, response: Dict, cache: Dict, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
+    def __init__(self, interaction: Interaction, entries: Dict, page: int, response: Dict, cache: Dict, endpoint: API_ENDPOINT, is_private_message: bool) -> None:
         self.interaction: Interaction = interaction
         self.entries = entries
         self.response = response
         self.cache = cache
         self.language = str(VLR_locale)
-        self.index: int = 1
+        self.page: int = page
+        self.max_page: int = 1
+        self.start_index: int = 0
+        self.end_index: int = 0
         self.season: str = None
         self.data: Dict = {}
         self.endpoint = endpoint
         self.bot: ValorantBot = getattr(interaction, "client", interaction._state._get_client())
         self.embeds: List[discord.Embed] = []
         self.file: discord.File = None
-        self.embed_amount = 15
         self.page_format = {}
         self.is_private_message = is_private_message
 
         super().__init__()
         self.clear_items()
     
+    def get_leaderboard_data(self, page: int, size: int = -1) -> None:
+        if size<0:
+            amount = 10
+        else:
+            amount = size - 1 
+
+        if page == 1:
+            start_index = 0
+        else:
+            start_index = (page - 1) * 10 - 1
+        
+        data = self.endpoint.fetch_leaderboard(self.season, 0, 10, False)
+        for tierDetail in data.get("tierDetails", {}).values():
+            index = tierDetail.get("startingIndex") - 1
+            if start_index<= index <= start_index + amount - 1:
+                amount -= 1
+            if start_index <= index and start_index!=0:
+                start_index -= 1
+
+        if start_index != 0:
+            data = self.endpoint.fetch_leaderboard(self.season, start_index - 1, amount + 1, False)
+        else:
+            data = self.endpoint.fetch_leaderboard(self.season, start_index, amount + 1, False)
+
+        self.start_index = start_index
+        self.end_index = start_index + amount - 1 if (start_index + amount)<=data.get("totalPlayers") else self.data.get("totalPlayers")-1
+
+        if data!=None:
+            self.data = data
+    
+    def get_starting_page(self) -> int:
+        return self.data.get("tierDetails", {}).get(str(self.tier), {}).get("startingPage", 1)
+
     def fill_items(self, force=False) -> None:
         self.clear_items()
         if len(self.embeds) > 1 or force:
             self.add_item(self.select_season)
+            self.add_item(self.select_tier)
+            self.add_item(self.start_button)
             self.add_item(self.back_button)
             self.add_item(self.next_button)
+            self.add_item(self.end_button)
 
     def build_embeds(self) -> List:
         """Embed Rank"""
@@ -2057,8 +2094,6 @@ class BaseLeaderboard(ui.View):
         data = self.data
         embeds = []
 
-        each_player = False
-
         # season name
         season_name: str = ""
         for entry in self.entries:
@@ -2067,7 +2102,18 @@ class BaseLeaderboard(ui.View):
 
         # main embed
         def main_format(format: str) -> str:
-            return format.format(season=season_name, player=self.endpoint.player, start=self.index, end=self.index+self.embed_amount-1)
+            return format.format(
+                season=season_name,
+                player=self.endpoint.player,
+                start=self.start_index + 1,
+                end=self.end_index + 1,
+                page=self.page,
+                max_page = self.max_page,
+                rank = GetFormat.get_competitive_tier_name(data.get("Players", [])[0].get("competitiveTier", 0), self.language),
+                rank_emoji = GetEmoji.competitive_tier_by_bot(data.get("Players", [])[0].get("competitiveTier", 0), self.bot),
+                min_rr = data.get("tierDetails", {}).get(str(data.get("Players", [])[0].get("competitiveTier", 0)), {}).get("rankedRatingThreshold", 0),
+                total=data.get("totalPlayers", 0),
+            )
 
         embed = Embed(
             title=main_format(response.get("TITLE", "")),
@@ -2079,40 +2125,62 @@ class BaseLeaderboard(ui.View):
 
         # player embed
         description = ""
-        for leader in data.get("Players", []):
-            def player_format(format: str) -> str:
-                    return format.format(
-                        season = season_name,
-                        player = leader.get("gameName") + "#" + leader.get("tagLine") if not leader.get("IsAnonymized") else response.get("ANONYMOUS"),
-                        puuid = leader.get("puuid"),
-                        rr = leader.get("rankedRating"),
-                        leaderboard = leader.get("leaderboardRank"),
-                        wins = leader.get("numberOfWins"),
-                        rank = cache["competitive_tiers"][str(leader.get("competitiveTier"))]["names"][self.language],
-                        rank_emoji = GetEmoji.competitive_tier_by_bot(leader.get("competitiveTier"), self.bot),
-                        title = GetItems.get_title_name(leader.get("TitleID"), self.language, True)
+        count = self.end_index - self.start_index + 1
+        start = 1 if self.start_index!=0 else 0
+
+        for i in range(count):
+            try:
+                leader = data.get("Players")[i + start]
+
+                def player_format(format: str) -> str:
+                        return format.format(
+                            season = season_name,
+                            player = leader.get("gameName") + "#" + leader.get("tagLine") if not leader.get("IsAnonymized") else response.get("ANONYMOUS"),
+                            puuid = leader.get("puuid"),
+                            rr = leader.get("rankedRating"),
+                            min_rr = data.get("tierDetails", {}).get(str(leader.get("competitiveTier", 0)), {}).get("rankedRatingThreshold", 0),
+                            leaderboard = leader.get("leaderboardRank"),
+                            wins = leader.get("numberOfWins"),
+                            rank = cache["competitive_tiers"][str(leader.get("competitiveTier"))]["names"][self.language],
+                            rank_emoji = GetEmoji.competitive_tier_by_bot(leader.get("competitiveTier"), self.bot),
+                            title = GetItems.get_title_name(leader.get("TitleID"), self.language, True)
+                        )
+
+                if leader.get("leaderboardRank")==1: # no1 player
+                    embed = Embed(
+                        title=player_format(response.get("TOP_PLAYER", {}).get("TITLE", "")),
+                        description=player_format(response.get("TOP_PLAYER", {}).get("RESPONSE", "")),
+                        color = GetColor("premium")
                     )
+                    embed.set_author(name=player_format(response.get("TOP_PLAYER", {}).get("HEADER", "")))
+                    embed.set_footer(text=player_format(response.get("TOP_PLAYER", {}).get("FOOTER", "")))
+                    embed.set_thumbnail(url=cache["playercards"].get(leader.get("PlayerCardID", ""), {}).get("icon", {}).get("small"))
+                    embeds.append(embed)
+                else: # other player
+                    if len(description)!=0:
+                        description += "\n"
+                    
+                    if self.start_index!=0:
+                        if leader.get("competitiveTier")!=data.get("Players")[i].get("competitiveTier"):
+                            description += response.get("PLAYER", {}).get("DELIM", "").format(
+                                rank=cache["competitive_tiers"][str(leader.get("competitiveTier")+1)]["names"][self.language],
+                                rank_emoji = GetEmoji.competitive_tier_by_bot(leader.get("competitiveTier")+1, self.bot),
+                                min_rr = data.get("tierDetails", {}).get(str(leader.get("competitiveTier", 0)+1), {}).get("rankedRatingThreshold", 0)
+                            )
+                            description += "\n"
+                    description += player_format(response.get("PLAYER", {}).get("RESPONSE", ""))
+            except IndexError:
+                break
 
-            if each_player:
-                embed = Embed(
-                    title=player_format(response.get("PLAYER", {}).get("TITLE", "")),
-                    description=player_format(response.get("PLAYER", {}).get("RESPONSE", "")),
-                    color = GetColor("items")
-                )
-                embed.set_author(name=player_format(response.get("PLAYER", {}).get("HEADER", "")))
-                embed.set_footer(text=player_format(response.get("PLAYER", {}).get("FOOTER", "")))
-                embed.set_thumbnail(url=cache["playercards"][leader.get("PlayerCardID")]["icon"]["small"])
-                embeds.append(embed)
-            else:
-                if len(description)!=0:
-                    description += "\n"
-                description += player_format(response.get("PLAYER", {}).get("RESPONSE", ""))
 
-        if not each_player:
-            embed = Embed(title=main_format(response.get("PLAYER", {}).get("TITLE")), description=description, color=GetColor("items"))
-            embed.set_author(name=main_format(response.get("PLAYER", {}).get("HEADER", "")))
-            embed.set_footer(text=main_format(response.get("PLAYER", {}).get("FOOTER", "")))
-            embeds.append(embed)
+        embed = Embed(
+            title=main_format(response.get("PLAYER", {}).get("TITLE")),
+            description=description,
+            color=GetColor("premium")
+        )
+        embed.set_author(name=main_format(response.get("PLAYER", {}).get("HEADER", "")))
+        embed.set_footer(text=main_format(response.get("PLAYER", {}).get("FOOTER", "")))
+        embeds.append(embed)
         
         self.embeds = embeds
 
@@ -2120,41 +2188,101 @@ class BaseLeaderboard(ui.View):
         """ Builds the select season """
         for entry in self.entries:
             self.select_season.add_option(label=entry['name'], value=entry["uuid"])
+        for entry in self.data.get("tierDetails", {}).keys():
+            self.select_tier.add_option(label=GetFormat.get_competitive_tier_name(int(entry)), value=int(entry))
     
     def update_button(self) -> None:
         """ Updates the button """
-        self.next_button.disabled = self.data == None
-        self.back_button.disabled = self.index <= self.embed_amount
+        self.start_button.disabled = self.page <= 1
+        self.next_button.disabled = self.page >= self.max_page
+        self.back_button.disabled = self.page <= 1
+        self.end_button.disabled = self.page >= self.max_page
     
     @ui.select(placeholder='Select a season:')
     async def select_season(self, interaction: Interaction, select: ui.Select):
         try:
+            await interaction.response.defer()
             self.season = select.values[0]
-            self.index = 1
-            self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
+            self.page = self.get_starting_page()
+            self.get_leaderboard_data(self.page)
             self.build_embeds()
             embeds = self.embeds
-            await interaction.response.edit_message(embeds=embeds, view=self)
+            message = await interaction.original_response()
+            await interaction.followup.edit_message(message_id=message.id, embeds=embeds, view=self)
+        except Exception as e:
+           print(e)
+
+    @ui.select(placeholder='Select a tier:')
+    async def select_tier(self, interaction: Interaction, select: ui.Select):
+        try:
+            await interaction.response.defer()
+            self.get_leaderboard_data(1, 10)
+            self.page = self.data.get("tierDetails", {}).get(str(select.values[0])).get("startingPage", 1)
+            self.get_leaderboard_data(self.page)
+            self.build_embeds()
+            embeds = self.embeds
+            
+            message = await interaction.original_response()
+            await interaction.followup.edit_message(message_id=message.id, embeds=embeds, view=self)
         except Exception as e:
             print(e)
 
     @ui.button(label='Back')
     async def back_button(self, interaction: Interaction, button: ui.Button):
-        self.index -= self.embed_amount
-        self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
-        self.build_embeds()
-        self.update_button()
-        embeds = self.embeds
-        await interaction.response.edit_message(embeds=embeds, view=self)
+        try:
+            await interaction.response.defer()
+            self.page -= 1
+            self.get_leaderboard_data(self.page)
+            self.build_embeds()
+            embeds = self.embeds
+            self.update_button()
+            message = await interaction.original_response()
+            await interaction.followup.edit_message(message_id=message.id, embeds=embeds, view=self)
+        except Exception as e:
+            print(e)
 
     @ui.button(label='Next')
     async def next_button(self, interaction: Interaction, button: ui.Button):
-        self.index += self.embed_amount
-        self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
-        self.build_embeds()
-        self.update_button()
-        embeds = self.embeds
-        await interaction.response.edit_message(embeds=embeds, view=self)
+        try:
+            await interaction.response.defer()
+            self.page += 1
+            self.get_leaderboard_data(self.page)
+            self.build_embeds()
+            embeds = self.embeds
+            self.update_button()
+            message = await interaction.original_response()
+            await interaction.followup.edit_message(message_id=message.id, embeds=embeds, view=self)
+        except Exception as e:
+            print(e)
+
+    @ui.button(label='Start')
+    async def start_button(self, interaction: Interaction, button: ui.Button):
+        try:
+            await interaction.response.defer()
+            self.page = 1
+            self.get_leaderboard_data(self.page)
+            self.build_embeds()
+            embeds = self.embeds
+            self.update_button()
+            message = await interaction.original_response()
+            await interaction.followup.edit_message(message_id=message.id, embeds=embeds, view=self)
+        except Exception as e:
+            print(e)
+
+    @ui.button(label='End')
+    async def end_button(self, interaction: Interaction, button: ui.Button):
+        try:
+            await interaction.response.defer()
+            self.page = self.max_page
+            self.get_leaderboard_data(self.page)
+            self.build_embeds()
+            embeds = self.embeds
+            self.update_button()
+            message = await interaction.original_response()
+            await interaction.followup.edit_message(message_id=message.id, embeds=embeds, view=self)
+        except Exception as e:
+            print(e)
+
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         if interaction.user == self.interaction.user:
@@ -2165,6 +2293,7 @@ class BaseLeaderboard(ui.View):
     async def start(self) -> Awaitable[None]:
         """ Starts the rank view """
 
+        # season
         mmr = self.endpoint.fetch_player_mmr(self.endpoint.puuid)
         self.season = mmr['LatestCompetitiveUpdate']['SeasonID']
         if self.season==None:
@@ -2172,16 +2301,27 @@ class BaseLeaderboard(ui.View):
         if len(self.season) == 0:
             self.season = self.endpoint.__get_live_season()
 
-        self.data = self.endpoint.fetch_leaderboard(self.season, self.index-1, self.embed_amount, False)
+        # data
+        self.get_leaderboard_data(1)
+        
+        # start page
+        self.max_page = math.ceil((self.data.get("totalPlayers", 0) + len(self.data.get("tierDetails", {}))) / 10)
+        if self.page > self.max_page:
+            self.page = self.max_page
+
+        # build embed
         self.build_embeds()
-        self.build_select()
-
-        placeholder = self.response.get('DROPDOWN_CHOICE_TITLE')
-        self.select_season.placeholder = placeholder
-
-        self.fill_items()
-        self.update_button()
         embeds = self.embeds
+
+        # build views
+        placeholder = self.response.get('DROPDOWN_CHOICE_TITLE', {}).get("SEASON")
+        self.select_season.placeholder = placeholder
+        placeholder = self.response.get('DROPDOWN_CHOICE_TITLE', {}).get("RANK")
+        self.select_tier.placeholder = placeholder
+        self.fill_items()
+        self.build_select()
+        self.update_button()
+        
         return await self.interaction.followup.send(embeds=embeds, view=self, ephemeral=self.is_private_message)
 
 

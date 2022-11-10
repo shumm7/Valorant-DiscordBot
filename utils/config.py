@@ -38,8 +38,8 @@ def NewConfigData() -> Dict:
         "command-description-language": "en-US",
         "owner-id": -1,
         "emoji-server-id": [-1],
-        "reset-cache-when-updated": True,
-        "font": "Noto Sans CJK JP",
+        "reset-cache-when-updated": False,
+        "reset-fonts-when-restart": False,
         "article": {
             "description": 150
         },
@@ -57,6 +57,29 @@ def NewConfigData() -> Dict:
             "win": 3978097,
             "draw": 4286945,
             "lose": 16598356
+        },
+        "commands": {
+            "match": {
+                "font": {
+                    "heatmap-regular": ["Noto Sans CJK JP", "Regular"],
+                    "heatmap-bold": ["Noto Sans CJK JP", "Bold"],
+                    "graph-regular": ["Noto Sans CJK JP", "Regular"],
+                    "stats-title": ["Noto Sans CJK JP", "Bold"],
+                    "stats-player": ["Noto Sans CJK JP", "Bold"],
+                    "stats-regular": ["Noto Sans CJK JP", "Regular"],
+                    "stats-bold": ["Noto Sans CJK JP", "Bold"]
+                },
+                "color": {
+                    "base": 0,
+                    "point": 16730186,
+                    "text": 16777215,
+                    "text-base": 10526880,
+                    "text-impact": 15265171,
+                    "victory-text": 8050877,
+                    "defeat-text": 16730186,
+                    "draw-text": 16777215
+                }
+            }
         }
     }
     
