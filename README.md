@@ -24,6 +24,9 @@
 [In-game API](https://github.com/HeyM1ke/ValorantClientAPI)を使用して、VALORANTを開かずに様々な情報を表示することのできるDiscord Botです。
 このリポジトリは、[staciax/Valorant-DiscordBot](https://github.com/staciax/Valorant-DiscordBot)のフォークです。
 
+## Heroku
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+- [Youtube Tutorial][Tutorial]
 
 ## Installations
 
