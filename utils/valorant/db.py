@@ -11,6 +11,7 @@ from .local import verify_localcode, LocalErrorResponse
 from .useful import JSON
 from ..errors import DatabaseError
 from utils.locale_v2 import ValorantTranslator
+from utils.drive import Drive
 
 VLR_locale = ValorantTranslator()
 
@@ -106,6 +107,7 @@ class DATABASE:
             db[str(user_id)]["lang"] = str(VLR_locale)
             
             self.insert_user(db)
+            Drive.backup("data/users.json")
 
         except Exception as e:
             print(e)
@@ -132,6 +134,8 @@ class DATABASE:
                 else:
                     db[str(user_id)]["active"] = list(db[str(user_id)]["auth"].keys())[0]
                 self.insert_user(db)
+            Drive.backup("data/users.json")
+
         except KeyError:
             raise DatabaseError(response.get('LOGOUT_ERROR'))
         except Exception as e:
@@ -152,6 +156,7 @@ class DATABASE:
                 raise DatabaseError(response.get('LOGOUT_ERROR'))
             db[str(user_id)]["active"] = puuid
             self.insert_user(db)
+            Drive.backup("data/users.json")
         except KeyError:
             raise DatabaseError(response.get('LOGOUT_ERROR'))
         except Exception as e:

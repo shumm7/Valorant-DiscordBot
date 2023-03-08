@@ -135,5 +135,11 @@
         "TITLE": "/leaderboard コマンド",
         "RESPONSE": "リーダーボードを確認できるコマンドが追加されました！",
         "THUMBNAIL": null
+    },
+    "fork-1.6.3": {
+        "HEADER": "Changelog // 1.6.3",
+        "TITLE": "クラウドバックアップ",
+        "RESPONSE": "ユーザーデータなどをクラウドに自動バックアップする昨日が追加されました。",
+        "THUMBNAIL": null
     }
 }

@@ -25,6 +25,7 @@ from utils.valorant.resources import setup_emoji
 from utils.valorant.useful import JSON, GetItems, GetImage
 from utils.locale_v2 import ValorantTranslator
 import utils.config as Config
+from utils.drive import Drive
 
 VLR_locale = ValorantTranslator()
 clocal = ResponseLanguage("", JSON.read("config", dir="config").get("command-description-language", "en-US"))
@@ -41,6 +42,9 @@ class ValorantCog(commands.Cog, name='Valorant'):
         self.endpoint: API_ENDPOINT = None
         self.db: DATABASE = None
         self.config = Config.LoadConfig()
+        Drive.download("data/users.json")
+        Drive.download("data/notifys.json")
+        Drive.download("data/emoji.json")
         if self.config.get("reset-fonts-when-restart") or not os.path.exists("data/fonts.json"):
             GetImage.load_font()
         self.reload_cache.start()
@@ -60,7 +64,11 @@ class ValorantCog(commands.Cog, name='Valorant'):
                 cache['bot_version'] = bot_version
                 cache['valorant_version'] = valorant_version
                 self.db.insert_cache(cache)
+                Drive.backup("data/users.json")
+                Drive.backup("data/notifys.json")
+                Drive.backup("data/emoji.json")
                 print(f"[{datetime.datetime.now()}] *** Updated cache ***")
+
     
     @tasks.loop(minutes=30)
     async def reload_cache(self) -> None:
@@ -109,7 +117,6 @@ class ValorantCog(commands.Cog, name='Valorant'):
                     self.db.insert_user(db)
         except:
             print(f"[{datetime.datetime.now()}] Failed to send an update notify.")
-
 
     @app_commands.command(description=clocal.get("login", {}).get("DESCRIPTION", ""))
     @app_commands.describe(username=clocal.get("login", {}).get("DESCRIBE", {}).get("username", ""), password=clocal.get("login", {}).get("DESCRIBE", {}).get("password", ""))

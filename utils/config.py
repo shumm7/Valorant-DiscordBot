@@ -40,6 +40,7 @@ def NewConfigData() -> Dict:
         "emoji-server-id": [-1],
         "reset-cache-when-updated": False,
         "reset-fonts-when-restart": False,
+        "backup-google-drive": False,
         "article": {
             "description": 150
         },

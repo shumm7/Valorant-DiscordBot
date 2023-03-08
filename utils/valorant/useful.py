@@ -1226,6 +1226,8 @@ class GetFormat:
         if tier == max: next_reward = max
         current_reward = data[next_reward]
 
+        if current_reward==None:
+            return []
         return current_reward
 
     def __get_contracts_by_season_id(contracts: Dict, data_contracts: Dict, season_id: str) -> Dict[str, Any]:
