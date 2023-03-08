@@ -7,6 +7,11 @@ import os, datetime
 class Drive:
     def backup_dir(path: str = "data"):
         if Config.LoadConfig().get("backup-google-drive", False)==True:
+            if not os.path.exists("client_secrets.json"):
+                creds = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDENTIAL')
+                f = open('client_secrets.json', 'w')
+                f.write(creds)
+
             gauth = GoogleAuth()
             gauth.LoadCredentialsFile("data/mycreds.txt")
 
@@ -30,6 +35,11 @@ class Drive:
     
     def backup(path: str):
         if Config.LoadConfig().get("backup-google-drive", False)==True:
+            if not os.path.exists("client_secrets.json"):
+                creds = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDENTIAL')
+                f = open('client_secrets.json', 'w')
+                f.write(creds)
+
             gauth = GoogleAuth()
             gauth.LoadCredentialsFile("data/mycreds.txt")
 
@@ -52,6 +62,11 @@ class Drive:
 
     def download_dir(path: str = "data"):
         if Config.LoadConfig().get("backup-google-drive", False)==True:
+            if not os.path.exists("client_secrets.json"):
+                creds = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDENTIAL')
+                f = open('client_secrets.json', 'w')
+                f.write(creds)
+
             gauth = GoogleAuth()
             gauth.LoadCredentialsFile("data/mycreds.txt")
 
@@ -78,6 +93,11 @@ class Drive:
     
     def download(path: str):
         if Config.LoadConfig().get("backup-google-drive", False)==True:
+            if not os.path.exists("client_secrets.json"):
+                creds = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDENTIAL')
+                f = open('client_secrets.json', 'w')
+                f.write(creds)
+                
             gauth = GoogleAuth()
             gauth.LoadCredentialsFile("data/mycreds.txt")
 
