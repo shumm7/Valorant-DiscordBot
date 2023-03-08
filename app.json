@@ -1,0 +1,10 @@
+{
+    "name": "discord-valorantbot-folk",
+    "description": "Folk of staciax/Valorant-DiscordBot",
+    "repository": "https://github.com/shumm7/Valorant-DiscordBot",
+    "keywords": [
+      "python",
+      "discord",
+      "bot"
+    ]
+  }
